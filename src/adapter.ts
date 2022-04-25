@@ -14,6 +14,12 @@ export type GetPoolsParams = Omit<PaginationOptions, "page"> & {
   page: number;
 };
 
+export type GetPoolPriceParams = {
+  pool: PoolState;
+  decimalsA?: number;
+  decimalsB?: number;
+};
+
 export class BlockfrostAdapter {
   private readonly networkId: NetworkId;
   private readonly api: BlockFrostAPI;
@@ -45,4 +51,10 @@ export class BlockfrostAdapter {
     });
     return utxos.filter(isValidPoolUtxo).map((utxo) => new PoolState(utxo));
   }
+
+  /**
+   *
+   * @param param0
+   */
+  public async getPoolPrice({ pool, decimalsA, decimalsB }: GetPoolPriceParams);
 }
