@@ -8,12 +8,21 @@ function mustGetEnv(key: string): string {
   return val;
 }
 
+const MIN = "29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c64d494e";
+const MIN_ADA_POOL_ID =
+  "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
+
 const adapter = new BlockfrostAdapter({
   projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
   networkId: NetworkId.MAINNET,
 });
 
-it("getPoolPrice", async () => {
+test("getAssetDecimals", async () => {
+  expect(await adapter.getAssetDecimals("lovelace")).toBe(6);
+  expect(await adapter.getAssetDecimals(MIN)).toBe(6);
+});
+
+test("getPoolPrice", async () => {
   const pools = await adapter.getPools({ page: 1 });
   // check random 5 pools
   for (let i = 0; i < 5; i++) {
@@ -26,4 +35,11 @@ it("getPoolPrice", async () => {
       1e-6
     );
   }
+});
+
+test("getPoolById", async () => {
+  const pool = await adapter.getPoolById({ id: MIN_ADA_POOL_ID });
+  expect(pool).not.toBeNull();
+  expect(pool?.assetA).toEqual("lovelace");
+  expect(pool?.assetB).toEqual(MIN);
 });

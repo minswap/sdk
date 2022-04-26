@@ -1,8 +1,14 @@
-import { Responses } from "@blockfrost/blockfrost-js";
-
 export enum NetworkId {
   TESTNET = 0,
   MAINNET,
 }
 
-export type Utxo = Responses["address_utxo_content"][number];
+export type Value = {
+  unit: string;
+  quantity: string;
+}[];
+
+export type TxIn = {
+  tx_hash: string;
+  output_index: number;
+};

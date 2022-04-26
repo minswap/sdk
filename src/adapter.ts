@@ -3,10 +3,11 @@ import {
   BlockfrostServerError,
 } from "@blockfrost/blockfrost-js";
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
+import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
-import { POOL_ADDRESS } from "./constants";
-import { isValidPoolUtxo, PoolState } from "./pool";
+import { POOL_ADDRESS, POOL_NFT_POLICY_ID } from "./constants";
+import { checkValidPoolOutput, isValidPoolOutput, PoolState } from "./pool";
 import { NetworkId } from "./types";
 
 export type BlockfrostAdapterOptions = {
@@ -16,6 +17,10 @@ export type BlockfrostAdapterOptions = {
 
 export type GetPoolsParams = Omit<PaginationOptions, "page"> & {
   page: number;
+};
+
+export type GetPoolByIdParams = {
+  id: string;
 };
 
 export type GetPoolPriceParams = {
@@ -53,10 +58,59 @@ export class BlockfrostAdapter {
       order,
       page,
     });
-    return utxos.filter(isValidPoolUtxo).map((utxo) => new PoolState(utxo));
+    return utxos
+      .filter((utxo) =>
+        isValidPoolOutput(
+          this.networkId,
+          POOL_ADDRESS[this.networkId],
+          utxo.amount,
+          utxo.data_hash
+        )
+      )
+      .map(
+        (utxo) =>
+          new PoolState(
+            { tx_hash: utxo.tx_hash, output_index: utxo.output_index },
+            utxo.amount,
+            utxo.data_hash
+          )
+      );
   }
 
-  private async getAssetDecimals(asset: string): Promise<number> {
+  public async getPoolById({
+    id,
+  }: GetPoolByIdParams): Promise<PoolState | null> {
+    const nft = `${POOL_NFT_POLICY_ID}${id}`;
+    const nftTxs = await this.api.assetsTransactions(nft, {
+      count: 1,
+      page: 1,
+      order: "desc",
+    });
+    if (nftTxs.length === 0) {
+      return null;
+    }
+    const lastPoolTx = await this.api.txsUtxos(nftTxs[0].tx_hash);
+    const poolUtxo = lastPoolTx.outputs.find(
+      (o) => o.address === POOL_ADDRESS[this.networkId]
+    );
+    invariant(poolUtxo, "pool utxo doesn't exist in tx");
+    checkValidPoolOutput(
+      this.networkId,
+      poolUtxo.address,
+      poolUtxo.amount,
+      poolUtxo.data_hash
+    );
+    return new PoolState(
+      { tx_hash: lastPoolTx.hash, output_index: poolUtxo.output_index },
+      poolUtxo.amount,
+      poolUtxo.data_hash
+    );
+  }
+
+  public async getAssetDecimals(asset: string): Promise<number> {
+    if (asset === "lovelace") {
+      return 6;
+    }
     try {
       const assetAInfo = await this.api.assetsById(asset);
       return assetAInfo.metadata?.decimals ?? 0;
