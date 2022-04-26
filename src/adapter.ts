@@ -1,5 +1,9 @@
-import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
+import {
+  BlockFrostAPI,
+  BlockfrostServerError,
+} from "@blockfrost/blockfrost-js";
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
+import Big from "big.js";
 
 import { POOL_ADDRESS } from "./constants";
 import { isValidPoolUtxo, PoolState } from "./pool";
@@ -52,9 +56,45 @@ export class BlockfrostAdapter {
     return utxos.filter(isValidPoolUtxo).map((utxo) => new PoolState(utxo));
   }
 
+  private async getAssetDecimals(asset: string): Promise<number> {
+    try {
+      const assetAInfo = await this.api.assetsById(asset);
+      return assetAInfo.metadata?.decimals ?? 0;
+    } catch (err) {
+      if (err instanceof BlockfrostServerError && err.status_code === 404) {
+        return 0;
+      }
+      throw err;
+    }
+  }
+
   /**
-   *
-   * @param param0
+   * Get pool price.
+   * @param {Object} params - The parameters to calculate pool price.
+   * @param {string} params.pool - The pool we want to get price.
+   * @param {string} [params.decimalsA] - The decimals of assetA in pool, if undefined the query from Blockfrost.
+   * @param {string} [params.decimalsB] - The decimals of assetB in pool, if undefined the query from Blockfrost.
+   * @returns {[string, string]} - Returns a pair of asset A/B price and B/A price, adjusted to decimals.
    */
-  public async getPoolPrice({ pool, decimalsA, decimalsB }: GetPoolPriceParams);
+  public async getPoolPrice({
+    pool,
+    decimalsA,
+    decimalsB,
+  }: GetPoolPriceParams): Promise<[string, string]> {
+    if (decimalsA === undefined) {
+      decimalsA = await this.getAssetDecimals(pool.assetA);
+    }
+    if (decimalsB === undefined) {
+      decimalsB = await this.getAssetDecimals(pool.assetB);
+    }
+    const adjustedReserveA = Big(pool.reserveA.toString()).div(
+      Big(10).pow(decimalsA)
+    );
+    const adjustedReserveB = Big(pool.reserveB.toString()).div(
+      Big(10).pow(decimalsB)
+    );
+    const priceAB = adjustedReserveA.div(adjustedReserveB).toString();
+    const priceBA = adjustedReserveB.div(adjustedReserveA).toString();
+    return [priceAB, priceBA];
+  }
 }
