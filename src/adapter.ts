@@ -80,7 +80,7 @@ export class BlockfrostAdapter {
     pool,
     decimalsA,
     decimalsB,
-  }: GetPoolPriceParams): Promise<[string, string]> {
+  }: GetPoolPriceParams): Promise<[Big, Big]> {
     if (decimalsA === undefined) {
       decimalsA = await this.getAssetDecimals(pool.assetA);
     }
@@ -93,8 +93,8 @@ export class BlockfrostAdapter {
     const adjustedReserveB = Big(pool.reserveB.toString()).div(
       Big(10).pow(decimalsB)
     );
-    const priceAB = adjustedReserveA.div(adjustedReserveB).toString();
-    const priceBA = adjustedReserveB.div(adjustedReserveA).toString();
+    const priceAB = adjustedReserveA.div(adjustedReserveB);
+    const priceBA = adjustedReserveB.div(adjustedReserveA);
     return [priceAB, priceBA];
   }
 }
