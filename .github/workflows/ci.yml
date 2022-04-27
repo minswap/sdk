@@ -22,5 +22,7 @@ jobs:
         run: npm run build
       - name: Run test
         run: npm run test
+        env:
+          BLOCKFROST_PROJECT_ID_MAINNET: ${{ secrets.BLOCKFROST_PROJECT_ID_MAINNET }}
       - name: Run lint
         run: npm run lint
