@@ -7,6 +7,11 @@
 - [ ] Calculate trade price and price impact
 - [ ] Create orders and submit to Blockfrost
 
+## Install
+
+- NPM: `npm install @minswap/blockfrost-adapter`
+- Yarn: `yarn add @minswap/blockfrost-adapter`
+
 ## Examples
 
 ```ts
