@@ -30,10 +30,12 @@ for (let i = 1; ; i++) {
   );
   if (minADAPool) {
     const [a, b] = await api.getPoolPrice({ pool: minADAPool });
-    console.log(a.toString(), b.toString());
-    console.log(minADAPool);
-    const pool2 = await api.getPoolById({ id: minADAPool.id });
-    console.log(pool2);
+    console.log(
+      `ADA/MIN price: ${a.toString()}; MIN/ADA price: ${b.toString()}`
+    );
+    // we can later use this ID to call getPoolById
+    console.log(`ADA/MIN pool ID: ${minADAPool.id}`);
+    break;
   }
 }
 ```
