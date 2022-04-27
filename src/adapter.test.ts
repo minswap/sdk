@@ -17,6 +17,10 @@ const adapter = new BlockfrostAdapter({
   networkId: NetworkId.MAINNET,
 });
 
+beforeAll(() => {
+  jest.setTimeout(30_000);
+});
+
 test("getAssetDecimals", async () => {
   expect(await adapter.getAssetDecimals("lovelace")).toBe(6);
   expect(await adapter.getAssetDecimals(MIN)).toBe(6);
