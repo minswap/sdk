@@ -8,6 +8,7 @@ import {
   POOL_NFT_POLICY_ID,
 } from "./constants";
 import { NetworkId, TxIn, Value } from "./types";
+import { slotToTime } from "./utils";
 
 // ADA goes first
 // If non-ADA, then sort lexicographically
@@ -25,7 +26,11 @@ export function normalizeAssets(a: string, b: string): [string, string] {
   }
 }
 
+/**
+ * Represents state of a pool UTxO. The state could be latest state or a historical state.
+ */
 export class PoolState {
+  /** The transaction hash and output index of the pool UTxO */
   public readonly txIn: TxIn;
   public readonly value: Value;
   public readonly datumHash: string | null;
@@ -36,6 +41,8 @@ export class PoolState {
     this.txIn = txIn;
     this.value = value;
     this.datumHash = datumHash;
+
+    // validate and memoize assetA and assetB
     const relevantAssets = value.filter(
       ({ unit }) =>
         !unit.startsWith(FACTORY_POLICY_ID) &&
@@ -99,6 +106,37 @@ export class PoolState {
     return BigInt(
       this.value.find(({ unit }) => unit === this.assetB)?.quantity ?? "0"
     );
+  }
+}
+
+/**
+ * Represents a historical point of a pool.
+ */
+export class PoolHistory {
+  public readonly txHash: string;
+  /** Transaction index within the block */
+  public readonly txIndex: number;
+  public readonly blockHeight: number;
+  /** The absolute slot of the block */
+  public readonly slot: number;
+  private readonly networkId: NetworkId;
+
+  constructor(
+    txHash: string,
+    txIndex: number,
+    blockHeight: number,
+    blockTime: number,
+    networkId: NetworkId
+  ) {
+    this.txHash = txHash;
+    this.txIndex = txIndex;
+    this.blockHeight = blockHeight;
+    this.slot = blockTime;
+    this.networkId = networkId;
+  }
+
+  getTime(): Date {
+    return slotToTime(this.networkId, this.slot);
   }
 }
 

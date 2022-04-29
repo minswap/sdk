@@ -47,3 +47,11 @@ test("getPoolById", async () => {
   expect(pool?.assetA).toEqual("lovelace");
   expect(pool?.assetB).toEqual(MIN);
 });
+
+test("get prices of last 5 states of MIN/ADA pool", async () => {
+  const history = await adapter.getPoolHistory({ id: MIN_ADA_POOL_ID });
+  for (let i = 0; i < Math.min(5, history.length); i++) {
+    const pool = await adapter.getPoolInTx({ txHash: history[i].txHash });
+    expect(pool?.txIn.txHash).toEqual(history[i].txHash);
+  }
+});

@@ -3,11 +3,15 @@ import {
   BlockfrostServerError,
 } from "@blockfrost/blockfrost-js";
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
-import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
 import { POOL_ADDRESS, POOL_NFT_POLICY_ID } from "./constants";
-import { checkValidPoolOutput, isValidPoolOutput, PoolState } from "./pool";
+import {
+  checkValidPoolOutput,
+  isValidPoolOutput,
+  PoolHistory,
+  PoolState,
+} from "./pool";
 import { NetworkId } from "./types";
 
 export type BlockfrostAdapterOptions = {
@@ -27,6 +31,14 @@ export type GetPoolPriceParams = {
   pool: PoolState;
   decimalsA?: number;
   decimalsB?: number;
+};
+
+export type GetPoolHistoryParams = PaginationOptions & {
+  id: string;
+};
+
+export type GetPoolInTxParams = {
+  txHash: string;
 };
 
 export class BlockfrostAdapter {
@@ -70,13 +82,19 @@ export class BlockfrostAdapter {
       .map(
         (utxo) =>
           new PoolState(
-            { tx_hash: utxo.tx_hash, output_index: utxo.output_index },
+            { txHash: utxo.tx_hash, index: utxo.output_index },
             utxo.amount,
             utxo.data_hash
           )
       );
   }
 
+  /**
+   * Get a specific pool by its ID.
+   * @param {Object} params - The parameters.
+   * @param {string} params.pool - The pool ID. This is the asset name of a pool's NFT and LP tokens. It can also be acquired by calling pool.id.
+   * @returns {PoolState | null} - Returns the pool or null if not found.
+   */
   public async getPoolById({
     id,
   }: GetPoolByIdParams): Promise<PoolState | null> {
@@ -89,11 +107,49 @@ export class BlockfrostAdapter {
     if (nftTxs.length === 0) {
       return null;
     }
-    const lastPoolTx = await this.api.txsUtxos(nftTxs[0].tx_hash);
-    const poolUtxo = lastPoolTx.outputs.find(
+    return this.getPoolInTx({ txHash: nftTxs[0].tx_hash });
+  }
+
+  public async getPoolHistory({
+    id,
+    page = 1,
+    count = 100,
+    order = "desc",
+  }: GetPoolHistoryParams): Promise<PoolHistory[]> {
+    const nft = `${POOL_NFT_POLICY_ID}${id}`;
+    const nftTxs = await this.api.assetsTransactions(nft, {
+      count,
+      page,
+      order,
+    });
+    return nftTxs.map(
+      (tx) =>
+        new PoolHistory(
+          tx.tx_hash,
+          tx.tx_index,
+          tx.block_height,
+          Number(tx.block_time),
+          this.networkId
+        )
+    );
+  }
+
+  /**
+   * Get pool state in a transaction.
+   * @param {Object} params - The parameters.
+   * @param {string} params.txHash - The transaction hash containing pool output. One of the way to acquire is by calling getPoolHistory.
+   * @returns {PoolState} - Returns the pool state or null if the transaction doesn't contain pool.
+   */
+  public async getPoolInTx({
+    txHash,
+  }: GetPoolInTxParams): Promise<PoolState | null> {
+    const poolTx = await this.api.txsUtxos(txHash);
+    const poolUtxo = poolTx.outputs.find(
       (o) => o.address === POOL_ADDRESS[this.networkId]
     );
-    invariant(poolUtxo, "pool utxo doesn't exist in tx");
+    if (!poolUtxo) {
+      return null;
+    }
     checkValidPoolOutput(
       this.networkId,
       poolUtxo.address,
@@ -101,7 +157,7 @@ export class BlockfrostAdapter {
       poolUtxo.data_hash
     );
     return new PoolState(
-      { tx_hash: lastPoolTx.hash, output_index: poolUtxo.output_index },
+      { txHash: txHash, index: poolUtxo.output_index },
       poolUtxo.amount,
       poolUtxo.data_hash
     );
@@ -126,8 +182,8 @@ export class BlockfrostAdapter {
    * Get pool price.
    * @param {Object} params - The parameters to calculate pool price.
    * @param {string} params.pool - The pool we want to get price.
-   * @param {string} [params.decimalsA] - The decimals of assetA in pool, if undefined the query from Blockfrost.
-   * @param {string} [params.decimalsB] - The decimals of assetB in pool, if undefined the query from Blockfrost.
+   * @param {string} [params.decimalsA] - The decimals of assetA in pool, if undefined then query from Blockfrost.
+   * @param {string} [params.decimalsB] - The decimals of assetB in pool, if undefined then query from Blockfrost.
    * @returns {[string, string]} - Returns a pair of asset A/B price and B/A price, adjusted to decimals.
    */
   public async getPoolPrice({
