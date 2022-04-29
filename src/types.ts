@@ -9,6 +9,6 @@ export type Value = {
 }[];
 
 export type TxIn = {
-  tx_hash: string;
-  output_index: number;
+  txHash: string;
+  index: number;
 };

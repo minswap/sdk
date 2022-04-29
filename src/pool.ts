@@ -25,7 +25,11 @@ export function normalizeAssets(a: string, b: string): [string, string] {
   }
 }
 
+/**
+ * Represents state of a pool UTxO. The state could be latest state or a historical state.
+ */
 export class PoolState {
+  /** The transaction hash and output index of the pool UTxO */
   public readonly txIn: TxIn;
   public readonly value: Value;
   public readonly datumHash: string | null;
@@ -36,6 +40,8 @@ export class PoolState {
     this.txIn = txIn;
     this.value = value;
     this.datumHash = datumHash;
+
+    // validate and memoize assetA and assetB
     const relevantAssets = value.filter(
       ({ unit }) =>
         !unit.startsWith(FACTORY_POLICY_ID) &&
@@ -101,6 +107,17 @@ export class PoolState {
     );
   }
 }
+
+/**
+ * Represents a historical point of a pool.
+ */
+export type PoolHistory = {
+  txHash: string;
+  /** Transaction index within the block */
+  txIndex: number;
+  blockHeight: number;
+  time: Date;
+};
 
 export function checkValidPoolOutput(
   networkId: NetworkId,

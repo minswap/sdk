@@ -3,7 +3,7 @@
 ## Features
 
 - [x] Get current pair price
-- [ ] Get historical pair price
+- [x] Get historical pair price
 - [ ] Calculate trade price and price impact
 - [ ] Create orders and submit to Blockfrost
 
@@ -13,6 +13,8 @@
 - Yarn: `yarn add @minswap/blockfrost-adapter`
 
 ## Examples
+
+### Example 1: Get current price of MIN/ADA pool
 
 ```ts
 import { BlockfrostAdapter, NetworkId } from "@minswap/blockfrost-adapter";
@@ -42,5 +44,32 @@ for (let i = 1; ; i++) {
     console.log(`ADA/MIN pool ID: ${minADAPool.id}`);
     break;
   }
+}
+```
+
+### Example 2: Get historical prices of MIN/ADA pool
+
+```ts
+import { BlockfrostAdapter } from "@minswap/blockfrost-adapter";
+
+const MIN_ADA_POOL_ID =
+  "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
+
+const api = new BlockfrostAdapter({
+  projectId: "<your_project_id>",
+  networkId: NetworkId.MAINNET,
+});
+const history = await api.getPoolHistory({ id: MIN_ADA_POOL_ID });
+for (const historyPoint of history) {
+  const pool = await api.getPoolInTx({ txHash: historyPoint.txHash });
+  if (!pool) {
+    throw new Error("pool not found");
+  }
+  const [price0, price1] = await api.getPoolPrice({
+    pool,
+    decimalsA: 6,
+    decimalsB: 6,
+  });
+  console.log(`${historyPoint.time}: ${price0} ADA/MIN, ${price1} MIN/ADA`);
 }
 ```
