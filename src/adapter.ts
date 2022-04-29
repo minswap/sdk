@@ -123,14 +123,12 @@ export class BlockfrostAdapter {
       order,
     });
     return nftTxs.map(
-      (tx) =>
-        new PoolHistory(
-          tx.tx_hash,
-          tx.tx_index,
-          tx.block_height,
-          Number(tx.block_time),
-          this.networkId
-        )
+      (tx): PoolHistory => ({
+        txHash: tx.tx_hash,
+        txIndex: tx.tx_index,
+        blockHeight: tx.block_height,
+        time: new Date(Number(tx.block_time) * 1000),
+      })
     );
   }
 

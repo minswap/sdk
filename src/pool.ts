@@ -8,7 +8,6 @@ import {
   POOL_NFT_POLICY_ID,
 } from "./constants";
 import { NetworkId, TxIn, Value } from "./types";
-import { slotToTime } from "./utils";
 
 // ADA goes first
 // If non-ADA, then sort lexicographically
@@ -112,33 +111,13 @@ export class PoolState {
 /**
  * Represents a historical point of a pool.
  */
-export class PoolHistory {
-  public readonly txHash: string;
+export type PoolHistory = {
+  txHash: string;
   /** Transaction index within the block */
-  public readonly txIndex: number;
-  public readonly blockHeight: number;
-  /** The absolute slot of the block */
-  public readonly slot: number;
-  private readonly networkId: NetworkId;
-
-  constructor(
-    txHash: string,
-    txIndex: number,
-    blockHeight: number,
-    blockTime: number,
-    networkId: NetworkId
-  ) {
-    this.txHash = txHash;
-    this.txIndex = txIndex;
-    this.blockHeight = blockHeight;
-    this.slot = blockTime;
-    this.networkId = networkId;
-  }
-
-  getTime(): Date {
-    return slotToTime(this.networkId, this.slot);
-  }
-}
+  txIndex: number;
+  blockHeight: number;
+  time: Date;
+};
 
 export function checkValidPoolOutput(
   networkId: NetworkId,

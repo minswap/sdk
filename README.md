@@ -70,8 +70,6 @@ for (const historyPoint of history) {
     decimalsA: 6,
     decimalsB: 6,
   });
-  console.log(
-    `${historyPoint.getTime()}: ${price0} ADA/MIN, ${price1} MIN/ADA`
-  );
+  console.log(`${historyPoint.time}: ${price0} ADA/MIN, ${price1} MIN/ADA`);
 }
 ```
