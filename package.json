@@ -1,6 +1,6 @@
 {
   "name": "@minswap/blockfrost-adapter",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Query Minswap data from Blockfrost",
   "main": "./build/index.js",
   "module": "./build/index.es.js",
@@ -11,8 +11,7 @@
   "scripts": {
     "build": "rimraf build && rollup -c rollup.config.js",
     "test": "jest",
-    "lint": "eslint src --ext .ts",
-    "publish": "npm publish"
+    "lint": "eslint src --ext .ts"
   },
   "keywords": [
     "minswap",
