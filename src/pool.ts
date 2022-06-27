@@ -41,12 +41,14 @@ export class PoolState {
     this.value = value;
     this.datumHash = datumHash;
 
+    const nft = value.find(({ unit }) => unit.startsWith(POOL_NFT_POLICY_ID));
+    invariant(nft, "pool doesn't have NFT");
+    const poolId = nft.unit.slice(56);
     // validate and memoize assetA and assetB
     const relevantAssets = value.filter(
       ({ unit }) =>
-        !unit.startsWith(FACTORY_POLICY_ID) &&
-        !unit.startsWith(POOL_NFT_POLICY_ID) &&
-        !unit.startsWith(LP_POLICY_ID)
+        !unit.startsWith(FACTORY_POLICY_ID) && // factory token
+        !unit.endsWith(poolId) // NFT and LP tokens from profit sharing
     );
     switch (relevantAssets.length) {
       case 2: {
