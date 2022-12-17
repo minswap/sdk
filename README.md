@@ -4,7 +4,8 @@
 
 - [x] Get current pair price
 - [x] Get historical pair price
-- [ ] Calculate trade price and price impact
+- [x] Calculate trade price
+- [ ] Calculate price impact
 - [ ] Create orders and submit to Blockfrost
 
 ## Install
@@ -50,7 +51,7 @@ for (let i = 1; ; i++) {
 ### Example 2: Get historical prices of MIN/ADA pool
 
 ```ts
-import { BlockfrostAdapter } from "@minswap/blockfrost-adapter";
+import { BlockfrostAdapter, NetworkId } from "@minswap/blockfrost-adapter";
 
 const MIN_ADA_POOL_ID =
   "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";

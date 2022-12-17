@@ -108,6 +108,46 @@ export class PoolState {
       this.value.find(({ unit }) => unit === this.assetB)?.quantity ?? "0"
     );
   }
+
+  /**
+   * Get the output amount if we swap a certain amount of a token in the pair
+   * @param assetIn The asset that we want to swap from
+   * @param amountIn The amount that we want to swap from
+   * @returns The amount of the other token that we get from the swap
+   */
+  getAmountOut(assetIn: string, amountIn: bigint): bigint {
+    invariant(
+      assetIn === this.assetA || assetIn === this.assetB,
+      `asset ${assetIn} doesn't exist in pool ${this.assetA}-${this.assetB}`
+    );
+    const [reserveIn, reserveOut] =
+      assetIn === this.assetA
+        ? [this.reserveA, this.reserveB]
+        : [this.reserveB, this.reserveA];
+    const numerator = amountIn * 997n * reserveOut;
+    const denominator = amountIn * 997n + reserveIn * 1000n;
+    return numerator / denominator;
+  }
+
+  /**
+   * Get the input amount needed if we want to get a certain amount of a token in the pair from swapping
+   * @param assetOut The asset that we want to get from the pair
+   * @param amountOut The amount of assetOut that we want get from the swap
+   * @returns The amount needed of the input token for the swap
+   */
+  getAmountIn(assetOut: string, amountOut: bigint): bigint {
+    invariant(
+      assetOut === this.assetA || assetOut === this.assetB,
+      `asset ${assetOut} doesn't exist in pool ${this.assetA}-${this.assetB}`
+    );
+    const [reserveIn, reserveOut] =
+      assetOut === this.assetB
+        ? [this.reserveA, this.reserveB]
+        : [this.reserveB, this.reserveA];
+    const numerator = reserveIn * amountOut * 1000n;
+    const denominator = (reserveOut - amountOut) * 997n;
+    return numerator / denominator + 1n;
+  }
 }
 
 /**
