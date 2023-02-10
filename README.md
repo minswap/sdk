@@ -5,7 +5,7 @@
 - [x] Get current pair price
 - [x] Get historical pair price
 - [x] Calculate trade price
-- [ ] Calculate price impact
+- [x] Calculate price impact
 - [ ] Create orders and submit to Blockfrost
 
 ## Install
