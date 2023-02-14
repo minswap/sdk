@@ -1,4 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
+import Big from "big.js";
 
 import {
   FACTORY_ASSET_NAME,
@@ -118,7 +119,7 @@ export class PoolState {
   getAmountOut(
     assetIn: string,
     amountIn: bigint
-  ): { amountOut: bigint; priceImpact: number } {
+  ): { amountOut: bigint; priceImpact: Big } {
     invariant(
       assetIn === this.assetA || assetIn === this.assetB,
       `asset ${assetIn} doesn't exist in pool ${this.assetA}-${this.assetB}`
@@ -139,8 +140,9 @@ export class PoolState {
 
     return {
       amountOut: amtOutNumerator / amtOutDenominator,
-      priceImpact:
-        Number((priceImpactNumerator * 10_000n) / priceImpactDenominator) / 100,
+      priceImpact: new Big(priceImpactNumerator.toString())
+        .mul(new Big(100))
+        .div(new Big(priceImpactDenominator.toString())),
     };
   }
 
@@ -153,7 +155,7 @@ export class PoolState {
   getAmountIn(
     assetOut: string,
     amountOut: bigint
-  ): { amountIn: bigint; priceImpact: number } {
+  ): { amountIn: bigint; priceImpact: Big } {
     invariant(
       assetOut === this.assetA || assetOut === this.assetB,
       `asset ${assetOut} doesn't exist in pool ${this.assetA}-${this.assetB}`
@@ -173,8 +175,9 @@ export class PoolState {
 
     return {
       amountIn: amtInNumerator / amtInDenominator + 1n,
-      priceImpact:
-        Number((priceImpactNumerator * 10_000n) / priceImpactDenominator) / 100,
+      priceImpact: new Big(priceImpactNumerator.toString())
+        .mul(new Big(100))
+        .div(new Big(priceImpactDenominator.toString())),
     };
   }
 }
