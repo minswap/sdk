@@ -1,6 +1,6 @@
 {
   "name": "@minswap/blockfrost-adapter",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Query Minswap data from Blockfrost",
   "main": "./build/index.js",
   "module": "./build/index.es.js",
