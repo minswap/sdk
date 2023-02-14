@@ -1,4 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
+import Big from "big.js";
 
 import {
   FACTORY_ASSET_NAME,
@@ -113,9 +114,12 @@ export class PoolState {
    * Get the output amount if we swap a certain amount of a token in the pair
    * @param assetIn The asset that we want to swap from
    * @param amountIn The amount that we want to swap from
-   * @returns The amount of the other token that we get from the swap
+   * @returns The amount of the other token that we get from the swap and its price impact
    */
-  getAmountOut(assetIn: string, amountIn: bigint): bigint {
+  getAmountOut(
+    assetIn: string,
+    amountIn: bigint
+  ): { amountOut: bigint; priceImpact: Big } {
     invariant(
       assetIn === this.assetA || assetIn === this.assetB,
       `asset ${assetIn} doesn't exist in pool ${this.assetA}-${this.assetB}`
@@ -124,18 +128,34 @@ export class PoolState {
       assetIn === this.assetA
         ? [this.reserveA, this.reserveB]
         : [this.reserveB, this.reserveA];
-    const numerator = amountIn * 997n * reserveOut;
-    const denominator = amountIn * 997n + reserveIn * 1000n;
-    return numerator / denominator;
+
+    const amtOutNumerator = amountIn * 997n * reserveOut;
+    const amtOutDenominator = amountIn * 997n + reserveIn * 1000n;
+
+    const priceImpactNumerator =
+      reserveOut * amountIn * amtOutDenominator * 997n -
+      amtOutNumerator * reserveIn * 1000n;
+    const priceImpactDenominator =
+      reserveOut * amountIn * amtOutDenominator * 1000n;
+
+    return {
+      amountOut: amtOutNumerator / amtOutDenominator,
+      priceImpact: new Big(priceImpactNumerator.toString())
+        .mul(new Big(100))
+        .div(new Big(priceImpactDenominator.toString())),
+    };
   }
 
   /**
    * Get the input amount needed if we want to get a certain amount of a token in the pair from swapping
    * @param assetOut The asset that we want to get from the pair
    * @param amountOut The amount of assetOut that we want get from the swap
-   * @returns The amount needed of the input token for the swap
+   * @returns The amount needed of the input token for the swap and its price impact
    */
-  getAmountIn(assetOut: string, amountOut: bigint): bigint {
+  getAmountIn(
+    assetOut: string,
+    amountOut: bigint
+  ): { amountIn: bigint; priceImpact: Big } {
     invariant(
       assetOut === this.assetA || assetOut === this.assetB,
       `asset ${assetOut} doesn't exist in pool ${this.assetA}-${this.assetB}`
@@ -144,9 +164,21 @@ export class PoolState {
       assetOut === this.assetB
         ? [this.reserveA, this.reserveB]
         : [this.reserveB, this.reserveA];
-    const numerator = reserveIn * amountOut * 1000n;
-    const denominator = (reserveOut - amountOut) * 997n;
-    return numerator / denominator + 1n;
+
+    const amtInNumerator = reserveIn * amountOut * 1000n;
+    const amtInDenominator = (reserveOut - amountOut) * 997n;
+
+    const priceImpactNumerator =
+      reserveOut * amtInNumerator * 997n -
+      amountOut * amtInDenominator * reserveIn * 1000n;
+    const priceImpactDenominator = reserveOut * amtInNumerator * 1000n;
+
+    return {
+      amountIn: amtInNumerator / amtInDenominator + 1n,
+      priceImpact: new Big(priceImpactNumerator.toString())
+        .mul(new Big(100))
+        .div(new Big(priceImpactDenominator.toString())),
+    };
   }
 }
 

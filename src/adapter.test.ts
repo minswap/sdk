@@ -1,3 +1,5 @@
+import invariant from "@minswap/tiny-invariant";
+
 import { BlockfrostAdapter, NetworkId } from ".";
 
 function mustGetEnv(key: string): string {
@@ -54,4 +56,13 @@ test("get prices of last 5 states of MIN/ADA pool", async () => {
     const pool = await adapter.getPoolInTx({ txHash: history[i].txHash });
     expect(pool?.txIn.txHash).toEqual(history[i].txHash);
   }
+});
+
+test("get trade amount and price impact", async () => {
+  const pool = await adapter.getPoolById({ id: MIN_ADA_POOL_ID });
+  invariant(pool);
+  pool.getAmountOut("lovelace", 1_000_000n);
+  pool.getAmountOut(MIN, 1_000_000n);
+  pool.getAmountIn("lovelace", 1_000_000n);
+  pool.getAmountIn(MIN, 1_000_000n);
 });
