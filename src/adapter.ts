@@ -1,18 +1,11 @@
-import {
-  BlockFrostAPI,
-  BlockfrostServerError,
-} from "@blockfrost/blockfrost-js";
+import { BlockFrostAPI, BlockfrostServerError } from "@blockfrost/blockfrost-js";
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
 import Big from "big.js";
 
-import { POOL_ADDRESS, POOL_NFT_POLICY_ID } from "./constants";
-import {
-  checkValidPoolOutput,
-  isValidPoolOutput,
-  PoolHistory,
-  PoolState,
-} from "./pool";
-import { NetworkId } from "./types";
+import { POOL_ADDRESS, POOL_NFT_POLICY_ID, STAKE_ORDER_ADDRESS } from "./constants";
+import { checkValidPoolOutput, isValidPoolOutput, PoolHistory, PoolState } from "./pool";
+import { BlockfrostUtxo, NetworkId } from "./types";
+import invariant from "@minswap/tiny-invariant";
 
 export type BlockfrostAdapterOptions = {
   projectId: string;
@@ -52,7 +45,7 @@ export class BlockfrostAdapter {
     this.networkId = networkId;
     this.api = new BlockFrostAPI({
       projectId,
-      isTestnet: networkId === NetworkId.TESTNET,
+      network: networkId === NetworkId.MAINNET ? "mainnet": "preprod",
     });
   }
 
@@ -204,5 +197,14 @@ export class BlockfrostAdapter {
     const priceAB = adjustedReserveA.div(adjustedReserveB);
     const priceBA = adjustedReserveB.div(adjustedReserveA);
     return [priceAB, priceBA];
+  }
+
+  public async getOrderUTxO(orderId: string): Promise<BlockfrostUtxo> {
+    const orderTx = await this.api.txsUtxos(orderId);
+    const orderUtxo = orderTx.outputs.find(
+        (o) => o.address === STAKE_ORDER_ADDRESS[this.networkId]
+    );
+    invariant(orderUtxo, "not found orderUtxo");
+    return {...orderUtxo, tx_hash: orderTx.hash};
   }
 }
