@@ -1,8 +1,9 @@
-import { POOL_ADDRESS } from "./constants";
+import { POOL_ADDRESS_LIST } from "./constants";
 import { isValidPoolOutput, PoolState } from "./pool";
 import { NetworkId, TxIn, Value } from "./types";
 
 test("can handle pool with one side being LP tokens", () => {
+  const address = POOL_ADDRESS_LIST[NetworkId.TESTNET][0];
   const txIn: TxIn = {
     txHash: "8626060cf100c9b777546808e0ad20c099fe35cfcaee8de0079aa6c6931d345b",
     index: 3,
@@ -25,12 +26,7 @@ test("can handle pool with one side being LP tokens", () => {
   const datumHash =
     "421d71a088b55789301a403994760d1f2854444b0380fc3df8970f8e212b3f30";
   expect(
-    isValidPoolOutput(
-      NetworkId.TESTNET,
-      POOL_ADDRESS[NetworkId.TESTNET],
-      value,
-      datumHash
-    )
+    isValidPoolOutput(NetworkId.TESTNET, address, value, datumHash)
   ).toBeTruthy();
   expect(new PoolState(txIn, value, datumHash)).toBeInstanceOf(PoolState);
 });

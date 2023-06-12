@@ -5,7 +5,7 @@ import {
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
 import Big from "big.js";
 
-import { POOL_ADDRESS, POOL_NFT_POLICY_ID } from "./constants";
+import { POOL_ADDRESS_SET, POOL_NFT_POLICY_ID } from "./constants";
 import {
   checkValidPoolOutput,
   isValidPoolOutput,
@@ -21,6 +21,7 @@ export type BlockfrostAdapterOptions = {
 
 export type GetPoolsParams = Omit<PaginationOptions, "page"> & {
   page: number;
+  poolAddress: string;
 };
 
 export type GetPoolByIdParams = {
@@ -57,15 +58,16 @@ export class BlockfrostAdapter {
   }
 
   /**
-   *
+   * @param {string} poolAddress - Because there're multiple addresses for Minswap pools, we need to specify which address we want to query. A list of known addresses can be found in POOL_ADDRESS_LIST constant.
    * @returns The latest pools or empty array if current page is after last page
    */
   public async getPools({
     page,
     count = 100,
     order = "asc",
+    poolAddress,
   }: GetPoolsParams): Promise<PoolState[]> {
-    const utxos = await this.api.addressesUtxos(POOL_ADDRESS[this.networkId], {
+    const utxos = await this.api.addressesUtxos(poolAddress, {
       count,
       order,
       page,
@@ -74,7 +76,7 @@ export class BlockfrostAdapter {
       .filter((utxo) =>
         isValidPoolOutput(
           this.networkId,
-          POOL_ADDRESS[this.networkId],
+          poolAddress,
           utxo.amount,
           utxo.data_hash
         )
@@ -142,8 +144,8 @@ export class BlockfrostAdapter {
     txHash,
   }: GetPoolInTxParams): Promise<PoolState | null> {
     const poolTx = await this.api.txsUtxos(txHash);
-    const poolUtxo = poolTx.outputs.find(
-      (o) => o.address === POOL_ADDRESS[this.networkId]
+    const poolUtxo = poolTx.outputs.find((o) =>
+      POOL_ADDRESS_SET[this.networkId].has(o.address)
     );
     if (!poolUtxo) {
       return null;
