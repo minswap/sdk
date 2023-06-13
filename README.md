@@ -25,7 +25,10 @@ const api = new BlockfrostAdapter({
   networkId: NetworkId.MAINNET,
 });
 for (let i = 1; ; i++) {
-  const pools = await api.getPools({ page: i });
+  const pools = await api.getPools({
+    page: i,
+    poolAddress: POOL_ADDRESS_LIST[NetworkId.MAINNET][0],
+  });
   if (pools.length === 0) {
     // last page
     break;

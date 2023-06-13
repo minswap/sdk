@@ -5,7 +5,7 @@ import {
   FACTORY_ASSET_NAME,
   FACTORY_POLICY_ID,
   LP_POLICY_ID,
-  POOL_ADDRESS,
+  POOL_ADDRESS_SET,
   POOL_NFT_POLICY_ID,
 } from "./constants";
 import { NetworkId, TxIn, Value } from "./types";
@@ -195,13 +195,13 @@ export type PoolHistory = {
 
 export function checkValidPoolOutput(
   networkId: NetworkId,
-  address: string,
+  poolAddress: string,
   value: Value,
   datumHash: string | null
 ): void {
   invariant(
-    address === POOL_ADDRESS[networkId],
-    `expect pool address of ${POOL_ADDRESS[networkId]}, got ${address}`
+    POOL_ADDRESS_SET[networkId].has(poolAddress),
+    `invalid pool address: ${poolAddress}`
   );
   // must have 1 factory token
   if (
@@ -216,12 +216,12 @@ export function checkValidPoolOutput(
 
 export function isValidPoolOutput(
   networkId: NetworkId,
-  address: string,
+  poolAddress: string,
   value: Value,
   datumHash: string | null
 ): boolean {
   try {
-    checkValidPoolOutput(networkId, address, value, datumHash);
+    checkValidPoolOutput(networkId, poolAddress, value, datumHash);
     return true;
   } catch (err) {
     return false;
