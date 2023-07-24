@@ -1,6 +1,6 @@
 import invariant from "@minswap/tiny-invariant";
 
-import { BlockfrostAdapter, NetworkId } from ".";
+import { BlockfrostAdapter, NetworkId, POOL_ADDRESS_LIST } from ".";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];
@@ -29,7 +29,10 @@ test("getAssetDecimals", async () => {
 });
 
 test("getPoolPrice", async () => {
-  const pools = await adapter.getPools({ page: 1 });
+  const pools = await adapter.getPools({
+    page: 1,
+    poolAddress: POOL_ADDRESS_LIST[NetworkId.MAINNET][0],
+  });
   // check random 5 pools
   for (let i = 0; i < 5; i++) {
     const idx = Math.floor(Math.random() * pools.length);

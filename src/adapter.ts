@@ -2,8 +2,13 @@ import { BlockFrostAPI, BlockfrostServerError } from "@blockfrost/blockfrost-js"
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
 import Big from "big.js";
 
-import { POOL_ADDRESS, POOL_NFT_POLICY_ID, STAKE_ORDER_ADDRESS } from "./constants";
-import { checkValidPoolOutput, isValidPoolOutput, PoolHistory, PoolState } from "./pool";
+import { ORDER_BASE_ADDRESS, POOL_ADDRESS_SET, POOL_NFT_POLICY_ID, ORDER_ENTERPRISE_ADDRESS } from "./constants";
+import {
+  checkValidPoolOutput,
+  isValidPoolOutput,
+  PoolHistory,
+  PoolState,
+} from "./pool";
 import { BlockfrostUtxo, NetworkId } from "./types";
 import invariant from "@minswap/tiny-invariant";
 
@@ -14,6 +19,7 @@ export type BlockfrostAdapterOptions = {
 
 export type GetPoolsParams = Omit<PaginationOptions, "page"> & {
   page: number;
+  poolAddress: string;
 };
 
 export type GetPoolByIdParams = {
@@ -50,15 +56,16 @@ export class BlockfrostAdapter {
   }
 
   /**
-   *
+   * @param {string} poolAddress - Because there're multiple addresses for Minswap pools, we need to specify which address we want to query. A list of known addresses can be found in POOL_ADDRESS_LIST constant.
    * @returns The latest pools or empty array if current page is after last page
    */
   public async getPools({
     page,
     count = 100,
     order = "asc",
+    poolAddress,
   }: GetPoolsParams): Promise<PoolState[]> {
-    const utxos = await this.api.addressesUtxos(POOL_ADDRESS[this.networkId], {
+    const utxos = await this.api.addressesUtxos(poolAddress, {
       count,
       order,
       page,
@@ -67,7 +74,7 @@ export class BlockfrostAdapter {
       .filter((utxo) =>
         isValidPoolOutput(
           this.networkId,
-          POOL_ADDRESS[this.networkId],
+          poolAddress,
           utxo.amount,
           utxo.data_hash
         )
@@ -135,8 +142,8 @@ export class BlockfrostAdapter {
     txHash,
   }: GetPoolInTxParams): Promise<PoolState | null> {
     const poolTx = await this.api.txsUtxos(txHash);
-    const poolUtxo = poolTx.outputs.find(
-      (o) => o.address === POOL_ADDRESS[this.networkId]
+    const poolUtxo = poolTx.outputs.find((o) =>
+      POOL_ADDRESS_SET[this.networkId].has(o.address)
     );
     if (!poolUtxo) {
       return null;
@@ -202,7 +209,7 @@ export class BlockfrostAdapter {
   public async getOrderUTxO(orderId: string): Promise<BlockfrostUtxo> {
     const orderTx = await this.api.txsUtxos(orderId);
     const orderUtxo = orderTx.outputs.find(
-        (o) => o.address === STAKE_ORDER_ADDRESS[this.networkId]
+        (o) => o.address === ORDER_BASE_ADDRESS[this.networkId] || o.address === ORDER_ENTERPRISE_ADDRESS[this.networkId]
     );
     invariant(orderUtxo, "not found orderUtxo");
     return {...orderUtxo, tx_hash: orderTx.hash};
