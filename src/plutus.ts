@@ -14,20 +14,17 @@ export namespace AddressPlutusData {
     const addressDetails = getAddressDetails(address);
     if (addressDetails.type === "Base") {
       invariant(
-        addressDetails.paymentCredential,
-        "baseAddress must has paymentCredential"
+        addressDetails.paymentCredential && addressDetails.stakeCredential,
+        "baseAddress must have both paymentCredential and stakeCredential"
       );
-      const stakeCredConstr = addressDetails.stakeCredential
-        ? new Constr(0, [
-            new Constr(0, [
-              LucidCredential.toPlutusData(addressDetails.stakeCredential),
-            ]),
-          ])
-        : new Constr(1, []);
 
       return new Constr(0, [
         LucidCredential.toPlutusData(addressDetails.paymentCredential),
-        stakeCredConstr,
+        new Constr(0, [
+          new Constr(0, [
+            LucidCredential.toPlutusData(addressDetails.stakeCredential),
+          ]),
+        ]),
       ]);
     }
     if (addressDetails.type === "Enterprise") {
