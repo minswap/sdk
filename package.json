@@ -12,6 +12,7 @@
     "build": "rimraf build && rollup -c rollup.config.js",
     "test": "jest",
     "lint": "eslint src --ext .ts",
+    "format": "prettier --write **/*.ts && eslint --fix --ext .ts",
     "publish": "npm publish"
   },
   "keywords": [
@@ -52,6 +53,7 @@
     "eslint-plugin-unused-imports": "^2.0.0",
     "fast-check": "^2.24.0",
     "jest": "^28.0.1",
+    "prettier": "3.0.0",
     "rollup": "^2.70.2",
     "rollup-plugin-dts": "^4.2.1",
     "rollup-plugin-esbuild": "^4.9.1",
