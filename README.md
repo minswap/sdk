@@ -6,7 +6,7 @@
 - [x] Get historical pair price
 - [x] Calculate trade price
 - [x] Calculate price impact
-- [ ] Create orders and submit to Blockfrost
+- [x] Create orders and submit to Blockfrost
 
 ## Install
 
@@ -76,4 +76,28 @@ for (const historyPoint of history) {
   });
   console.log(`${historyPoint.time}: ${price0} ADA/MIN, ${price1} MIN/ADA`);
 }
+```
+
+### Example 3: Build Order transaction and submit 
+
+```ts
+import { Dex } from "./dex";
+
+const dex = new Dex(
+  "<BLOCKFROST_API_KEY>",
+  "<Network>",
+  "<BLOCKFROST_URL>"
+);
+const address = <address>;
+const txb = await dex.buildSwapExactInTx({
+  sender: address,
+  assetIn: ADA,
+  amountIn: 100_000_000n,
+  assetOut:
+    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e",
+  minimumAmountOut: 1000n,
+  isLimitOrder: false,
+});
+const signedTx = await txb.signWithPrivateKey(<your_private_key>).complete();
+const txId = await signedTx.submit();
 ```
