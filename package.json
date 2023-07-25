@@ -12,8 +12,7 @@
     "build": "rimraf build && rollup -c rollup.config.js",
     "test": "jest",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write **/*.ts && eslint --fix --ext .ts",
-    "publish": "npm publish"
+    "format": "prettier --write **/*.ts && eslint --fix --ext .ts"
   },
   "keywords": [
     "minswap",
