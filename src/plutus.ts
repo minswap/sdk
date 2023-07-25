@@ -13,13 +13,16 @@ export namespace AddressPlutusData {
   export function toPlutusData(address: Address) {
     const addressDetails = getAddressDetails(address);
     if (addressDetails.type === "Base") {
-      invariant(addressDetails.paymentCredential, "baseAddress must has paymentCredential");
+      invariant(
+        addressDetails.paymentCredential,
+        "baseAddress must has paymentCredential"
+      );
       const stakeCredConstr = addressDetails.stakeCredential
         ? new Constr(0, [
-          new Constr(0, [
-            LucidCredential.toPlutusData(addressDetails.stakeCredential),
-          ]),
-        ])
+            new Constr(0, [
+              LucidCredential.toPlutusData(addressDetails.stakeCredential),
+            ]),
+          ])
         : new Constr(1, []);
 
       return new Constr(0, [
@@ -28,7 +31,10 @@ export namespace AddressPlutusData {
       ]);
     }
     if (addressDetails.type === "Enterprise") {
-      invariant(addressDetails.paymentCredential, "EnterpriseAddress must has paymentCredential");
+      invariant(
+        addressDetails.paymentCredential,
+        "EnterpriseAddress must has paymentCredential"
+      );
       return new Constr(0, [
         LucidCredential.toPlutusData(addressDetails.paymentCredential),
         new Constr(1, []),

@@ -3,11 +3,6 @@ export enum NetworkId {
   MAINNET,
 }
 
-export type Asset = {
-  unit: string;
-  quantity: bigint;
-}
-
 export type Value = {
   unit: string;
   quantity: string;

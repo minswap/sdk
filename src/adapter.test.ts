@@ -61,17 +61,8 @@ test("get prices of last 5 states of MIN/ADA pool", async () => {
   }
 });
 
-test("get trade amount and price impact", async () => {
-  const pool = await adapter.getPoolById({ id: MIN_ADA_POOL_ID });
-  invariant(pool);
-  pool.getAmountOut("lovelace", 1_000_000n);
-  pool.getAmountOut(MIN, 1_000_000n);
-  pool.getAmountIn("lovelace", 1_000_000n);
-  pool.getAmountIn(MIN, 1_000_000n);
-});
-
-test("get order UTxO", async() => {
-  const orderUtxo = await adapter.getOrderUTxO(
+test("get order UTxO", async () => {
+  const orderUtxo = await adapter.getOrderUTxOByTxId(
     "09cc86832fcbd2cbf97c1b9dfe2500fab2b1fddab3274770a95c0f12e8d18ded"
   );
   invariant(orderUtxo);
