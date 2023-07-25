@@ -13,14 +13,14 @@ import {
 import { BlockfrostAdapter } from "./adapter";
 import { Address, BlockfrostUtxo, NetworkId, OrderRedeemer } from "./types";
 import {
-  FIXED_BATCHER_FEE,
   MetadataMessage,
   ORDER_BASE_ADDRESS,
   orderScript,
   FIXED_DEPOSIT_ADA,
+  BATCHER_FEE_REDUCTION_SUPPORTED_ASSET,
 } from "./constants";
+import { getBatcherFee } from "./batcher-fee-reduction/configs";
 import invariant from "@minswap/tiny-invariant";
-import { AddressPlutusData } from "./plutus";
 import { OrderDatum, OrderStepType } from "./order";
 
 /**
@@ -177,9 +177,16 @@ export class Dex {
     } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
+    const lucid = await this.getLucidInstance();
+    lucid.selectWalletFrom({ address: sender });
     const orderAssets: Assets = { [assetIn]: amountIn };
+    const utxos = await lucid.utxosAt(sender);
+    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
+      utxos,
+      orderAssets
+    );
     if (orderAssets["lovelace"]) {
-      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + FIXED_BATCHER_FEE;
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -190,18 +197,18 @@ export class Dex {
         desiredAsset: assetOut,
         minimumReceived: minimumAmountOut,
       },
-      batcherFee: FIXED_BATCHER_FEE,
+      batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
     };
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
     const tx = lucid
       .newTx()
       .payToContract(
         ORDER_BASE_ADDRESS[this.networkId],
         OrderDatum.toCborHex(datum),
         orderAssets
-      );
+      )
+      .payToAddress(sender, reductionAssets)
+      .addSigner(sender);
     if (isLimitOrder) {
       tx.attachMetadata(674, {
         msg: [MetadataMessage.SWAP_EXACT_IN_LIMIT_ORDER],
@@ -221,9 +228,16 @@ export class Dex {
       maximumAmountIn > 0n && expectedAmountOut > 0n,
       "amount in and out must be positive"
     );
+    const lucid = await this.getLucidInstance();
+    lucid.selectWalletFrom({ address: sender });
     const orderAssets: Assets = { [assetIn]: maximumAmountIn };
+    const utxos = await lucid.utxosAt(sender);
+    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
+      utxos,
+      orderAssets
+    );
     if (orderAssets["lovelace"]) {
-      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + FIXED_BATCHER_FEE;
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -234,11 +248,10 @@ export class Dex {
         desiredAsset: assetOut,
         expectedReceived: expectedAmountOut,
       },
-      batcherFee: FIXED_BATCHER_FEE,
+      batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
     };
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
+
     return await lucid
       .newTx()
       .payToContract(
@@ -246,6 +259,8 @@ export class Dex {
         OrderDatum.toCborHex(datum),
         orderAssets
       )
+      .payToAddress(sender, reductionAssets)
+      .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.SWAP_EXACT_OUT_ORDER] })
       .complete();
   }
@@ -263,9 +278,16 @@ export class Dex {
       minimumAssetAReceived > 0n && minimumAssetBReceived > 0n,
       "minimum asset received must be positive"
     );
+    const lucid = await this.getLucidInstance();
+    lucid.selectWalletFrom({ address: sender });
     const orderAssets: Assets = { [lpAsset]: lpAmount };
+    const utxos = await lucid.utxosAt(sender);
+    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
+      utxos,
+      orderAssets
+    );
     if (orderAssets["lovelace"]) {
-      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + FIXED_BATCHER_FEE;
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -276,11 +298,9 @@ export class Dex {
         minimumAssetA: minimumAssetAReceived,
         minimumAssetB: minimumAssetBReceived,
       },
-      batcherFee: FIXED_BATCHER_FEE,
+      batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
     };
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
     return await lucid
       .newTx()
       .payToContract(
@@ -288,6 +308,8 @@ export class Dex {
         OrderDatum.toCborHex(datum),
         orderAssets
       )
+      .payToAddress(sender, reductionAssets)
+      .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.WITHDRAW_ORDER] })
       .complete();
   }
@@ -296,9 +318,16 @@ export class Dex {
     const { sender, assetIn, amountIn, assetOut, minimumLPReceived } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
+    const lucid = await this.getLucidInstance();
+    lucid.selectWalletFrom({ address: sender });
     const orderAssets: Assets = { [assetIn]: amountIn };
+    const utxos = await lucid.utxosAt(sender);
+    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
+      utxos,
+      orderAssets
+    );
     if (orderAssets["lovelace"]) {
-      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + FIXED_BATCHER_FEE;
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -309,11 +338,10 @@ export class Dex {
         desiredAsset: assetOut,
         minimumLP: minimumLPReceived,
       },
-      batcherFee: FIXED_BATCHER_FEE,
+      batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
     };
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
+
     return await lucid
       .newTx()
       .payToContract(
@@ -321,6 +349,7 @@ export class Dex {
         OrderDatum.toCborHex(datum),
         orderAssets
       )
+      .payToAddress(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.ZAP_IN_ORDER] })
       .complete();
@@ -331,12 +360,19 @@ export class Dex {
       options;
     invariant(amountA > 0n && amountB > 0n, "amount must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
+    const lucid = await this.getLucidInstance();
+    lucid.selectWalletFrom({ address: sender });
     const orderAssets = {
       [assetA]: amountA,
       [assetB]: amountB,
     };
+    const utxos = await lucid.utxosAt(sender);
+    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
+      utxos,
+      orderAssets
+    );
     if (orderAssets["lovelace"]) {
-      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + FIXED_BATCHER_FEE;
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -346,11 +382,9 @@ export class Dex {
         type: OrderStepType.DEPOSIT,
         minimumLP: minimumLPReceived,
       },
-      batcherFee: FIXED_BATCHER_FEE,
+      batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
     };
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
     return await lucid
       .newTx()
       .payToContract(
@@ -358,6 +392,8 @@ export class Dex {
         OrderDatum.toCborHex(datum),
         orderAssets
       )
+      .payToAddress(sender, reductionAssets)
+      .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.DEPOSIT_ORDER] })
       .complete();
   }
@@ -379,5 +415,43 @@ export class Dex {
       .attachSpendingValidator(<SpendingValidator>orderScript)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .complete();
+  }
+
+  private calculateBatcherFee(
+    utxos: UTxO[],
+    orderAssets: Assets
+  ): {
+    batcherFee: bigint;
+    reductionAssets: Assets;
+  } {
+    const [minAsset, adaMINLPAsset] =
+      BATCHER_FEE_REDUCTION_SUPPORTED_ASSET[this.networkId];
+    let amountMIN = 0n;
+    let amountADAMINLP = 0n;
+    for (const utxo of utxos) {
+      if (utxo.assets[minAsset]) {
+        amountMIN += utxo.assets[minAsset];
+      }
+      if (utxo.assets[adaMINLPAsset]) {
+        amountADAMINLP += utxo.assets[adaMINLPAsset];
+      }
+    }
+    if (orderAssets[minAsset]) {
+      amountMIN -= orderAssets[minAsset];
+    }
+    if (orderAssets[adaMINLPAsset]) {
+      amountADAMINLP -= orderAssets[adaMINLPAsset];
+    }
+    const reductionAssets: Assets = {};
+    if (amountMIN > 0) {
+      reductionAssets[minAsset] = amountMIN;
+    }
+    if (amountADAMINLP > 0) {
+      reductionAssets[adaMINLPAsset] = amountADAMINLP;
+    }
+    return {
+      batcherFee: getBatcherFee(this.network, amountMIN, amountADAMINLP),
+      reductionAssets: reductionAssets,
+    };
   }
 }
