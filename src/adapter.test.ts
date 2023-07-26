@@ -61,8 +61,8 @@ test("get prices of last 5 states of MIN/ADA pool", async () => {
   }
 });
 
-test("get order UTxO", async () => {
-  const orderUtxo = await adapter.getOrderUTxOByTxId(
+test("get order utxo", async () => {
+  const orderUtxo = await adapter.getOrderUtxoByTxId(
     "09cc86832fcbd2cbf97c1b9dfe2500fab2b1fddab3274770a95c0f12e8d18ded"
   );
   invariant(orderUtxo);

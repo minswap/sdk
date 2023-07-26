@@ -214,7 +214,7 @@ export class BlockfrostAdapter {
     return [priceAB, priceBA];
   }
 
-  public async getOrderUTxOByTxId(orderTxId: string): Promise<BlockfrostUtxo> {
+  public async getOrderUtxoByTxId(orderTxId: string): Promise<BlockfrostUtxo> {
     const orderTx = await this.api.txsUtxos(orderTxId);
     const orderUtxo = orderTx.outputs.find(
       (o) =>

@@ -402,15 +402,15 @@ export class Dex {
     options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
     const { orderTxId, sender } = options;
-    const orderUTxO = blockfrostUtxosToUtxos(
-      await this.blockfrostAdapter.getOrderUTxOByTxId(orderTxId)
+    const orderUtxo = blockfrostUtxosToUtxos(
+      await this.blockfrostAdapter.getOrderUtxoByTxId(orderTxId)
     );
     const lucid = await this.getLucidInstance();
     lucid.selectWalletFrom({ address: sender });
     const redeemer = Data.to(new Constr(OrderRedeemer.CANCEL_ORDER, []));
     return await lucid
       .newTx()
-      .collectFrom([orderUTxO], redeemer)
+      .collectFrom([orderUtxo], redeemer)
       .addSigner(sender)
       .attachSpendingValidator(<SpendingValidator>orderScript)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
