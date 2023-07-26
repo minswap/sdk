@@ -1,6 +1,7 @@
-import { Network } from "lucid-cardano";
-import { BatcherFeeConfig } from "./types";
 import BigNumber from "bignumber.js";
+import { Network } from "lucid-cardano";
+
+import { BatcherFeeConfig } from "./types";
 
 export const FIXED_BATCHER_FEE = 2_000_000n;
 

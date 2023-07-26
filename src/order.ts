@@ -1,6 +1,7 @@
 import { Constr, Data } from "lucid-cardano";
-import { Address } from "./types";
+
 import { AddressPlutusData } from "./plutus";
+import { Address } from "./types";
 import { parseAsset } from "./utils";
 
 export enum OrderStepType {
@@ -58,14 +59,8 @@ export type OrderDatum = {
 
 export namespace OrderDatum {
   export function toCborHex(datum: OrderDatum): string {
-    const {
-      sender,
-      receiver,
-      receiverDatumHash,
-      step,
-      batcherFee,
-      depositADA,
-    } = datum;
+    const { sender, receiver, receiverDatumHash, batcherFee, depositADA } =
+      datum;
     const senderConstr = AddressPlutusData.toPlutusData(sender);
     const receiverConstr = AddressPlutusData.toPlutusData(receiver);
     const receiverDatumHashConstr = receiverDatumHash

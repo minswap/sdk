@@ -1,16 +1,17 @@
-import { Address } from "./types";
-import { C, Constr, Credential, getAddressDetails } from "lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Constr, Credential, Data, getAddressDetails } from "lucid-cardano";
+
+import { Address } from "./types";
 
 export namespace LucidCredential {
-  export function toPlutusData(data: Credential) {
+  export function toPlutusData(data: Credential): Constr<Data> {
     const constructor = data.type === "Key" ? 0 : 1;
     return new Constr(constructor, [data.hash]);
   }
 }
 
 export namespace AddressPlutusData {
-  export function toPlutusData(address: Address) {
+  export function toPlutusData(address: Address): Constr<Data> {
     const addressDetails = getAddressDetails(address);
     if (addressDetails.type === "Base") {
       invariant(

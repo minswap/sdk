@@ -1,3 +1,4 @@
+import invariant from "@minswap/tiny-invariant";
 import {
   Assets,
   Blockfrost,
@@ -11,17 +12,16 @@ import {
 } from "lucid-cardano";
 
 import { BlockfrostAdapter } from "./adapter";
-import { Address, BlockfrostUtxo, NetworkId, OrderRedeemer } from "./types";
+import { getBatcherFee } from "./batcher-fee-reduction/configs";
 import {
+  BATCHER_FEE_REDUCTION_SUPPORTED_ASSET,
+  FIXED_DEPOSIT_ADA,
   MetadataMessage,
   ORDER_BASE_ADDRESS,
   orderScript,
-  FIXED_DEPOSIT_ADA,
-  BATCHER_FEE_REDUCTION_SUPPORTED_ASSET,
 } from "./constants";
-import { getBatcherFee } from "./batcher-fee-reduction/configs";
-import invariant from "@minswap/tiny-invariant";
 import { OrderDatum, OrderStepType } from "./order";
+import { Address, BlockfrostUtxo, NetworkId, OrderRedeemer } from "./types";
 
 /**
  * Options for building cancel Order
@@ -115,17 +115,16 @@ export type BuildSwapExactInTxOptions = {
   isLimitOrder: boolean;
 };
 
-export function blockfrostUtxosToUtxos(u: BlockfrostUtxo): UTxO {
+export function blockfrostToLucidUtxo(u: BlockfrostUtxo): UTxO {
+  const assets: Assets = {};
+  for (const am of u.amount) {
+    assets[am.unit] = BigInt(am.quantity);
+  }
+
   return {
     txHash: u.tx_hash,
     outputIndex: u.output_index,
-    assets: (() => {
-      const a: Assets = {};
-      u.amount.forEach((am) => {
-        a[am.unit] = BigInt(am.quantity);
-      });
-      return a;
-    })(),
+    assets,
     address: u.address,
     datumHash: !u.inline_datum ? u.data_hash : undefined,
     datum: u.inline_datum,
@@ -402,7 +401,7 @@ export class Dex {
     options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
     const { orderTxId, sender } = options;
-    const orderUtxo = blockfrostUtxosToUtxos(
+    const orderUtxo = blockfrostToLucidUtxo(
       await this.blockfrostAdapter.getOrderUtxoByTxId(orderTxId)
     );
     const lucid = await this.getLucidInstance();

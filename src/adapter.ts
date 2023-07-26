@@ -3,13 +3,14 @@ import {
   BlockfrostServerError,
 } from "@blockfrost/blockfrost-js";
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
+import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
 import {
   ORDER_BASE_ADDRESS,
+  ORDER_ENTERPRISE_ADDRESS,
   POOL_ADDRESS_SET,
   POOL_NFT_POLICY_ID,
-  ORDER_ENTERPRISE_ADDRESS,
 } from "./constants";
 import {
   checkValidPoolOutput,
@@ -18,7 +19,6 @@ import {
   PoolState,
 } from "./pool";
 import { BlockfrostUtxo, NetworkId } from "./types";
-import invariant from "@minswap/tiny-invariant";
 
 export type BlockfrostAdapterOptions = {
   projectId: string;
