@@ -1,5 +1,9 @@
+import JSONBig from "json-bigint";
+import { Data } from "lucid-cardano";
+
 import { POOL_ADDRESS_LIST } from "../constants";
-import { isValidPoolOutput, PoolState } from "../types/pool";
+import { ADA, Asset } from "../types/asset";
+import { isValidPoolOutput, PoolDatum, PoolFeeSharing, PoolState } from "../types/pool";
 import { NetworkId, TxIn, Value } from "../types/tx";
 
 test("can handle pool with one side being LP tokens", () => {
@@ -29,4 +33,65 @@ test("can handle pool with one side being LP tokens", () => {
     isValidPoolOutput(NetworkId.TESTNET, address, value, datumHash)
   ).toBeTruthy();
   expect(new PoolState(txIn, value, datumHash)).toBeInstanceOf(PoolState);
+});
+
+test("Fee Sharing to PlutusData Converter", () => {
+  const feeSharing1: PoolFeeSharing = {
+    feeTo: "addr_test1wqq9fn7ynjzx3kfddmnsjn69tgm8hrr333adhvw0sfx30lqy38kcs",
+    feeToDatumHash: "b8b912cdbcc998f3f0c18e951928ca179de85735c4fc2d82e8d10777"
+  }
+  const feeSharing2: PoolFeeSharing = {
+    feeTo: "addr_test1qp7e4l2z307kjsashtgl2l373hd06jumuspl0qn2fklc6tlf6dsm8jwtvdltnax4fl7uu8w9mh2u8f420ul5vp8q3jas7yep6y",
+    feeToDatumHash: undefined
+  }
+
+  const convertedFeeSharing1 = PoolFeeSharing.fromPlutusData(
+    NetworkId.TESTNET,
+    Data.from(Data.to(PoolFeeSharing.toPlutusData(feeSharing1)))
+  )
+  const convertedFeeSharing2 = PoolFeeSharing.fromPlutusData(
+    NetworkId.TESTNET,
+    Data.from(Data.to(PoolFeeSharing.toPlutusData(feeSharing2)))
+  )
+
+  expect(JSONBig.stringify(feeSharing1)).toEqual(JSONBig.stringify(convertedFeeSharing1))
+  expect(JSONBig.stringify(feeSharing2)).toEqual(JSONBig.stringify(convertedFeeSharing2))
+});
+
+test("Pool Datum to PlutusData Converter", () => {
+  const assetA = ADA
+  const assetB: Asset = {
+    policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+    tokenName: "4d494e"
+}
+  const poolDatum1: PoolDatum = {
+    assetA: assetA,
+    assetB: assetB,
+    totalLiquidity: 100000n,
+    rootKLast: 10000n,
+    feeSharing: {
+      feeTo: "addr_test1qp7e4l2z307kjsashtgl2l373hd06jumuspl0qn2fklc6tlf6dsm8jwtvdltnax4fl7uu8w9mh2u8f420ul5vp8q3jas7yep6y",
+      feeToDatumHash: undefined
+    }
+  }
+
+  const poolDatum2: PoolDatum = {
+    assetA: assetA,
+    assetB: assetB,
+    totalLiquidity: 100000n,
+    rootKLast: 10000n,
+    feeSharing: undefined
+  }
+
+  const convertedPoolDatum1 = PoolDatum.fromPlutusData(
+    NetworkId.TESTNET,
+    Data.from(Data.to(PoolDatum.toPlutusData(poolDatum1)))
+  )
+  const convertedPoolDatum2 = PoolDatum.fromPlutusData(
+    NetworkId.TESTNET,
+    Data.from(Data.to(PoolDatum.toPlutusData(poolDatum2)))
+  )
+
+  expect(JSONBig.stringify(poolDatum1)).toEqual(JSONBig.stringify(convertedPoolDatum1))
+  expect(JSONBig.stringify(poolDatum2)).toEqual(JSONBig.stringify(convertedPoolDatum2))
 });

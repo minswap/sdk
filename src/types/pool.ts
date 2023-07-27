@@ -84,7 +84,7 @@ export namespace PoolDatum {
       Asset.toPlutusData(assetB),
       totalLiquidity,
       rootKLast,
-      feeSharing ? PoolFeeSharing.toPlutusData(feeSharing) : new Constr(1, [])
+      feeSharing ? new Constr(0, [PoolFeeSharing.toPlutusData(feeSharing)]) : new Constr(1, [])
     ])
   }
 
