@@ -1,6 +1,6 @@
-import { POOL_ADDRESS_LIST } from "./constants";
-import { isValidPoolOutput, PoolState } from "./pool";
-import { NetworkId, TxIn, Value } from "./types";
+import { POOL_ADDRESS_LIST } from "../constants";
+import { isValidPoolOutput, PoolState } from "../types/pool";
+import { NetworkId, TxIn, Value } from "../types/tx";
 
 test("can handle pool with one side being LP tokens", () => {
   const address = POOL_ADDRESS_LIST[NetworkId.TESTNET][0];

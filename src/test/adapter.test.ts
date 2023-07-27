@@ -1,7 +1,7 @@
+import { jest } from "@jest/globals";
 import invariant from "@minswap/tiny-invariant";
 
-import { BlockfrostAdapter, NetworkId, POOL_ADDRESS_LIST } from ".";
-import { jest } from "@jest/globals";
+import { BlockfrostAdapter, NetworkId, POOL_ADDRESS_LIST } from "..";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];

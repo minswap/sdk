@@ -17,8 +17,8 @@ import {
   isValidPoolOutput,
   PoolHistory,
   PoolState,
-} from "./pool";
-import { BlockfrostUtxo, NetworkId } from "./types";
+} from "./types/pool";
+import { BlockfrostUtxo, NetworkId } from "./types/tx";
 
 export type BlockfrostAdapterOptions = {
   projectId: string;
@@ -87,14 +87,17 @@ export class BlockfrostAdapter {
           utxo.data_hash
         )
       )
-      .map(
-        (utxo) =>
-          new PoolState(
-            { txHash: utxo.tx_hash, index: utxo.output_index },
-            utxo.amount,
-            utxo.data_hash
-          )
-      );
+      .map((utxo) => {
+        invariant(
+          utxo.data_hash,
+          `expect pool to have datum hash, got ${utxo.data_hash}`
+        );
+        return new PoolState(
+          { txHash: utxo.tx_hash, index: utxo.output_index },
+          utxo.amount,
+          utxo.data_hash
+        );
+      });
   }
 
   /**
@@ -162,6 +165,10 @@ export class BlockfrostAdapter {
       poolUtxo.amount,
       poolUtxo.data_hash
     );
+    invariant(
+      poolUtxo.data_hash,
+      `expect pool to have datum hash, got ${poolUtxo.data_hash}`
+    );
     return new PoolState(
       { txHash: txHash, index: poolUtxo.output_index },
       poolUtxo.amount,
@@ -223,5 +230,10 @@ export class BlockfrostAdapter {
     );
     invariant(orderUtxo, "not found orderUtxo");
     return { ...orderUtxo, tx_hash: orderTx.hash };
+  }
+
+  public async getDatumByDatumHash(datumHash: string): Promise<string> {
+    const scriptsDatum = await this.api.scriptsDatumCbor(datumHash);
+    return scriptsDatum.cbor;
   }
 }

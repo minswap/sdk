@@ -1,4 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
+import { Address, Constr, Data } from "lucid-cardano";
 
 import {
   FACTORY_ASSET_NAME,
@@ -6,8 +7,10 @@ import {
   LP_POLICY_ID,
   POOL_ADDRESS_SET,
   POOL_NFT_POLICY_ID,
-} from "./constants";
-import { NetworkId, TxIn, Value } from "./types";
+} from "../constants";
+import { AddressPlutusData } from "./address";
+import { Asset } from "./asset";
+import { NetworkId, TxIn, Value } from "./tx";
 
 // ADA goes first
 // If non-ADA, then sort lexicographically
@@ -25,6 +28,95 @@ export function normalizeAssets(a: string, b: string): [string, string] {
   }
 }
 
+export type PoolFeeSharing = {
+  feeTo: Address,
+  feeToDatumHash?: string
+}
+
+export namespace PoolFeeSharing {
+  export function toPlutusData(feeSharing: PoolFeeSharing): Constr<Data> {
+    const {feeTo, feeToDatumHash} = feeSharing
+    return new Constr(0, [
+      AddressPlutusData.toPlutusData(feeTo),
+      feeToDatumHash ? new Constr(0, [feeToDatumHash]) : new Constr(1, [])
+    ])
+  }
+
+  export function fromPlutusData(networkId: NetworkId, data: Constr<Data>): PoolFeeSharing {
+    if (data.index !== 0) {
+      throw new Error(`Index of Pool Profit Sharing must be 0, actual: ${data.index}`)
+    }
+    let feeToDatumHash: string | undefined = undefined
+    const maybeFeeToDatumHash = data.fields[1] as Constr<Data>
+    switch(maybeFeeToDatumHash.index) {
+      case 0: {
+        feeToDatumHash = maybeFeeToDatumHash.fields[0] as string
+        break
+      }
+      case 1: {
+        feeToDatumHash = undefined
+        break
+      }
+      default: {
+        throw new Error(`Index of Fee To DatumHash must be 0 or 1, actual: ${maybeFeeToDatumHash.index}`)
+      }
+    }
+    return {
+      feeTo: AddressPlutusData.fromPlutusData(networkId, data.fields[0] as Constr<Data>),
+      feeToDatumHash: feeToDatumHash
+    }
+  }
+}
+
+export type PoolDatum = {
+  assetA: Asset;
+  assetB: Asset;
+  totalLiquidity: bigint;
+  rootKLast: bigint;
+  feeSharing?: PoolFeeSharing;
+}
+
+export namespace PoolDatum {
+  export function toPlutusData(datum: PoolDatum): Constr<Data> {
+    const {assetA, assetB, totalLiquidity, rootKLast, feeSharing} = datum
+    return new Constr(0, [
+      Asset.toPlutusData(assetA),
+      Asset.toPlutusData(assetB),
+      totalLiquidity,
+      rootKLast,
+      feeSharing ? PoolFeeSharing.toPlutusData(feeSharing) : new Constr(1, [])
+    ])
+  }
+
+  export function fromPlutusData(networkId: NetworkId ,data: Constr<Data>): PoolDatum {
+    if (data.index !== 0) {
+      throw new Error(`Index of Pool Datum must be 0, actual: ${data.index}`)
+    }
+    let feeSharing: PoolFeeSharing | undefined = undefined
+    const maybeFeeSharingConstr = data.fields[4] as Constr<Data>
+    switch(maybeFeeSharingConstr.index) {
+      case 0: {
+        feeSharing = PoolFeeSharing.fromPlutusData(networkId, maybeFeeSharingConstr.fields[0] as Constr<Data>)
+        break
+      }
+      case 1: {
+        feeSharing = undefined
+        break
+      }
+      default: {
+        throw new Error(`Index of Pool Fee Sharing must be 0 or 1, actual: ${maybeFeeSharingConstr.index}`)
+      }
+    }
+    return {
+      assetA: Asset.fromPlutusData(data.fields[0] as Constr<Data>),
+      assetB: Asset.fromPlutusData(data.fields[1] as Constr<Data>),
+      totalLiquidity: data.fields[2] as bigint,
+      rootKLast: data.fields[3] as bigint,
+      feeSharing: feeSharing
+    }
+  }
+}
+
 /**
  * Represents state of a pool UTxO. The state could be latest state or a historical state.
  */
@@ -32,11 +124,11 @@ export class PoolState {
   /** The transaction hash and output index of the pool UTxO */
   public readonly txIn: TxIn;
   public readonly value: Value;
-  public readonly datumHash: string | null;
+  public readonly datumHash: string;
   public readonly assetA: string;
   public readonly assetB: string;
 
-  constructor(txIn: TxIn, value: Value, datumHash: string | null) {
+  constructor(txIn: TxIn, value: Value, datumHash: string) {
     this.txIn = txIn;
     this.value = value;
     this.datumHash = datumHash;

@@ -1,4 +1,6 @@
-import { Address, NetworkId } from "./types";
+import { Address } from "lucid-cardano";
+
+import { NetworkId } from "./types/tx";
 
 export const ORDER_ENTERPRISE_ADDRESS = {
   [NetworkId.TESTNET]:
@@ -71,4 +73,3 @@ export enum MetadataMessage {
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;
-export const ADA = "lovelace";

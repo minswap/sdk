@@ -3,15 +3,6 @@ import Big from "big.js";
 
 export const MAX_SAFE_INTEGER = BigInt(Number.MAX_SAFE_INTEGER);
 
-export function parseAsset(asset: string): [string, string] {
-  if (asset === "lovelace") {
-    return ["", ""];
-  }
-  const policyId = asset.slice(0, 56);
-  const tokenName = asset.slice(56);
-  return [policyId, tokenName];
-}
-
 /**
  * Computes floor(sqrt(value))
  * @param value the value for which to compute the square root, rounded down

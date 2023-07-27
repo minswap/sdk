@@ -1,7 +1,7 @@
 import invariant from "@minswap/tiny-invariant";
 import {
+  Address,
   Assets,
-  Blockfrost,
   Constr,
   Data,
   Lucid,
@@ -11,7 +11,6 @@ import {
   UTxO,
 } from "lucid-cardano";
 
-import { BlockfrostAdapter } from "./adapter";
 import { getBatcherFee } from "./batcher-fee-reduction/configs";
 import {
   BATCHER_FEE_REDUCTION_SUPPORTED_ASSET,
@@ -20,8 +19,19 @@ import {
   ORDER_BASE_ADDRESS,
   orderScript,
 } from "./constants";
-import { OrderDatum, OrderStepType } from "./order";
-import { Address, BlockfrostUtxo, NetworkId, OrderRedeemer } from "./types";
+import { Asset } from "./types/asset";
+import { OrderDatum, OrderRedeemer, OrderStepType } from "./types/order";
+import { BlockfrostUtxo, NetworkId } from "./types/tx";
+
+/**
+ * Common options for build Minswap transaction
+ * @sender The owner of this order, it will be used for cancelling this order
+ * @availableUtxos Available UTxOs can be used in transaction
+ */
+export type CommonOptions = {
+  sender: Address;
+  availableUtxos: UTxO[];
+};
 
 /**
  * Options for building cancel Order
@@ -29,21 +39,20 @@ import { Address, BlockfrostUtxo, NetworkId, OrderRedeemer } from "./types";
  * @sender The owner of this order. The @sender must be matched with data in Order's Datum
  */
 export type BuildCancelOrderOptions = {
-  orderTxId: string;
+  orderUtxo: UTxO;
   sender: Address;
 };
 
 /**
  * Options for building Deposit Order
- * @sender The owner of this order, it will be used for cancelling this order
  * @assetA @assetB Define pair which you want to deposit to
  * @amountA @amountB Define amount which you want to deposit to
  * @minimumLPReceived Minimum Received Amount you can accept after order is executed
  */
-export type BuildDepositTxOptions = {
-  sender: Address;
-  assetA: string;
-  assetB: string;
+export type BuildDepositTxOptions = CommonOptions & {
+  // sender: Address;
+  assetA: Asset;
+  assetB: Asset;
   amountA: bigint;
   amountB: bigint;
   minimumLPReceived: bigint;
@@ -51,31 +60,29 @@ export type BuildDepositTxOptions = {
 
 /**
  * Options for building Zap In Order
- * @sender The owner of this order, it will be used for cancelling this order
  * @assetIn Asset you want to Zap
  * @assetOut The remaining asset of Pool which you want to Zap.
  *      For eg, in Pool ADA-MIN, if @assetIn is ADA then @assetOut will be MIN and vice versa
  * @minimumLPReceived Minimum Received Amount you can accept after order is executed
  */
-export type BuildZapInTxOptions = {
+export type BuildZapInTxOptions = CommonOptions & {
   sender: Address;
-  assetIn: string;
+  assetIn: Asset;
   amountIn: bigint;
-  assetOut: string;
+  assetOut: Asset;
   minimumLPReceived: bigint;
 };
 
 /**
  * Options for building Withdrawal Order
- * @sender The owner of this order, it will be used for cancelling this order
  * @lpAsset LP Asset will be withdrawed
  * @lpAmount LP Asset amount will be withdrawed
  * @minimumAssetAReceived Minimum Received of Asset A in the Pool you can accept after order is executed
  * @minimumAssetBReceived Minimum Received of Asset A in the Pool you can accept after order is executed
  */
-export type BuildWithdrawTxOptions = {
+export type BuildWithdrawTxOptions = CommonOptions & {
   sender: Address;
-  lpAsset: string;
+  lpAsset: Asset;
   lpAmount: bigint;
   minimumAssetAReceived: bigint;
   minimumAssetBReceived: bigint;
@@ -83,34 +90,32 @@ export type BuildWithdrawTxOptions = {
 
 /**
  * Options for building Swap Exact Out Order
- * @sender The owner of this order, it will be used for cancelling this order
  * @assetIn Asset you want to Swap
  * @assetOut Asset you want to receive
  * @maximumAmountIn The maximum Amount of Asset In which will be spent after order is executed
  * @expectedAmountOut The expected Amount of Asset Out you want to receive after order is executed
  */
-export type BuildSwapExactOutTxOptions = {
+export type BuildSwapExactOutTxOptions = CommonOptions & {
   sender: Address;
-  assetIn: string;
-  assetOut: string;
+  assetIn: Asset;
+  assetOut: Asset;
   maximumAmountIn: bigint;
   expectedAmountOut: bigint;
 };
 
 /**
  * Options for building Swap Exact In Order
- * @sender The owner of this order, it will be used for cancelling this order
  * @assetIn Asset and its amount you want to Swap
  * @amountIn Amount of Asset In you want to Swap
  * @assetOut Asset and you want to receive
  * @minimumAmountOut The minimum Amount of Asset Out you can accept after order is executed
  * @isLimitOrder Define this order is Limit Order or not
  */
-export type BuildSwapExactInTxOptions = {
+export type BuildSwapExactInTxOptions = CommonOptions & {
   sender: Address;
-  assetIn: string;
+  assetIn: Asset;
   amountIn: bigint;
-  assetOut: string;
+  assetOut: Asset;
   minimumAmountOut: bigint;
   isLimitOrder: boolean;
 };
@@ -133,35 +138,34 @@ export function blockfrostToLucidUtxo(u: BlockfrostUtxo): UTxO {
 }
 
 export class Dex {
-  private lucid: Lucid | undefined;
-  private readonly projectId: string;
+  private readonly lucid: Lucid;
   private readonly network: Network;
   private readonly networkId: NetworkId;
-  private readonly blockfrostUrl: string;
-  private readonly blockfrostAdapter: BlockfrostAdapter;
+  // private readonly blockfrostUrl: string;
+  // private readonly blockfrostAdapter: BlockfrostAdapter;
 
-  constructor(projectId: string, network: Network, blockfrostUrl: string) {
-    this.projectId = projectId;
+  constructor(lucid: Lucid, network: Network) {
+    this.lucid = lucid;
     this.network = network;
-    this.blockfrostUrl = blockfrostUrl;
+    // this.blockfrostUrl = blockfrostUrl;
     this.networkId =
       network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
-    this.blockfrostAdapter = new BlockfrostAdapter({
-      projectId,
-      networkId: this.networkId,
-    });
+    // this.blockfrostAdapter = new BlockfrostAdapter({
+    //   projectId,
+    //   networkId: this.networkId,
+    // });
   }
 
-  async getLucidInstance(): Promise<Lucid> {
-    if (!this.lucid) {
-      const provider: Blockfrost = new Blockfrost(
-        this.blockfrostUrl,
-        this.projectId
-      );
-      this.lucid = await Lucid.new(provider, this.network);
-    }
-    return this.lucid;
-  }
+  // async getLucidInstance(): Promise<Lucid> {
+  //   if (!this.lucid) {
+  //     const provider: Blockfrost = new Blockfrost(
+  //       this.blockfrostUrl,
+  //       this.projectId
+  //     );
+  //     this.lucid = await Lucid.new(provider, this.network);
+  //   }
+  //   return this.lucid;
+  // }
 
   async buildSwapExactInTx(
     options: BuildSwapExactInTxOptions
@@ -173,15 +177,16 @@ export class Dex {
       assetOut,
       minimumAmountOut,
       isLimitOrder,
+      availableUtxos,
     } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
-    const orderAssets: Assets = { [assetIn]: amountIn };
-    const utxos = await lucid.utxosAt(sender);
+    // const lucid = await this.getLucidInstance();
+    // lucid.selectWalletFrom({ address: sender });
+    const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
+    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      utxos,
+      availableUtxos,
       orderAssets
     );
     if (orderAssets["lovelace"]) {
@@ -199,11 +204,11 @@ export class Dex {
       batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
     };
-    const tx = lucid
+    const tx = this.lucid
       .newTx()
       .payToContract(
         ORDER_BASE_ADDRESS[this.networkId],
-        OrderDatum.toCborHex(datum),
+        Data.to(OrderDatum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -221,18 +226,24 @@ export class Dex {
   async buildSwapExactOutTx(
     options: BuildSwapExactOutTxOptions
   ): Promise<TxComplete> {
-    const { sender, assetIn, assetOut, maximumAmountIn, expectedAmountOut } =
-      options;
+    const {
+      sender,
+      assetIn,
+      assetOut,
+      maximumAmountIn,
+      expectedAmountOut,
+      availableUtxos,
+    } = options;
     invariant(
       maximumAmountIn > 0n && expectedAmountOut > 0n,
       "amount in and out must be positive"
     );
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
-    const orderAssets: Assets = { [assetIn]: maximumAmountIn };
-    const utxos = await lucid.utxosAt(sender);
+    // const lucid = await this.getLucidInstance();
+    // lucid.selectWalletFrom({ address: sender });
+    const orderAssets: Assets = { [Asset.toString(assetIn)]: maximumAmountIn };
+    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      utxos,
+      availableUtxos,
       orderAssets
     );
     if (orderAssets["lovelace"]) {
@@ -251,11 +262,11 @@ export class Dex {
       depositADA: FIXED_DEPOSIT_ADA,
     };
 
-    return await lucid
+    return await this.lucid
       .newTx()
       .payToContract(
         ORDER_BASE_ADDRESS[this.networkId],
-        OrderDatum.toCborHex(datum),
+        Data.to(OrderDatum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -271,18 +282,19 @@ export class Dex {
       lpAmount,
       minimumAssetAReceived,
       minimumAssetBReceived,
+      availableUtxos,
     } = options;
     invariant(lpAmount > 0n, "LP amount must be positive");
     invariant(
       minimumAssetAReceived > 0n && minimumAssetBReceived > 0n,
       "minimum asset received must be positive"
     );
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
-    const orderAssets: Assets = { [lpAsset]: lpAmount };
-    const utxos = await lucid.utxosAt(sender);
+    // const lucid = await this.getLucidInstance();
+    // lucid.selectWalletFrom({ address: sender });
+    const orderAssets: Assets = { [Asset.toString(lpAsset)]: lpAmount };
+    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      utxos,
+      availableUtxos,
       orderAssets
     );
     if (orderAssets["lovelace"]) {
@@ -300,11 +312,11 @@ export class Dex {
       batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
     };
-    return await lucid
+    return await this.lucid
       .newTx()
       .payToContract(
         ORDER_BASE_ADDRESS[this.networkId],
-        OrderDatum.toCborHex(datum),
+        Data.to(OrderDatum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -314,15 +326,22 @@ export class Dex {
   }
 
   async buildZapInTx(options: BuildZapInTxOptions): Promise<TxComplete> {
-    const { sender, assetIn, amountIn, assetOut, minimumLPReceived } = options;
+    const {
+      sender,
+      assetIn,
+      amountIn,
+      assetOut,
+      minimumLPReceived,
+      availableUtxos,
+    } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
-    const orderAssets: Assets = { [assetIn]: amountIn };
-    const utxos = await lucid.utxosAt(sender);
+    // const lucid = await this.getLucidInstance();
+    // lucid.selectWalletFrom({ address: sender });
+    const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
+    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      utxos,
+      availableUtxos,
       orderAssets
     );
     if (orderAssets["lovelace"]) {
@@ -341,11 +360,11 @@ export class Dex {
       depositADA: FIXED_DEPOSIT_ADA,
     };
 
-    return await lucid
+    return await this.lucid
       .newTx()
       .payToContract(
         ORDER_BASE_ADDRESS[this.networkId],
-        OrderDatum.toCborHex(datum),
+        Data.to(OrderDatum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -355,19 +374,26 @@ export class Dex {
   }
 
   async buildDepositTx(options: BuildDepositTxOptions): Promise<TxComplete> {
-    const { sender, assetA, assetB, amountA, amountB, minimumLPReceived } =
-      options;
+    const {
+      sender,
+      assetA,
+      assetB,
+      amountA,
+      amountB,
+      minimumLPReceived,
+      availableUtxos,
+    } = options;
     invariant(amountA > 0n && amountB > 0n, "amount must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
+    // const lucid = await this.getLucidInstance();
+    // lucid.selectWalletFrom({ address: sender });
     const orderAssets = {
-      [assetA]: amountA,
-      [assetB]: amountB,
+      [Asset.toString(assetA)]: amountA,
+      [Asset.toString(assetB)]: amountB,
     };
-    const utxos = await lucid.utxosAt(sender);
+    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      utxos,
+      availableUtxos,
       orderAssets
     );
     if (orderAssets["lovelace"]) {
@@ -384,11 +410,11 @@ export class Dex {
       batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
     };
-    return await lucid
+    return await this.lucid
       .newTx()
       .payToContract(
         ORDER_BASE_ADDRESS[this.networkId],
-        OrderDatum.toCborHex(datum),
+        Data.to(OrderDatum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -400,17 +426,26 @@ export class Dex {
   async buildCancelOrder(
     options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
-    const { orderTxId, sender } = options;
-    const orderUtxo = blockfrostToLucidUtxo(
-      await this.blockfrostAdapter.getOrderUtxoByTxId(orderTxId)
-    );
-    const lucid = await this.getLucidInstance();
-    lucid.selectWalletFrom({ address: sender });
+    const { orderUtxo } = options;
+    // const orderUtxo = blockfrostToLucidUtxo(
+    //   await this.blockfrostAdapter.getOrderUtxoByTxId(orderTxId)
+    // );
+    // const lucid = await this.getLucidInstance();
+    // lucid.selectWalletFrom({ address: sender });
     const redeemer = Data.to(new Constr(OrderRedeemer.CANCEL_ORDER, []));
-    return await lucid
+    const rawDatum = orderUtxo.datum;
+    invariant(
+      rawDatum,
+      `Cancel Order requires Order UTxOs along with its CBOR Datum`
+    );
+    const orderDatum = OrderDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawDatum) as Constr<Data>
+    );
+    return await this.lucid
       .newTx()
       .collectFrom([orderUtxo], redeemer)
-      .addSigner(sender)
+      .addSigner(orderDatum.sender)
       .attachSpendingValidator(<SpendingValidator>orderScript)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .complete();
