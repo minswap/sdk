@@ -11,10 +11,16 @@ import {
 
 import { BlockfrostAdapter } from "./adapter";
 import { Dex } from "./dex";
-import { ADA } from "./types/asset";
+import { ADA, Asset } from "./types/asset";
 import { PoolDatum, PoolState } from "./types/pool";
 import { NetworkId } from "./types/tx";
-import { calculateDeposit, calculateSwapExactIn } from "./utils";
+import {
+  calculateDeposit,
+  calculateSwapExactIn,
+  calculateSwapExactOut,
+  calculateWithdraw,
+  calculateZapIn,
+} from "./utils";
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
@@ -156,6 +162,130 @@ async function _swapExactInTxExample(
     minimumAmountOut: acceptedAmount,
     isLimitOrder: false,
     sender: address,
+    availableUtxos: availableUtxos,
+  });
+}
+
+async function _swapExactOutTxExample(
+  network: Network,
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  // ID of ADA-MIN Pool on Testnet Preprod
+  const poolId =
+    "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
+
+  const { poolState, poolDatum } = await getPoolById(
+    network,
+    blockfrostAdapter,
+    poolId
+  );
+
+  const exactAmountOut = 10_000n;
+
+  const { amountIn } = calculateSwapExactOut({
+    exactAmountOut: exactAmountOut,
+    reserveIn: poolState.reserveA,
+    reserveOut: poolState.reserveB,
+  });
+
+  // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
+  const impact = 20n;
+  const necessaryAmountIn = (amountIn * (100n + impact)) / 100n;
+
+  const dex = new Dex(lucid, network);
+  return await dex.buildSwapExactOutTx({
+    maximumAmountIn: necessaryAmountIn,
+    assetIn: ADA,
+    assetOut: poolDatum.assetB,
+    expectedAmountOut: exactAmountOut,
+    sender: address,
+    availableUtxos: availableUtxos,
+  });
+}
+
+async function _withdrawTxExample(
+  network: Network,
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  // ID of ADA-MIN Pool on Testnet Preprod
+  const poolId =
+    "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
+
+  const { poolState, poolDatum } = await getPoolById(
+    network,
+    blockfrostAdapter,
+    poolId
+  );
+
+  const lpAsset = Asset.fromString(poolState.assetLP);
+  const withdrawalAmount = 10_000_000n;
+
+  const { amountAReceive, amountBReceive } = calculateWithdraw({
+    withdrawalLPAmount: withdrawalAmount,
+    reserveA: poolState.reserveA,
+    reserveB: poolState.reserveB,
+    totalLiquidity: poolDatum.totalLiquidity,
+  });
+
+  // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
+  const impact = 20n;
+  const acceptedAmountAReceive = (amountAReceive * (100n - impact)) / 100n;
+  const acceptedAmountBReceive = (amountBReceive * (100n - impact)) / 100n;
+
+  const dex = new Dex(lucid, network);
+  return await dex.buildWithdrawTx({
+    lpAsset: lpAsset,
+    lpAmount: withdrawalAmount,
+    sender: address,
+    minimumAssetAReceived: acceptedAmountAReceive,
+    minimumAssetBReceived: acceptedAmountBReceive,
+    availableUtxos: availableUtxos,
+  });
+}
+
+async function _zapTxExample(
+  network: Network,
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  // ID of ADA-MIN Pool on Testnet Preprod
+  const poolId =
+    "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
+
+  const { poolState, poolDatum } = await getPoolById(
+    network,
+    blockfrostAdapter,
+    poolId
+  );
+
+  const zapAmount = 10_000_000n;
+
+  const lpAmountOut = calculateZapIn({
+    amountIn: zapAmount,
+    reserveIn: poolState.reserveA,
+    reserveOut: poolState.reserveB,
+    totalLiquidity: poolDatum.totalLiquidity,
+  });
+
+  // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
+  const impact = 20n;
+  const acceptedLPAmount = (lpAmountOut * (100n - impact)) / 100n;
+
+  const dex = new Dex(lucid, network);
+  return await dex.buildZapInTx({
+    sender: address,
+    amountIn: zapAmount,
+    assetIn: poolDatum.assetA,
+    assetOut: poolDatum.assetB,
+    minimumLPReceived: acceptedLPAmount,
     availableUtxos: availableUtxos,
   });
 }
