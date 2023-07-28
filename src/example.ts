@@ -113,7 +113,7 @@ async function _depositTxExample(
   const impact = 20n;
   const acceptedLPAmount = (lpAmount * (100n - impact)) / 100n;
 
-  const dex = new Dex(lucid, network);
+  const dex = new Dex(lucid);
   return await dex.buildDepositTx({
     amountA: necessaryAmountA,
     amountB: necessaryAmountB,
@@ -154,7 +154,7 @@ async function _swapExactInTxExample(
   const impact = 20n;
   const acceptedAmount = (amountOut * (100n - impact)) / 100n;
 
-  const dex = new Dex(lucid, network);
+  const dex = new Dex(lucid);
   return await dex.buildSwapExactInTx({
     amountIn: depositedAmountADA,
     assetIn: ADA,
@@ -195,7 +195,7 @@ async function _swapExactOutTxExample(
   const impact = 20n;
   const necessaryAmountIn = (amountIn * (100n + impact)) / 100n;
 
-  const dex = new Dex(lucid, network);
+  const dex = new Dex(lucid);
   return await dex.buildSwapExactOutTx({
     maximumAmountIn: necessaryAmountIn,
     assetIn: ADA,
@@ -238,7 +238,7 @@ async function _withdrawTxExample(
   const acceptedAmountAReceive = (amountAReceive * (100n - impact)) / 100n;
   const acceptedAmountBReceive = (amountBReceive * (100n - impact)) / 100n;
 
-  const dex = new Dex(lucid, network);
+  const dex = new Dex(lucid);
   return await dex.buildWithdrawTx({
     lpAsset: lpAsset,
     lpAmount: withdrawalAmount,
@@ -279,7 +279,7 @@ async function _zapTxExample(
   const impact = 20n;
   const acceptedLPAmount = (lpAmountOut * (100n - impact)) / 100n;
 
-  const dex = new Dex(lucid, network);
+  const dex = new Dex(lucid);
   return await dex.buildZapInTx({
     sender: address,
     amountIn: zapAmount,

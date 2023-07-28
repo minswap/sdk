@@ -141,31 +141,13 @@ export class Dex {
   private readonly lucid: Lucid;
   private readonly network: Network;
   private readonly networkId: NetworkId;
-  // private readonly blockfrostUrl: string;
-  // private readonly blockfrostAdapter: BlockfrostAdapter;
 
-  constructor(lucid: Lucid, network: Network) {
+  constructor(lucid: Lucid) {
     this.lucid = lucid;
-    this.network = network;
-    // this.blockfrostUrl = blockfrostUrl;
+    this.network = lucid.network;
     this.networkId =
-      network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
-    // this.blockfrostAdapter = new BlockfrostAdapter({
-    //   projectId,
-    //   networkId: this.networkId,
-    // });
+      lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
   }
-
-  // async getLucidInstance(): Promise<Lucid> {
-  //   if (!this.lucid) {
-  //     const provider: Blockfrost = new Blockfrost(
-  //       this.blockfrostUrl,
-  //       this.projectId
-  //     );
-  //     this.lucid = await Lucid.new(provider, this.network);
-  //   }
-  //   return this.lucid;
-  // }
 
   async buildSwapExactInTx(
     options: BuildSwapExactInTxOptions
@@ -181,10 +163,7 @@ export class Dex {
     } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
-    // const lucid = await this.getLucidInstance();
-    // lucid.selectWalletFrom({ address: sender });
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
       availableUtxos,
       orderAssets
@@ -238,10 +217,7 @@ export class Dex {
       maximumAmountIn > 0n && expectedAmountOut > 0n,
       "amount in and out must be positive"
     );
-    // const lucid = await this.getLucidInstance();
-    // lucid.selectWalletFrom({ address: sender });
     const orderAssets: Assets = { [Asset.toString(assetIn)]: maximumAmountIn };
-    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
       availableUtxos,
       orderAssets
@@ -289,10 +265,7 @@ export class Dex {
       minimumAssetAReceived > 0n && minimumAssetBReceived > 0n,
       "minimum asset received must be positive"
     );
-    // const lucid = await this.getLucidInstance();
-    // lucid.selectWalletFrom({ address: sender });
     const orderAssets: Assets = { [Asset.toString(lpAsset)]: lpAmount };
-    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
       availableUtxos,
       orderAssets
@@ -336,10 +309,7 @@ export class Dex {
     } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
-    // const lucid = await this.getLucidInstance();
-    // lucid.selectWalletFrom({ address: sender });
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
       availableUtxos,
       orderAssets
@@ -385,13 +355,10 @@ export class Dex {
     } = options;
     invariant(amountA > 0n && amountB > 0n, "amount must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
-    // const lucid = await this.getLucidInstance();
-    // lucid.selectWalletFrom({ address: sender });
     const orderAssets = {
       [Asset.toString(assetA)]: amountA,
       [Asset.toString(assetB)]: amountB,
     };
-    // const utxos = await lucid.utxosAt(sender);
     const { batcherFee, reductionAssets } = this.calculateBatcherFee(
       availableUtxos,
       orderAssets
@@ -427,11 +394,6 @@ export class Dex {
     options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
     const { orderUtxo } = options;
-    // const orderUtxo = blockfrostToLucidUtxo(
-    //   await this.blockfrostAdapter.getOrderUtxoByTxId(orderTxId)
-    // );
-    // const lucid = await this.getLucidInstance();
-    // lucid.selectWalletFrom({ address: sender });
     const redeemer = Data.to(new Constr(OrderRedeemer.CANCEL_ORDER, []));
     const rawDatum = orderUtxo.datum;
     invariant(
