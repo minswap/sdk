@@ -17,7 +17,7 @@ import {
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
   ORDER_BASE_ADDRESS,
-  orderScript,
+  ORDER_SCRIPT,
 } from "./constants";
 import { Asset } from "./types/asset";
 import { NetworkId } from "./types/network";
@@ -391,7 +391,7 @@ export class Dex {
       .newTx()
       .collectFrom([orderUtxo], redeemer)
       .addSigner(orderDatum.sender)
-      .attachSpendingValidator(<SpendingValidator>orderScript)
+      .attachSpendingValidator(<SpendingValidator>ORDER_SCRIPT)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .complete();
   }

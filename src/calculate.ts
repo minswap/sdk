@@ -1,6 +1,6 @@
 import Big from "big.js";
 
-import { sqrt } from "./utils/sqrt";
+import { sqrt } from "./utils/sqrt.internal";
 
 /**
  * Options to calculate Amount Out & Price Impact while swapping exact in
