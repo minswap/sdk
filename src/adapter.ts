@@ -12,7 +12,7 @@ import { PoolHistory, PoolState } from "./types/pool";
 import { checkValidPoolOutput, isValidPoolOutput } from "./types/pool.internal";
 
 export type BlockfrostAdapterOptions = {
-  projectId: string;
+  blockFrost: BlockFrostAPI;
   networkId?: NetworkId;
 };
 
@@ -44,14 +44,11 @@ export class BlockfrostAdapter {
   private readonly api: BlockFrostAPI;
 
   constructor({
-    projectId,
+    blockFrost,
     networkId = NetworkId.MAINNET,
   }: BlockfrostAdapterOptions) {
     this.networkId = networkId;
-    this.api = new BlockFrostAPI({
-      projectId,
-      network: networkId === NetworkId.MAINNET ? "mainnet" : "preprod",
-    });
+    this.api = blockFrost;
   }
 
   /**

@@ -1,3 +1,4 @@
+import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import {
   Address,
   Blockfrost,
@@ -22,7 +23,7 @@ import {
   NetworkId,
   PoolDatum,
   PoolState,
-} from "../build";
+} from "../src";
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
@@ -39,7 +40,10 @@ async function main(): Promise<void> {
   );
 
   const blockfrostAdapter = new BlockfrostAdapter({
-    projectId: blockfrostProjectId,
+    blockFrost: new BlockFrostAPI({
+      projectId: blockfrostProjectId,
+      network: "preprod",
+    }),
     networkId: networkId,
   });
 
