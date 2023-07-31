@@ -6,19 +6,10 @@ import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
 import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
-import {
-  ORDER_BASE_ADDRESS,
-  ORDER_ENTERPRISE_ADDRESS,
-  POOL_ADDRESS_SET,
-  POOL_NFT_POLICY_ID,
-} from "./constants";
-import {
-  checkValidPoolOutput,
-  isValidPoolOutput,
-  PoolHistory,
-  PoolState,
-} from "./types/pool";
-import { BlockfrostUtxo, NetworkId } from "./types/tx";
+import { POOL_ADDRESS_SET, POOL_NFT_POLICY_ID } from "./constants";
+import { NetworkId } from "./types/network";
+import { PoolHistory, PoolState } from "./types/pool";
+import { checkValidPoolOutput, isValidPoolOutput } from "./types/pool.internal";
 
 export type BlockfrostAdapterOptions = {
   projectId: string;
@@ -219,17 +210,6 @@ export class BlockfrostAdapter {
     const priceAB = adjustedReserveA.div(adjustedReserveB);
     const priceBA = adjustedReserveB.div(adjustedReserveA);
     return [priceAB, priceBA];
-  }
-
-  public async getOrderUtxoByTxId(orderTxId: string): Promise<BlockfrostUtxo> {
-    const orderTx = await this.api.txsUtxos(orderTxId);
-    const orderUtxo = orderTx.outputs.find(
-      (o) =>
-        o.address === ORDER_BASE_ADDRESS[this.networkId] ||
-        o.address === ORDER_ENTERPRISE_ADDRESS[this.networkId]
-    );
-    invariant(orderUtxo, "not found orderUtxo");
-    return { ...orderUtxo, tx_hash: orderTx.hash };
   }
 
   public async getDatumByDatumHash(datumHash: string): Promise<string> {

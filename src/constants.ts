@@ -1,6 +1,6 @@
 import { Address } from "lucid-cardano";
 
-import { NetworkId } from "./types/tx";
+import { NetworkId } from "./types/network";
 
 export const ORDER_ENTERPRISE_ADDRESS = {
   [NetworkId.TESTNET]:
@@ -63,13 +63,13 @@ export const BATCHER_FEE_REDUCTION_SUPPORTED_ASSET: Record<
 };
 
 export enum MetadataMessage {
-  DEPOSIT_ORDER = "Minswap: Deposit Order",
-  CANCEL_ORDER = "Minswap: Cancel Order",
-  ZAP_IN_ORDER = "Minswap: Zap Order",
-  SWAP_EXACT_IN_ORDER = "Minswap: Swap Exact In Order",
-  SWAP_EXACT_IN_LIMIT_ORDER = "Minswap: Swap Exact In Limit Order",
-  SWAP_EXACT_OUT_ORDER = "Minswap: Swap Exact Out Order",
-  WITHDRAW_ORDER = "Minswap: Withdraw Order",
+  DEPOSIT_ORDER = "SDK Minswap: Deposit Order",
+  CANCEL_ORDER = "SDK Minswap: Cancel Order",
+  ZAP_IN_ORDER = "SDK Minswap: Zap Order",
+  SWAP_EXACT_IN_ORDER = "SDK Minswap: Swap Exact In Order",
+  SWAP_EXACT_IN_LIMIT_ORDER = "SDK Minswap: Swap Exact In Limit Order",
+  SWAP_EXACT_OUT_ORDER = "SDK Minswap: Swap Exact Out Order",
+  WITHDRAW_ORDER = "SDK Minswap: Withdraw Order",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;

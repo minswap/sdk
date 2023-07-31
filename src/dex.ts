@@ -11,7 +11,7 @@ import {
   UTxO,
 } from "lucid-cardano";
 
-import { getBatcherFee } from "./batcher-fee-reduction/configs";
+import { getBatcherFee } from "./batcher-fee-reduction/configs.internal";
 import {
   BATCHER_FEE_REDUCTION_SUPPORTED_ASSET,
   FIXED_DEPOSIT_ADA,
@@ -20,15 +20,15 @@ import {
   orderScript,
 } from "./constants";
 import { Asset } from "./types/asset";
+import { NetworkId } from "./types/network";
 import { OrderDatum, OrderRedeemer, OrderStepType } from "./types/order";
-import { BlockfrostUtxo, NetworkId } from "./types/tx";
 
 /**
  * Common options for build Minswap transaction
  * @sender The owner of this order, it will be used for cancelling this order
  * @availableUtxos Available UTxOs can be used in transaction
  */
-export type CommonOptions = {
+type CommonOptions = {
   sender: Address;
   availableUtxos: UTxO[];
 };
@@ -119,23 +119,6 @@ export type BuildSwapExactInTxOptions = CommonOptions & {
   minimumAmountOut: bigint;
   isLimitOrder: boolean;
 };
-
-export function blockfrostToLucidUtxo(u: BlockfrostUtxo): UTxO {
-  const assets: Assets = {};
-  for (const am of u.amount) {
-    assets[am.unit] = BigInt(am.quantity);
-  }
-
-  return {
-    txHash: u.tx_hash,
-    outputIndex: u.output_index,
-    assets,
-    address: u.address,
-    datumHash: !u.inline_datum ? u.data_hash : undefined,
-    datum: u.inline_datum,
-    scriptRef: undefined, // TODO: not support yet
-  };
-}
 
 export class Dex {
   private readonly lucid: Lucid;

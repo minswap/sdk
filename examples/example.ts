@@ -9,18 +9,20 @@ import {
   UTxO,
 } from "lucid-cardano";
 
-import { BlockfrostAdapter } from "./adapter";
-import { Dex } from "./dex";
-import { ADA, Asset } from "./types/asset";
-import { PoolDatum, PoolState } from "./types/pool";
-import { NetworkId } from "./types/tx";
 import {
+  ADA,
+  Asset,
+  BlockfrostAdapter,
   calculateDeposit,
   calculateSwapExactIn,
   calculateSwapExactOut,
   calculateWithdraw,
   calculateZapIn,
-} from "./utils";
+  Dex,
+  NetworkId,
+  PoolDatum,
+  PoolState,
+} from "../build";
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";

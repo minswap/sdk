@@ -1,7 +1,6 @@
 import { jest } from "@jest/globals";
-import invariant from "@minswap/tiny-invariant";
 
-import { BlockfrostAdapter, NetworkId, POOL_ADDRESS_LIST } from "..";
+import { BlockfrostAdapter, NetworkId, POOL_ADDRESS_LIST } from "../src";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];
@@ -60,11 +59,4 @@ test("get prices of last 5 states of MIN/ADA pool", async () => {
     const pool = await adapter.getPoolInTx({ txHash: history[i].txHash });
     expect(pool?.txIn.txHash).toEqual(history[i].txHash);
   }
-});
-
-test("get order utxo", async () => {
-  const orderUtxo = await adapter.getOrderUtxoByTxId(
-    "09cc86832fcbd2cbf97c1b9dfe2500fab2b1fddab3274770a95c0f12e8d18ded"
-  );
-  invariant(orderUtxo);
 });

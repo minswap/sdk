@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "rimraf build && rollup -c rollup.config.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest && tsc",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write **/*.ts && eslint src --fix --ext .ts",
     "check-format": "prettier --check **/*.ts && eslint src --ext .ts"
