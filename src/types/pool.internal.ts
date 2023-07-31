@@ -1,11 +1,9 @@
 import invariant from "@minswap/tiny-invariant";
 import { Address, Constr, Data } from "lucid-cardano";
 
-import {
-  FACTORY_ASSET_NAME,
-  FACTORY_POLICY_ID,
-  POOL_ADDRESS_SET,
-} from "../constants";
+import { FACTORY_ASSET_NAME, FACTORY_POLICY_ID } from "../constants";
+import { POOL_SCRIPT_HASH } from "../constants";
+import { getScriptHashFromAddress } from "../utils/address-utils.internal";
 import { AddressPlutusData } from "./address.internal";
 import { NetworkId } from "./network";
 import { Value } from "./tx.internal";
@@ -77,13 +75,12 @@ export namespace PoolFeeSharing {
 }
 
 export function checkValidPoolOutput(
-  networkId: NetworkId,
   poolAddress: string,
   value: Value,
   datumHash: string | null
 ): void {
   invariant(
-    POOL_ADDRESS_SET[networkId].has(poolAddress),
+    getScriptHashFromAddress(poolAddress) === POOL_SCRIPT_HASH,
     `invalid pool address: ${poolAddress}`
   );
   // must have 1 factory token
@@ -98,13 +95,12 @@ export function checkValidPoolOutput(
 }
 
 export function isValidPoolOutput(
-  networkId: NetworkId,
   poolAddress: string,
   value: Value,
   datumHash: string | null
 ): boolean {
   try {
-    checkValidPoolOutput(networkId, poolAddress, value, datumHash);
+    checkValidPoolOutput(poolAddress, value, datumHash);
     return true;
   } catch (err) {
     return false;

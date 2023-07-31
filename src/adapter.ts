@@ -6,19 +6,17 @@ import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
 import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
-import { POOL_ADDRESS_SET, POOL_NFT_POLICY_ID } from "./constants";
-import { NetworkId } from "./types/network";
+import { POOL_NFT_POLICY_ID, POOL_SCRIPT_HASH } from "./constants";
 import { PoolHistory, PoolState } from "./types/pool";
 import { checkValidPoolOutput, isValidPoolOutput } from "./types/pool.internal";
+import { getScriptHashFromAddress } from "./utils/address-utils.internal";
 
 export type BlockfrostAdapterOptions = {
   blockFrost: BlockFrostAPI;
-  networkId?: NetworkId;
 };
 
 export type GetPoolsParams = Omit<PaginationOptions, "page"> & {
   page: number;
-  poolAddress: string;
 };
 
 export type GetPoolByIdParams = {
@@ -40,40 +38,28 @@ export type GetPoolInTxParams = {
 };
 
 export class BlockfrostAdapter {
-  private readonly networkId: NetworkId;
   private readonly api: BlockFrostAPI;
 
-  constructor({
-    blockFrost,
-    networkId = NetworkId.MAINNET,
-  }: BlockfrostAdapterOptions) {
-    this.networkId = networkId;
+  constructor({ blockFrost }: BlockfrostAdapterOptions) {
     this.api = blockFrost;
   }
 
   /**
-   * @param {string} poolAddress - Because there're multiple addresses for Minswap pools, we need to specify which address we want to query. A list of known addresses can be found in POOL_ADDRESS_LIST constant.
    * @returns The latest pools or empty array if current page is after last page
    */
   public async getPools({
     page,
     count = 100,
     order = "asc",
-    poolAddress,
   }: GetPoolsParams): Promise<PoolState[]> {
-    const utxos = await this.api.addressesUtxos(poolAddress, {
+    const utxos = await this.api.addressesUtxos(POOL_SCRIPT_HASH, {
       count,
       order,
       page,
     });
     return utxos
       .filter((utxo) =>
-        isValidPoolOutput(
-          this.networkId,
-          poolAddress,
-          utxo.amount,
-          utxo.data_hash
-        )
+        isValidPoolOutput(utxo.address, utxo.amount, utxo.data_hash)
       )
       .map((utxo) => {
         invariant(
@@ -81,6 +67,7 @@ export class BlockfrostAdapter {
           `expect pool to have datum hash, got ${utxo.data_hash}`
         );
         return new PoolState(
+          utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
           utxo.data_hash
@@ -141,23 +128,19 @@ export class BlockfrostAdapter {
     txHash,
   }: GetPoolInTxParams): Promise<PoolState | null> {
     const poolTx = await this.api.txsUtxos(txHash);
-    const poolUtxo = poolTx.outputs.find((o) =>
-      POOL_ADDRESS_SET[this.networkId].has(o.address)
+    const poolUtxo = poolTx.outputs.find(
+      (o) => getScriptHashFromAddress(o.address) === POOL_SCRIPT_HASH
     );
     if (!poolUtxo) {
       return null;
     }
-    checkValidPoolOutput(
-      this.networkId,
-      poolUtxo.address,
-      poolUtxo.amount,
-      poolUtxo.data_hash
-    );
+    checkValidPoolOutput(poolUtxo.address, poolUtxo.amount, poolUtxo.data_hash);
     invariant(
       poolUtxo.data_hash,
       `expect pool to have datum hash, got ${poolUtxo.data_hash}`
     );
     return new PoolState(
+      poolUtxo.address,
       { txHash: txHash, index: poolUtxo.output_index },
       poolUtxo.amount,
       poolUtxo.data_hash

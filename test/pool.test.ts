@@ -2,14 +2,15 @@ import JSONBig from "json-bigint";
 import { Data } from "lucid-cardano";
 
 import { NetworkId } from "../src";
-import { POOL_ADDRESS_LIST } from "../src/constants";
 import { ADA, Asset } from "../src/types/asset";
 import { PoolDatum, PoolState } from "../src/types/pool";
 import { isValidPoolOutput, PoolFeeSharing } from "../src/types/pool.internal";
 import { TxIn, Value } from "../src/types/tx.internal";
 
+const PREPROD_POOL_ADDRESS =
+  "addr_test1zrsnz7c4974vzdpxu65ruphl3zjdvtxw8strf2c2tmqnxzvrajt8r8wqtygrfduwgukk73m5gcnplmztc5tl5ngy0upqs8q93k";
+
 test("can handle pool with one side being LP tokens", () => {
-  const address = POOL_ADDRESS_LIST[NetworkId.TESTNET][0];
   const txIn: TxIn = {
     txHash: "8626060cf100c9b777546808e0ad20c099fe35cfcaee8de0079aa6c6931d345b",
     index: 3,
@@ -32,9 +33,11 @@ test("can handle pool with one side being LP tokens", () => {
   const datumHash =
     "421d71a088b55789301a403994760d1f2854444b0380fc3df8970f8e212b3f30";
   expect(
-    isValidPoolOutput(NetworkId.TESTNET, address, value, datumHash)
+    isValidPoolOutput(PREPROD_POOL_ADDRESS, value, datumHash)
   ).toBeTruthy();
-  expect(new PoolState(txIn, value, datumHash)).toBeInstanceOf(PoolState);
+  expect(
+    new PoolState(PREPROD_POOL_ADDRESS, txIn, value, datumHash)
+  ).toBeInstanceOf(PoolState);
 });
 
 test("Fee Sharing to PlutusData Converter", () => {
