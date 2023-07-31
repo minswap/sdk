@@ -78,5 +78,6 @@ for (const historyPoint of history) {
 }
 ```
 
-### Example 3: Build Order transaction and submit 
-See `src/example.ts` for more details
+### Example 3: Build Order transaction and submit
+
+See `examples/` for more details
