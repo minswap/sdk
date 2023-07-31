@@ -14,7 +14,8 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest && tsc",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write **/*.ts && eslint src --fix --ext .ts",
-    "check-format": "prettier --check **/*.ts && eslint src --ext .ts"
+    "check-format": "prettier --check **/*.ts && eslint src --ext .ts",
+    "exec": "ts-node --esm --experimental-specifier-resolution=node"
   },
   "keywords": [
     "minswap",

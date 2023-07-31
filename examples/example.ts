@@ -1,4 +1,5 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
+import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   Blockfrost,
@@ -6,6 +7,7 @@ import {
   Data,
   Lucid,
   Network,
+  OutRef,
   TxComplete,
   UTxO,
 } from "lucid-cardano";
@@ -59,7 +61,9 @@ async function main(): Promise<void> {
   const signedTx = await txComplete
     .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
     .complete();
-  await signedTx.submit();
+  const txId = await signedTx.submit();
+  // eslint-disable-next-line no-console
+  console.log(`Transaction submitted successfully: ${txId}`);
 }
 
 async function getPoolById(
@@ -116,8 +120,8 @@ async function _depositTxExample(
   });
 
   // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
-  const impact = 20n;
-  const acceptedLPAmount = (lpAmount * (100n - impact)) / 100n;
+  const slippageTolerance = 20n;
+  const acceptedLPAmount = (lpAmount * (100n - slippageTolerance)) / 100n;
 
   const dex = new Dex(lucid);
   return await dex.buildDepositTx({
@@ -148,21 +152,21 @@ async function _swapExactInTxExample(
     poolId
   );
 
-  const depositedAmountADA = 10_000_000n;
+  const swapAmountADA = 10_000_000n;
 
   const { amountOut } = calculateSwapExactIn({
-    amountIn: depositedAmountADA,
+    amountIn: swapAmountADA,
     reserveIn: poolState.reserveA,
     reserveOut: poolState.reserveB,
   });
 
   // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
-  const impact = 20n;
-  const acceptedAmount = (amountOut * (100n - impact)) / 100n;
+  const slippageTolerance = 20n;
+  const acceptedAmount = (amountOut * (100n - slippageTolerance)) / 100n;
 
   const dex = new Dex(lucid);
   return await dex.buildSwapExactInTx({
-    amountIn: depositedAmountADA,
+    amountIn: swapAmountADA,
     assetIn: ADA,
     assetOut: poolDatum.assetB,
     minimumAmountOut: acceptedAmount,
@@ -198,8 +202,8 @@ async function _swapExactOutTxExample(
   });
 
   // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
-  const impact = 20n;
-  const necessaryAmountIn = (amountIn * (100n + impact)) / 100n;
+  const slippageTolerance = 20n;
+  const necessaryAmountIn = (amountIn * (100n + slippageTolerance)) / 100n;
 
   const dex = new Dex(lucid);
   return await dex.buildSwapExactOutTx({
@@ -207,6 +211,37 @@ async function _swapExactOutTxExample(
     assetIn: ADA,
     assetOut: poolDatum.assetB,
     expectedAmountOut: exactAmountOut,
+    sender: address,
+    availableUtxos: availableUtxos,
+  });
+}
+
+async function _swapLimitExample(
+  network: Network,
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  // ID of ADA-MIN Pool on Testnet Preprod
+  const poolId =
+    "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
+
+  const { poolDatum } = await getPoolById(network, blockfrostAdapter, poolId);
+
+  const swapAmountADA = 10_000_000n;
+
+  // use your limit price to determine the minimum amount of MIN you want to receive
+  // if the pool can give more MIN (price equal or better) then the order will be batched
+  const acceptedAmountMIN = 100n;
+
+  const dex = new Dex(lucid);
+  return await dex.buildSwapExactInTx({
+    amountIn: swapAmountADA,
+    assetIn: ADA,
+    assetOut: poolDatum.assetB,
+    minimumAmountOut: acceptedAmountMIN,
+    isLimitOrder: true,
     sender: address,
     availableUtxos: availableUtxos,
   });
@@ -230,7 +265,7 @@ async function _withdrawTxExample(
   );
 
   const lpAsset = Asset.fromString(poolState.assetLP);
-  const withdrawalAmount = 10_000_000n;
+  const withdrawalAmount = 100_000n;
 
   const { amountAReceive, amountBReceive } = calculateWithdraw({
     withdrawalLPAmount: withdrawalAmount,
@@ -240,9 +275,11 @@ async function _withdrawTxExample(
   });
 
   // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
-  const impact = 20n;
-  const acceptedAmountAReceive = (amountAReceive * (100n - impact)) / 100n;
-  const acceptedAmountBReceive = (amountBReceive * (100n - impact)) / 100n;
+  const slippageTolerance = 20n;
+  const acceptedAmountAReceive =
+    (amountAReceive * (100n - slippageTolerance)) / 100n;
+  const acceptedAmountBReceive =
+    (amountBReceive * (100n - slippageTolerance)) / 100n;
 
   const dex = new Dex(lucid);
   return await dex.buildWithdrawTx({
@@ -282,8 +319,8 @@ async function _zapTxExample(
   });
 
   // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
-  const impact = 20n;
-  const acceptedLPAmount = (lpAmountOut * (100n - impact)) / 100n;
+  const slippageTolerance = 20n;
+  const acceptedLPAmount = (lpAmountOut * (100n - slippageTolerance)) / 100n;
 
   const dex = new Dex(lucid);
   return await dex.buildZapInTx({
@@ -293,6 +330,24 @@ async function _zapTxExample(
     assetOut: poolDatum.assetB,
     minimumLPReceived: acceptedLPAmount,
     availableUtxos: availableUtxos,
+  });
+}
+
+async function _cancelTxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  orderOutRef: OutRef
+): Promise<TxComplete> {
+  const orderUtxo = (await lucid.utxosByOutRef([orderOutRef]))[0];
+  invariant(orderUtxo.datumHash, "order utxo missing datum hash");
+  orderUtxo.datum = await blockFrostAdapter.getDatumByDatumHash(
+    orderUtxo.datumHash
+  );
+  const dex = new Dex(lucid);
+  return dex.buildCancelOrder({
+    orderUtxo,
+    sender: address,
   });
 }
 

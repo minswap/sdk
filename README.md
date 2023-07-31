@@ -88,4 +88,4 @@ for (const historyPoint of history) {
 
 ### Example 3: Build Order transaction and submit
 
-See `examples/` for more details
+See `examples/` for more details. You can run a single file like `npm run exec examples/example.ts`.
