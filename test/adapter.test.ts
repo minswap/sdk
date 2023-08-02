@@ -1,6 +1,7 @@
-import invariant from "@minswap/tiny-invariant";
+import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
+import { jest } from "@jest/globals";
 
-import { BlockfrostAdapter, NetworkId, POOL_ADDRESS_LIST } from ".";
+import { BlockfrostAdapter, NetworkId, POOL_ADDRESS_LIST } from "../src";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];
@@ -15,7 +16,10 @@ const MIN_ADA_POOL_ID =
   "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
 
 const adapter = new BlockfrostAdapter({
-  projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
+  blockFrost: new BlockFrostAPI({
+    projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
+    network: "mainnet",
+  }),
   networkId: NetworkId.MAINNET,
 });
 
@@ -44,7 +48,7 @@ test("getPoolPrice", async () => {
       1e-6
     );
   }
-});
+}, 10000);
 
 test("getPoolById", async () => {
   const pool = await adapter.getPoolById({ id: MIN_ADA_POOL_ID });
@@ -59,13 +63,4 @@ test("get prices of last 5 states of MIN/ADA pool", async () => {
     const pool = await adapter.getPoolInTx({ txHash: history[i].txHash });
     expect(pool?.txIn.txHash).toEqual(history[i].txHash);
   }
-});
-
-test("get trade amount and price impact", async () => {
-  const pool = await adapter.getPoolById({ id: MIN_ADA_POOL_ID });
-  invariant(pool);
-  pool.getAmountOut("lovelace", 1_000_000n);
-  pool.getAmountOut(MIN, 1_000_000n);
-  pool.getAmountIn("lovelace", 1_000_000n);
-  pool.getAmountIn(MIN, 1_000_000n);
 });

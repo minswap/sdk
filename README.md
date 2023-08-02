@@ -6,7 +6,7 @@
 - [x] Get historical pair price
 - [x] Calculate trade price
 - [x] Calculate price impact
-- [ ] Create orders and submit to Blockfrost
+- [x] Create orders and submit to Blockfrost
 
 ## Install
 
@@ -18,10 +18,14 @@
 ### Example 1: Get current price of MIN/ADA pool
 
 ```ts
+import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { BlockfrostAdapter, NetworkId } from "@minswap/blockfrost-adapter";
 
 const api = new BlockfrostAdapter({
-  projectId: "<your_project_id>",
+  blockFrost: new BlockFrostAPI({
+    projectId: "<your_project_id>",
+    network: "mainnet",
+  }),
   networkId: NetworkId.MAINNET,
 });
 for (let i = 1; ; i++) {
@@ -54,13 +58,17 @@ for (let i = 1; ; i++) {
 ### Example 2: Get historical prices of MIN/ADA pool
 
 ```ts
+import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { BlockfrostAdapter, NetworkId } from "@minswap/blockfrost-adapter";
 
 const MIN_ADA_POOL_ID =
   "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
 
 const api = new BlockfrostAdapter({
-  projectId: "<your_project_id>",
+  blockFrost: new BlockFrostAPI({
+    projectId: "<your_project_id>",
+    network: "mainnet",
+  }),
   networkId: NetworkId.MAINNET,
 });
 const history = await api.getPoolHistory({ id: MIN_ADA_POOL_ID });
@@ -77,3 +85,7 @@ for (const historyPoint of history) {
   console.log(`${historyPoint.time}: ${price0} ADA/MIN, ${price1} MIN/ADA`);
 }
 ```
+
+### Example 3: Build Order transaction and submit
+
+See `examples/` for more details. You can run a single file like `npm run exec examples/example.ts`.

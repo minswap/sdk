@@ -3,19 +3,16 @@ import {
   BlockfrostServerError,
 } from "@blockfrost/blockfrost-js";
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
+import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
 import { POOL_ADDRESS_SET, POOL_NFT_POLICY_ID } from "./constants";
-import {
-  checkValidPoolOutput,
-  isValidPoolOutput,
-  PoolHistory,
-  PoolState,
-} from "./pool";
-import { NetworkId } from "./types";
+import { NetworkId } from "./types/network";
+import { PoolHistory, PoolState } from "./types/pool";
+import { checkValidPoolOutput, isValidPoolOutput } from "./types/pool.internal";
 
 export type BlockfrostAdapterOptions = {
-  projectId: string;
+  blockFrost: BlockFrostAPI;
   networkId?: NetworkId;
 };
 
@@ -47,14 +44,11 @@ export class BlockfrostAdapter {
   private readonly api: BlockFrostAPI;
 
   constructor({
-    projectId,
+    blockFrost,
     networkId = NetworkId.MAINNET,
   }: BlockfrostAdapterOptions) {
     this.networkId = networkId;
-    this.api = new BlockFrostAPI({
-      projectId,
-      isTestnet: networkId === NetworkId.TESTNET,
-    });
+    this.api = blockFrost;
   }
 
   /**
@@ -81,14 +75,17 @@ export class BlockfrostAdapter {
           utxo.data_hash
         )
       )
-      .map(
-        (utxo) =>
-          new PoolState(
-            { txHash: utxo.tx_hash, index: utxo.output_index },
-            utxo.amount,
-            utxo.data_hash
-          )
-      );
+      .map((utxo) => {
+        invariant(
+          utxo.data_hash,
+          `expect pool to have datum hash, got ${utxo.data_hash}`
+        );
+        return new PoolState(
+          { txHash: utxo.tx_hash, index: utxo.output_index },
+          utxo.amount,
+          utxo.data_hash
+        );
+      });
   }
 
   /**
@@ -156,6 +153,10 @@ export class BlockfrostAdapter {
       poolUtxo.amount,
       poolUtxo.data_hash
     );
+    invariant(
+      poolUtxo.data_hash,
+      `expect pool to have datum hash, got ${poolUtxo.data_hash}`
+    );
     return new PoolState(
       { txHash: txHash, index: poolUtxo.output_index },
       poolUtxo.amount,
@@ -206,5 +207,10 @@ export class BlockfrostAdapter {
     const priceAB = adjustedReserveA.div(adjustedReserveB);
     const priceBA = adjustedReserveB.div(adjustedReserveA);
     return [priceAB, priceBA];
+  }
+
+  public async getDatumByDatumHash(datumHash: string): Promise<string> {
+    const scriptsDatum = await this.api.scriptsDatumCbor(datumHash);
+    return scriptsDatum.cbor;
   }
 }

@@ -4,17 +4,16 @@
     "module": "ES2020",
     "moduleResolution": "node",
     "lib": ["ES2021", "DOM"],
-    "declaration": true,
-    "declarationDir": ".",
-    "outDir": "build",
+    "outDir": "build-tsc",
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "strict": true
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitOverride": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "ts-node": {
-    "compilerOptions": {
-      "module": "CommonJS"
-    }
-  },
-  "exclude": ["build"]
+  "include": ["src", "examples", "test"],
 }
