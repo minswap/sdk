@@ -153,6 +153,8 @@ export class Dex {
     );
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
+    } else {
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -207,6 +209,8 @@ export class Dex {
     );
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
+    } else {
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -255,6 +259,8 @@ export class Dex {
     );
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
+    } else {
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -299,6 +305,8 @@ export class Dex {
     );
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
+    } else {
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
@@ -348,6 +356,8 @@ export class Dex {
     );
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
+    } else {
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderDatum = {
       sender: sender,
