@@ -1,7 +1,7 @@
 {
-  "name": "@minswap/blockfrost-adapter",
-  "version": "0.1.0",
-  "description": "Query Minswap data from Blockfrost",
+  "name": "@minswap/sdk",
+  "version": "0.2.0-beta",
+  "description": "Query Minswap data and build transactions",
   "main": "./build/index.js",
   "module": "./build/index.es.js",
   "types": "./build/index.d.ts",
@@ -23,18 +23,18 @@
     "blockfrost",
     "dex",
     "blockchain",
-    "ape"
+    "lucid"
   ],
   "author": "Minswap Labs",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/minswap/blockfrost-adapter.git"
+    "url": "git+https://github.com/minswap/sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/minswap/blockfrost-adapter/issues"
+    "url": "https://github.com/minswap/sdk/issues"
   },
-  "homepage": "https://github.com/minswap/blockfrost-adapter#readme",
+  "homepage": "https://github.com/minswap/sdk#readme",
   "dependencies": {
     "@blockfrost/blockfrost-js": "^5.3.1",
     "@minswap/tiny-invariant": "^1.2.0",
