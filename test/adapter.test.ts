@@ -1,7 +1,7 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { jest } from "@jest/globals";
 
-import { BlockfrostAdapter, NetworkId, POOL_ADDRESS_LIST } from "../src";
+import { BlockfrostAdapter } from "../src";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];
@@ -20,7 +20,6 @@ const adapter = new BlockfrostAdapter({
     projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
     network: "mainnet",
   }),
-  networkId: NetworkId.MAINNET,
 });
 
 beforeAll(() => {
@@ -35,8 +34,8 @@ test("getAssetDecimals", async () => {
 test("getPoolPrice", async () => {
   const pools = await adapter.getPools({
     page: 1,
-    poolAddress: POOL_ADDRESS_LIST[NetworkId.MAINNET][0],
   });
+  expect(pools.length).toBeGreaterThan(0);
   // check random 5 pools
   for (let i = 0; i < 5; i++) {
     const idx = Math.floor(Math.random() * pools.length);

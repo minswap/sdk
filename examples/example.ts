@@ -29,7 +29,6 @@ import {
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const networkId: NetworkId = NetworkId.TESTNET;
   const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
@@ -46,7 +45,6 @@ async function main(): Promise<void> {
       projectId: blockfrostProjectId,
       network: "preprod",
     }),
-    networkId: networkId,
   });
 
   const utxos = await lucid.utxosAt(address);

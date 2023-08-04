@@ -19,19 +19,17 @@
 
 ```ts
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { BlockfrostAdapter, NetworkId } from "@minswap/blockfrost-adapter";
+import { BlockfrostAdapter } from "@minswap/blockfrost-adapter";
 
 const api = new BlockfrostAdapter({
   blockFrost: new BlockFrostAPI({
     projectId: "<your_project_id>",
     network: "mainnet",
   }),
-  networkId: NetworkId.MAINNET,
 });
 for (let i = 1; ; i++) {
   const pools = await api.getPools({
     page: i,
-    poolAddress: POOL_ADDRESS_LIST[NetworkId.MAINNET][0],
   });
   if (pools.length === 0) {
     // last page
@@ -69,7 +67,6 @@ const api = new BlockfrostAdapter({
     projectId: "<your_project_id>",
     network: "mainnet",
   }),
-  networkId: NetworkId.MAINNET,
 });
 const history = await api.getPoolHistory({ id: MIN_ADA_POOL_ID });
 for (const historyPoint of history) {

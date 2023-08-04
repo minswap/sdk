@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "module": "ES2020",
+    "target": "ES2022",
+    "module": "ES2022",
     "moduleResolution": "node",
-    "lib": ["ES2021", "DOM"],
+    "lib": ["ES2022", "DOM"],
     "outDir": "build-tsc",
     "skipLibCheck": true,
     "esModuleInterop": true,

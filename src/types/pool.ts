@@ -16,13 +16,15 @@ import { TxIn, Value } from "./tx.internal";
  */
 export class PoolState {
   /** The transaction hash and output index of the pool UTxO */
+  public readonly address: string;
   public readonly txIn: TxIn;
   public readonly value: Value;
   public readonly datumHash: string;
   public readonly assetA: string;
   public readonly assetB: string;
 
-  constructor(txIn: TxIn, value: Value, datumHash: string) {
+  constructor(address: string, txIn: TxIn, value: Value, datumHash: string) {
+    this.address = address;
     this.txIn = txIn;
     this.value = value;
     this.datumHash = datumHash;
