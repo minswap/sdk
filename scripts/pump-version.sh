@@ -15,7 +15,7 @@ echo "build"
 npm run build
 
 echo "publish"
-npm publish
+npm publish --access public
 
 echo "commit new version"
 git add package.json package-lock.json

@@ -1,4 +1,4 @@
-# Minswap Blockfrost Adapter
+# Minswap SDK
 
 ## Features
 
@@ -6,12 +6,12 @@
 - [x] Get historical pair price
 - [x] Calculate trade price
 - [x] Calculate price impact
-- [x] Create orders and submit to Blockfrost
+- [x] Create orders and submit with Lucid
 
 ## Install
 
-- NPM: `npm install @minswap/blockfrost-adapter`
-- Yarn: `yarn add @minswap/blockfrost-adapter`
+- NPM: `npm install @minswap/sdk`
+- Yarn: `yarn add @minswap/sdk`
 
 ## Examples
 
@@ -19,7 +19,7 @@
 
 ```ts
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { BlockfrostAdapter } from "@minswap/blockfrost-adapter";
+import { BlockfrostAdapter } from "@minswap/sdk";
 
 const api = new BlockfrostAdapter({
   blockFrost: new BlockFrostAPI({
@@ -57,7 +57,7 @@ for (let i = 1; ; i++) {
 
 ```ts
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { BlockfrostAdapter, NetworkId } from "@minswap/blockfrost-adapter";
+import { BlockfrostAdapter, NetworkId } from "@minswap/sdk";
 
 const MIN_ADA_POOL_ID =
   "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
