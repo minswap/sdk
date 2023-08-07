@@ -1,8 +1,6 @@
 import dts from "rollup-plugin-dts";
 import esbuild from "rollup-plugin-esbuild";
 
-const name = require("./package.json").main.replace(/\.js$/, "");
-
 const bundle = (config) => ({
   ...config,
   input: "src/index.ts",
@@ -14,12 +12,7 @@ export default [
     plugins: [esbuild()],
     output: [
       {
-        file: `${name}.js`,
-        format: "cjs",
-        sourcemap: true,
-      },
-      {
-        file: `${name}.es.js`,
+        file: `build/index.es.js`,
         format: "es",
         sourcemap: true,
       },
@@ -28,7 +21,7 @@ export default [
   bundle({
     plugins: [dts()],
     output: {
-      file: `${name}.d.ts`,
+      file: `build/index.d.ts`,
       format: "es",
     },
   }),

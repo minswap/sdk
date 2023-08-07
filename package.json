@@ -2,10 +2,13 @@
   "name": "@minswap/sdk",
   "version": "0.2.0-beta",
   "description": "Query Minswap data and build transactions",
-  "main": "./build/index.js",
-  "module": "./build/index.es.js",
-  "types": "./build/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.es.js"
+    }
+  },
   "files": [
     "build"
   ],
