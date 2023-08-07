@@ -13,6 +13,10 @@
 - NPM: `npm install @minswap/sdk`
 - Yarn: `yarn add @minswap/sdk`
 
+## ES Module Requirement
+
+This package depends on `lucid-cardano`, which is an ESM package, so it's also an ESM package. To import from ESM package, you need to specify `"type": "module"` in `package.json` and configure other build flags accordingly.
+
 ## Examples
 
 ### Example 1: Get current price of MIN/ADA pool
