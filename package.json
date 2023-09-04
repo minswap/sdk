@@ -3,6 +3,7 @@
   "version": "0.2.1-beta",
   "description": "Query Minswap data and build transactions",
   "type": "module",
+  "types": "./build/index.d.ts",
   "exports": {
     ".": {
       "types": "./build/index.d.ts",
