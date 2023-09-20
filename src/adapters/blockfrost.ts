@@ -6,10 +6,10 @@ import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
 import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
-import { POOL_NFT_POLICY_ID, POOL_SCRIPT_HASH } from "./constants";
-import { PoolHistory, PoolState } from "./types/pool";
-import { checkValidPoolOutput, isValidPoolOutput } from "./types/pool.internal";
-import { getScriptHashFromAddress } from "./utils/address-utils.internal";
+import { POOL_NFT_POLICY_ID, POOL_SCRIPT_HASH } from "../constants";
+import { PoolHistory, PoolState } from "../types/pool";
+import { checkValidPoolOutput, isValidPoolOutput } from "../types/pool.internal";
+import { getScriptHashFromAddress } from "../utils/address-utils.internal";
 
 export type BlockfrostAdapterOptions = {
   blockFrost: BlockFrostAPI;
