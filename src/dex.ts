@@ -6,6 +6,7 @@ import {
   Data,
   Lucid,
   Network,
+  OutputData,
   SpendingValidator,
   TxComplete,
   UTxO,
@@ -50,7 +51,6 @@ export type BuildCancelOrderOptions = {
  * @minimumLPReceived Minimum Received Amount you can accept after order is executed
  */
 export type BuildDepositTxOptions = CommonOptions & {
-  // sender: Address;
   assetA: Asset;
   assetB: Asset;
   amountA: bigint;
@@ -81,7 +81,6 @@ export type BuildZapInTxOptions = CommonOptions & {
  * @minimumAssetBReceived Minimum Received of Asset A in the Pool you can accept after order is executed
  */
 export type BuildWithdrawTxOptions = CommonOptions & {
-  sender: Address;
   lpAsset: Asset;
   lpAmount: bigint;
   minimumAssetAReceived: bigint;
@@ -96,7 +95,13 @@ export type BuildWithdrawTxOptions = CommonOptions & {
  * @expectedAmountOut The expected Amount of Asset Out you want to receive after order is executed
  */
 export type BuildSwapExactOutTxOptions = CommonOptions & {
-  sender: Address;
+  customReceiver?: {
+    receiver: Address;
+    receiverDatum?: {
+      hash: string;
+      datum: string;
+    };
+  };
   assetIn: Asset;
   assetOut: Asset;
   maximumAmountIn: bigint;
@@ -112,7 +117,13 @@ export type BuildSwapExactOutTxOptions = CommonOptions & {
  * @isLimitOrder Define this order is Limit Order or not
  */
 export type BuildSwapExactInTxOptions = CommonOptions & {
-  sender: Address;
+  customReceiver?: {
+    receiver: Address;
+    receiverDatum?: {
+      hash: string;
+      datum: string;
+    };
+  };
   assetIn: Asset;
   amountIn: bigint;
   assetOut: Asset;
@@ -137,6 +148,7 @@ export class Dex {
   ): Promise<TxComplete> {
     const {
       sender,
+      customReceiver,
       assetIn,
       amountIn,
       assetOut,
@@ -158,8 +170,8 @@ export class Dex {
     }
     const datum: OrderDatum = {
       sender: sender,
-      receiver: sender,
-      receiverDatumHash: undefined,
+      receiver: customReceiver ? customReceiver.receiver : sender,
+      receiverDatumHash: customReceiver?.receiverDatum?.hash,
       step: {
         type: OrderStepType.SWAP_EXACT_IN,
         desiredAsset: assetOut,
@@ -184,6 +196,21 @@ export class Dex {
     } else {
       tx.attachMetadata(674, { msg: [MetadataMessage.SWAP_EXACT_IN_ORDER] });
     }
+    if (customReceiver && customReceiver.receiverDatum) {
+      const utxoForStoringDatum = buildUtxoToStoreDatum(
+        this.lucid,
+        sender,
+        customReceiver.receiver,
+        customReceiver.receiverDatum.datum
+      );
+      if (utxoForStoringDatum) {
+        tx.payToAddressWithData(
+          utxoForStoringDatum.address,
+          utxoForStoringDatum.outputData,
+          utxoForStoringDatum.assets
+        );
+      }
+    }
     return await tx.complete();
   }
 
@@ -192,6 +219,7 @@ export class Dex {
   ): Promise<TxComplete> {
     const {
       sender,
+      customReceiver,
       assetIn,
       assetOut,
       maximumAmountIn,
@@ -214,8 +242,8 @@ export class Dex {
     }
     const datum: OrderDatum = {
       sender: sender,
-      receiver: sender,
-      receiverDatumHash: undefined,
+      receiver: customReceiver ? customReceiver.receiver : sender,
+      receiverDatumHash: customReceiver?.receiverDatum?.hash,
       step: {
         type: OrderStepType.SWAP_EXACT_OUT,
         desiredAsset: assetOut,
@@ -225,7 +253,7 @@ export class Dex {
       depositADA: FIXED_DEPOSIT_ADA,
     };
 
-    return await this.lucid
+    const tx = this.lucid
       .newTx()
       .payToContract(
         ORDER_BASE_ADDRESS[this.networkId],
@@ -234,8 +262,25 @@ export class Dex {
       )
       .payToAddress(sender, reductionAssets)
       .addSigner(sender)
-      .attachMetadata(674, { msg: [MetadataMessage.SWAP_EXACT_OUT_ORDER] })
-      .complete();
+      .attachMetadata(674, { msg: [MetadataMessage.SWAP_EXACT_OUT_ORDER] });
+
+    if (customReceiver && customReceiver.receiverDatum) {
+      const utxoForStoringDatum = buildUtxoToStoreDatum(
+        this.lucid,
+        sender,
+        customReceiver.receiver,
+        customReceiver.receiverDatum.datum
+      );
+      if (utxoForStoringDatum) {
+        tx.payToAddressWithData(
+          utxoForStoringDatum.address,
+          utxoForStoringDatum.outputData,
+          utxoForStoringDatum.assets
+        );
+      }
+    }
+
+    return await tx.complete();
   }
 
   async buildWithdrawTx(options: BuildWithdrawTxOptions): Promise<TxComplete> {
@@ -443,4 +488,38 @@ export class Dex {
       reductionAssets: reductionAssets,
     };
   }
+}
+
+/**
+ * Return a Output that pay back to @sender and include @datum
+ * This function is used for @receiver of an order can be a script
+ * @param lucid
+ * @param sender
+ * @param receiver
+ * @param datum
+ */
+export function buildUtxoToStoreDatum(
+  lucid: Lucid,
+  sender: Address,
+  receiver: Address,
+  datum: string
+): {
+  address: Address;
+  outputData: OutputData;
+  assets: Assets;
+} | null {
+  const receivePaymentCred =
+    lucid.utils.getAddressDetails(receiver).paymentCredential;
+  // If receiver is not a script address, we no need to store this datum On-chain because it's useless
+  if (!receivePaymentCred || receivePaymentCred.type === "Key") {
+    return null;
+  }
+
+  return {
+    address: sender,
+    assets: {},
+    outputData: {
+      inline: datum,
+    },
+  };
 }
