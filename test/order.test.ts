@@ -2,10 +2,10 @@ import JSONBig from "json-bigint";
 import { Address, Data } from "lucid-cardano";
 
 import { FIXED_BATCHER_FEE } from "../src/batcher-fee-reduction/configs.internal";
-import { FIXED_DEPOSIT_ADA } from "../src/constants";
+import { FIXED_DEPOSIT_ADA } from "../src/types/constants";
 import { Asset } from "../src/types/asset";
 import { NetworkId } from "../src/types/network";
-import { OrderDatum, OrderStepType } from "../src/types/order";
+import { OrderV1 } from "../src/types/order";
 
 let testSender: Address;
 let testReceiver: Address;
@@ -27,12 +27,12 @@ beforeAll(() => {
 });
 
 test("SwapExactIn Order to PlutusData Converter", () => {
-  const order1: OrderDatum = {
+  const order1: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: testReceiverDatumHash,
     step: {
-      type: OrderStepType.SWAP_EXACT_IN,
+      type: OrderV1.StepType.SWAP_EXACT_IN,
       desiredAsset: testAsset,
       minimumReceived: 10n,
     },
@@ -40,12 +40,12 @@ test("SwapExactIn Order to PlutusData Converter", () => {
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const order2: OrderDatum = {
+  const order2: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: undefined,
     step: {
-      type: OrderStepType.SWAP_EXACT_IN,
+      type: OrderV1.StepType.SWAP_EXACT_IN,
       desiredAsset: testAsset,
       minimumReceived: 10n,
     },
@@ -53,25 +53,25 @@ test("SwapExactIn Order to PlutusData Converter", () => {
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const convertedOrder1 = OrderDatum.fromPlutusData(
+  const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order1)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
   );
-  const convertedOrder2 = OrderDatum.fromPlutusData(
+  const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order2)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
   expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
 });
 
 test("SwapExactOut Order to PlutusData Converter", () => {
-  const order1: OrderDatum = {
+  const order1: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: testReceiverDatumHash,
     step: {
-      type: OrderStepType.SWAP_EXACT_OUT,
+      type: OrderV1.StepType.SWAP_EXACT_OUT,
       desiredAsset: testAsset,
       expectedReceived: 10n,
     },
@@ -79,12 +79,12 @@ test("SwapExactOut Order to PlutusData Converter", () => {
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const order2: OrderDatum = {
+  const order2: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: undefined,
     step: {
-      type: OrderStepType.SWAP_EXACT_OUT,
+      type: OrderV1.StepType.SWAP_EXACT_OUT,
       desiredAsset: testAsset,
       expectedReceived: 10n,
     },
@@ -92,62 +92,62 @@ test("SwapExactOut Order to PlutusData Converter", () => {
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const convertedOrder1 = OrderDatum.fromPlutusData(
+  const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order1)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
   );
-  const convertedOrder2 = OrderDatum.fromPlutusData(
+  const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order2)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
   expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
 });
 
 test("Deposit Order to PlutusData Converter", () => {
-  const order1: OrderDatum = {
+  const order1: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: testReceiverDatumHash,
     step: {
-      type: OrderStepType.DEPOSIT,
+      type: OrderV1.StepType.DEPOSIT,
       minimumLP: 10n,
     },
     batcherFee: FIXED_BATCHER_FEE,
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const order2: OrderDatum = {
+  const order2: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: undefined,
     step: {
-      type: OrderStepType.DEPOSIT,
+      type: OrderV1.StepType.DEPOSIT,
       minimumLP: 10n,
     },
     batcherFee: FIXED_BATCHER_FEE,
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const convertedOrder1 = OrderDatum.fromPlutusData(
+  const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order1)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
   );
-  const convertedOrder2 = OrderDatum.fromPlutusData(
+  const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order2)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
   expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
 });
 
 test("Withdraw Order to PlutusData Converter", () => {
-  const order1: OrderDatum = {
+  const order1: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: testReceiverDatumHash,
     step: {
-      type: OrderStepType.WITHDRAW,
+      type: OrderV1.StepType.WITHDRAW,
       minimumAssetA: 10n,
       minimumAssetB: 11n,
     },
@@ -155,12 +155,12 @@ test("Withdraw Order to PlutusData Converter", () => {
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const order2: OrderDatum = {
+  const order2: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: undefined,
     step: {
-      type: OrderStepType.WITHDRAW,
+      type: OrderV1.StepType.WITHDRAW,
       minimumAssetA: 10n,
       minimumAssetB: 11n,
     },
@@ -168,25 +168,25 @@ test("Withdraw Order to PlutusData Converter", () => {
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const convertedOrder1 = OrderDatum.fromPlutusData(
+  const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order1)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
   );
-  const convertedOrder2 = OrderDatum.fromPlutusData(
+  const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order2)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
   expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
 });
 
 test("Zap Order to PlutusData Converter", () => {
-  const order1: OrderDatum = {
+  const order1: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: testReceiverDatumHash,
     step: {
-      type: OrderStepType.ZAP_IN,
+      type: OrderV1.StepType.ZAP_IN,
       desiredAsset: testAsset,
       minimumLP: 11n,
     },
@@ -194,12 +194,12 @@ test("Zap Order to PlutusData Converter", () => {
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const order2: OrderDatum = {
+  const order2: OrderV1.Datum = {
     sender: testSender,
     receiver: testReceiver,
     receiverDatumHash: undefined,
     step: {
-      type: OrderStepType.ZAP_IN,
+      type: OrderV1.StepType.ZAP_IN,
       desiredAsset: testAsset,
       minimumLP: 11n,
     },
@@ -207,13 +207,13 @@ test("Zap Order to PlutusData Converter", () => {
     depositADA: FIXED_DEPOSIT_ADA,
   };
 
-  const convertedOrder1 = OrderDatum.fromPlutusData(
+  const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order1)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
   );
-  const convertedOrder2 = OrderDatum.fromPlutusData(
+  const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderDatum.toPlutusData(order2)))
+    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
   expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));

@@ -12,16 +12,15 @@ import {
 } from "lucid-cardano";
 
 import { getBatcherFee } from "./batcher-fee-reduction/configs.internal";
+import { Asset } from "./types/asset";
 import {
   BATCHER_FEE_REDUCTION_SUPPORTED_ASSET,
+  DexV1Constant,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
-  ORDER_BASE_ADDRESS,
-  ORDER_SCRIPT,
-} from "./constants";
-import { Asset } from "./types/asset";
+} from "./types/constants";
 import { NetworkId } from "./types/network";
-import { OrderDatum, OrderRedeemer, OrderStepType } from "./types/order";
+import { OrderV1 } from "./types/order";
 
 /**
  * Common options for build Minswap transaction
@@ -156,12 +155,12 @@ export class Dex {
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: sender,
       receiverDatumHash: undefined,
       step: {
-        type: OrderStepType.SWAP_EXACT_IN,
+        type: OrderV1.StepType.SWAP_EXACT_IN,
         desiredAsset: assetOut,
         minimumReceived: minimumAmountOut,
       },
@@ -171,8 +170,8 @@ export class Dex {
     const tx = this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -212,12 +211,12 @@ export class Dex {
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: sender,
       receiverDatumHash: undefined,
       step: {
-        type: OrderStepType.SWAP_EXACT_OUT,
+        type: OrderV1.StepType.SWAP_EXACT_OUT,
         desiredAsset: assetOut,
         expectedReceived: expectedAmountOut,
       },
@@ -228,8 +227,8 @@ export class Dex {
     return await this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -262,12 +261,12 @@ export class Dex {
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: sender,
       receiverDatumHash: undefined,
       step: {
-        type: OrderStepType.WITHDRAW,
+        type: OrderV1.StepType.WITHDRAW,
         minimumAssetA: minimumAssetAReceived,
         minimumAssetB: minimumAssetBReceived,
       },
@@ -277,8 +276,8 @@ export class Dex {
     return await this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -308,12 +307,12 @@ export class Dex {
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: sender,
       receiverDatumHash: undefined,
       step: {
-        type: OrderStepType.ZAP_IN,
+        type: OrderV1.StepType.ZAP_IN,
         desiredAsset: assetOut,
         minimumLP: minimumLPReceived,
       },
@@ -324,8 +323,8 @@ export class Dex {
     return await this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -359,12 +358,12 @@ export class Dex {
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: sender,
       receiverDatumHash: undefined,
       step: {
-        type: OrderStepType.DEPOSIT,
+        type: OrderV1.StepType.DEPOSIT,
         minimumLP: minimumLPReceived,
       },
       batcherFee: batcherFee,
@@ -373,8 +372,8 @@ export class Dex {
     return await this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -387,13 +386,13 @@ export class Dex {
     options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
     const { orderUtxo } = options;
-    const redeemer = Data.to(new Constr(OrderRedeemer.CANCEL_ORDER, []));
+    const redeemer = Data.to(new Constr(OrderV1.Redeemer.CANCEL_ORDER, []));
     const rawDatum = orderUtxo.datum;
     invariant(
       rawDatum,
       `Cancel Order requires Order UTxOs along with its CBOR Datum`
     );
-    const orderDatum = OrderDatum.fromPlutusData(
+    const orderDatum = OrderV1.Datum.fromPlutusData(
       this.networkId,
       Data.from(rawDatum) as Constr<Data>
     );
@@ -401,7 +400,7 @@ export class Dex {
       .newTx()
       .collectFrom([orderUtxo], redeemer)
       .addSigner(orderDatum.sender)
-      .attachSpendingValidator(<SpendingValidator>ORDER_SCRIPT)
+      .attachSpendingValidator(<SpendingValidator>DexV1Constant.ORDER_SCRIPT)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .complete();
   }

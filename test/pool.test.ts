@@ -3,7 +3,7 @@ import { Data } from "lucid-cardano";
 
 import { NetworkId } from "../src";
 import { ADA, Asset } from "../src/types/asset";
-import { PoolDatum, PoolState } from "../src/types/pool";
+import { PoolV1 } from "../src/types/pool";
 import { isValidPoolOutput, PoolFeeSharing } from "../src/types/pool.internal";
 import { TxIn, Value } from "../src/types/tx.internal";
 
@@ -36,8 +36,8 @@ test("can handle pool with one side being LP tokens", () => {
     isValidPoolOutput(PREPROD_POOL_ADDRESS, value, datumHash)
   ).toBeTruthy();
   expect(
-    new PoolState(PREPROD_POOL_ADDRESS, txIn, value, datumHash)
-  ).toBeInstanceOf(PoolState);
+    new PoolV1.State(PREPROD_POOL_ADDRESS, txIn, value, datumHash)
+  ).toBeInstanceOf(PoolV1.State);
 });
 
 test("Fee Sharing to PlutusData Converter", () => {
@@ -74,7 +74,7 @@ test("Pool Datum to PlutusData Converter", () => {
     policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
     tokenName: "4d494e",
   };
-  const poolDatum1: PoolDatum = {
+  const poolDatum1: PoolV1.Datum = {
     assetA: assetA,
     assetB: assetB,
     totalLiquidity: 100000n,
@@ -86,7 +86,7 @@ test("Pool Datum to PlutusData Converter", () => {
     },
   };
 
-  const poolDatum2: PoolDatum = {
+  const poolDatum2: PoolV1.Datum = {
     assetA: assetA,
     assetB: assetB,
     totalLiquidity: 100000n,
@@ -94,13 +94,13 @@ test("Pool Datum to PlutusData Converter", () => {
     feeSharing: undefined,
   };
 
-  const convertedPoolDatum1 = PoolDatum.fromPlutusData(
+  const convertedPoolDatum1 = PoolV1.Datum.fromPlutusData(
     NetworkId.TESTNET,
-    Data.from(Data.to(PoolDatum.toPlutusData(poolDatum1)))
+    Data.from(Data.to(PoolV1.Datum.toPlutusData(poolDatum1)))
   );
-  const convertedPoolDatum2 = PoolDatum.fromPlutusData(
+  const convertedPoolDatum2 = PoolV1.Datum.fromPlutusData(
     NetworkId.TESTNET,
-    Data.from(Data.to(PoolDatum.toPlutusData(poolDatum2)))
+    Data.from(Data.to(PoolV1.Datum.toPlutusData(poolDatum2)))
   );
 
   expect(JSONBig.stringify(poolDatum1)).toEqual(
