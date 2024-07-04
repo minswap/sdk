@@ -13,6 +13,8 @@ import { NetworkId } from "./network";
 import { normalizeAssets, PoolFeeSharing } from "./pool.internal";
 import { TxIn, Value } from "./tx.internal";
 
+export const DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR = 10000n;
+
 export namespace PoolV1 {
   /**
    * Represents state of a pool UTxO. The state could be latest state or a historical state.
@@ -312,20 +314,33 @@ export namespace PoolV2 {
       return this.datum.reserveA
     }
 
-    get reserve(): bigint {
+    get reserveB(): bigint {
       return this.datum.reserveB
     }
 
-    get feeA(): bigint {
-      return this.datum.baseFee.feeANumerator
+    get feeA(): [bigint, bigint] {
+      return [
+        this.datum.baseFee.feeANumerator,
+        DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR
+      ]
     }
 
-    get feeB(): bigint {
-      return this.datum.baseFee.feeBNumerator
+    get feeB(): [bigint, bigint] {
+      return [
+        this.datum.baseFee.feeBNumerator,
+        DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR
+      ]
     }
 
-    get feeShare(): bigint | undefined {
-      return this.datum.feeSharingNumerator
+    get feeShare(): [bigint, bigint] | undefined {
+      if (this.datum.feeSharingNumerator !== undefined) {
+        return [
+          this.datum.feeSharingNumerator,
+          DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR
+        ]
+      } else {
+        return undefined
+      }
     }
   }
 
