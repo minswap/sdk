@@ -23,8 +23,7 @@ import {
   calculateZapIn,
   Dex,
   NetworkId,
-  PoolDatum,
-  PoolState,
+  PoolV1,
 } from "../src";
 
 async function main(): Promise<void> {
@@ -41,6 +40,7 @@ async function main(): Promise<void> {
   );
 
   const blockfrostAdapter = new BlockfrostAdapter({
+    networkId: NetworkId.TESTNET,
     blockFrost: new BlockFrostAPI({
       projectId: blockfrostProjectId,
       network: "preprod",
@@ -68,8 +68,8 @@ async function getPoolById(
   network: Network,
   blockfrostAdapter: BlockfrostAdapter,
   poolId: string
-): Promise<{ poolState: PoolState; poolDatum: PoolDatum }> {
-  const pool = await blockfrostAdapter.getPoolById({
+): Promise<{ poolState: PoolV1.State; poolDatum: PoolV1.Datum }> {
+  const pool = await blockfrostAdapter.getV1PoolById({
     id: poolId,
   });
   if (!pool) {
@@ -79,7 +79,7 @@ async function getPoolById(
   const rawRoolDatum = await blockfrostAdapter.getDatumByDatumHash(
     pool.datumHash
   );
-  const poolDatum = PoolDatum.fromPlutusData(
+  const poolDatum = PoolV1.Datum.fromPlutusData(
     network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET,
     Data.from(rawRoolDatum) as Constr<Data>
   );
