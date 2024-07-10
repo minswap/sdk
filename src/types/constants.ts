@@ -328,18 +328,18 @@ export namespace DexV2Constant {
       poolBatchingAddress: "stake_test17rann6nth9675m0y5tz32u3rfhzcfjymanxqnfyexsufu5glcajhf",
     },
     [NetworkId.MAINNET]: {
-      factoryAsset: "<not ready yet>",
-      poolAuthenAsset: "<not ready yet>",
-      globalSettingAsset: "<not ready yet>",
-      lpPolicyId: "<not ready yet>",
-      globalSettingScriptHash: "<not ready yet>",
-      orderScriptHash: "<not ready yet>",
-      poolScriptHash: "<not ready yet>",
-      poolScriptHashBech32: "<not ready yet>",
-      poolCreationAddress: "<not ready yet>",
-      factoryScriptHash: "<not ready yet>",
-      expiredOrderCancelAddress: "<not ready yet>",
-      poolBatchingAddress: "<not ready yet>",
+      factoryAsset: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c4d5346",
+      poolAuthenAsset: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c4d5350",
+      globalSettingAsset: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c4d534753",
+      lpPolicyId: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
+      globalSettingScriptHash: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
+      orderScriptHash: "c3e28c36c3447315ba5a56f33da6a6ddc1770a876a8d9f0cb3a97c4c",
+      poolScriptHash: "ea07b733d932129c378af627436e7cbc2ef0bf96e0036bb51b3bde6b",
+      poolScriptHashBech32: "script1agrmwv7exgffcdu27cn5xmnuhsh0p0ukuqpkhdgm800xksw7e2w",
+      poolCreationAddress: "addr1z84q0denmyep98ph3tmzwsmw0j7zau9ljmsqx6a4rvaau66j2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pq777e2a",
+      factoryScriptHash: "7bc5fbd41a95f561be84369631e0e35895efb0b73e0a7480bb9ed730",
+      expiredOrderCancelAddress: "stake178ytpnrpxax5p8leepgjx9cq8ecedgly6jz4xwvvv4kvzfq9s6295",
+      poolBatchingAddress: "stake17y02a946720zw6pw50upt2arvxsvvpvaghjtl054h0f0gjsfyjz59",
     }
   }
 
@@ -372,27 +372,27 @@ export namespace DexV2Constant {
     },
     [NetworkId.MAINNET]: {
       order: {
-        txHash: "<not ready yet>",
+        txHash: "cf4ecddde0d81f9ce8fcc881a85eb1f8ccdaf6807f03fea4cd02da896a621776",
         outputIndex: 0
       },
       pool: {
-        txHash: "<not ready yet>",
+        txHash: "2536194d2a976370a932174c10975493ab58fd7c16395d50e62b7c0e1949baea",
         outputIndex: 0
       },
       factory: {
-        txHash: "<not ready yet>",
+        txHash: "59c7fa5c30cbab4e6d38f65e15d1adef71495321365588506ad089d237b602e0",
         outputIndex: 0
       },
       authen: {
-        txHash: "<not ready yet>",
+        txHash: "dbc1498500a6e79baa0f34d10de55cdb4289ca6c722bd70e1e1b78a858f136b9",
         outputIndex: 0
       },
       poolBatching: {
-        txHash: "<not ready yet>",
+        txHash: "d46bd227bd2cf93dedd22ae9b6d92d30140cf0d68b756f6608e38d680c61ad17",
         outputIndex: 0,
       },
       expiredOrderCancellation: {
-        txHash: "<not ready yet>",
+        txHash: "ef3acc7dfc5a98bffe8f4d4400e65a9ade5a1316b2fcb7145c3b83dba38a66f5",
         outputIndex: 0
       }
     }
