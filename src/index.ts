@@ -1,6 +1,7 @@
 export * from "./adapter";
 export * from "./calculate";
 export * from "./dex";
+export * from "./dexV2";
 export * from "./types/asset";
 export * from "./types/constants";
 export * from "./types/network";

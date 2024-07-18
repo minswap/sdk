@@ -3,10 +3,20 @@ export type BatcherFeeAssetConfig = {
   maximumAmount: bigint;
 };
 
-export type BatcherFeeConfig = {
-  maximumReduction: number;
+export type BatcherFeeReductionConfig = {
+  minFee: bigint;
   startTime: Date;
   endTime?: Date;
-  maximumAmountMIN: bigint;
-  maximumAmountADAMINLP: bigint;
+  assets: BatcherFeeAssetConfig[];
 };
+
+export type BatcherFeeConfig = {
+  standardFee: bigint;
+  reduction: BatcherFeeReductionConfig[];
+};
+
+export enum DexVersion {
+  DEX_V1 = "DEX_V1",
+  DEX_V2 = "DEX_V2",
+  STABLESWAP = "STABLESWAP",
+}
