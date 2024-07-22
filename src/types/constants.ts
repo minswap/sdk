@@ -361,6 +361,7 @@ export namespace DexV2Constant {
     lpPolicyId: string;
     globalSettingScriptHash: string;
     orderScriptHash: string;
+    orderEnterpriseAddress: string;
     poolScriptHash: string;
     poolScriptHashBech32: string;
     poolCreationAddress: Address;
@@ -389,6 +390,8 @@ export namespace DexV2Constant {
       lpPolicyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
       globalSettingScriptHash:
         "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+      orderEnterpriseAddress:
+        "addr_test1wrdf2f2x8pq3wwk3yv936ksmt59rz94mm66yzge8zj9pk7s0kjph3",
       orderScriptHash:
         "da9525463841173ad1230b1d5a1b5d0a3116bbdeb4412327148a1b7a",
       poolScriptHash:
@@ -416,6 +419,8 @@ export namespace DexV2Constant {
         "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
       orderScriptHash:
         "c3e28c36c3447315ba5a56f33da6a6ddc1770a876a8d9f0cb3a97c4c",
+      orderEnterpriseAddress:
+        "addr1w8p79rpkcdz8x9d6tft0x0dx5mwuzac2sa4gm8cvkw5hcnqst2ctf",
       poolScriptHash:
         "ea07b733d932129c378af627436e7cbc2ef0bf96e0036bb51b3bde6b",
       poolScriptHashBech32:

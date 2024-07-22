@@ -32,7 +32,7 @@ export function getActiveBatcherFee(
   return activeReductionConfig;
 }
 
-export function getBatcherFee(
+export function getReducedBatcherFee(
   activeReductionConfig: BatcherFeeReductionConfig,
   reductionAssets: Assets
 ): bigint {

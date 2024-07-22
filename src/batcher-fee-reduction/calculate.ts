@@ -4,7 +4,7 @@ import { NetworkEnvironment } from "../types/network";
 import {
   FIXED_BATCHER_FEE,
   getActiveBatcherFee,
-  getBatcherFee,
+  getReducedBatcherFee,
 } from "./configs.internal";
 import { DexVersion } from "./types.internal";
 
@@ -50,7 +50,10 @@ export function calculateBatcherFee({
     }
   }
   return {
-    batcherFee: getBatcherFee(activeBatcherFeeConfig, eligibleReductionAssets),
+    batcherFee: getReducedBatcherFee(
+      activeBatcherFeeConfig,
+      eligibleReductionAssets
+    ),
     reductionAssets: reductionAssets,
   };
 }
