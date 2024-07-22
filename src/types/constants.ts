@@ -508,10 +508,17 @@ export enum MetadataMessage {
   DEPOSIT_ORDER = "SDK Minswap: Deposit Order",
   CANCEL_ORDER = "SDK Minswap: Cancel Order",
   ZAP_IN_ORDER = "SDK Minswap: Zap Order",
+  ZAP_OUT_ORDER = "SDK Minswap: Zap Out Order",
   SWAP_EXACT_IN_ORDER = "SDK Minswap: Swap Exact In Order",
   SWAP_EXACT_IN_LIMIT_ORDER = "SDK Minswap: Swap Exact In Limit Order",
   SWAP_EXACT_OUT_ORDER = "SDK Minswap: Swap Exact Out Order",
   WITHDRAW_ORDER = "SDK Minswap: Withdraw Order",
+  STOP_ORDER = "SDK Minswap: Stop Order",
+  OCO_ORDER = "SDK Minswap: OCO Order",
+  ROUTING_ORDER = "SDK Minswap: Routing Order",
+  PARTIAL_SWAP_ORDER = "SDK Minswap: Partial Fill Order",
+  DONATION_ORDER = "Minswap: Donation Order",
+  MIXED_ORDERS = "SDK Minswap: Mixed Orders",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;
