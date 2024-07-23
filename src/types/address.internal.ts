@@ -10,8 +10,6 @@ import {
 
 import { NetworkId } from "./network";
 
-export type Bech32 = string;
-
 export namespace LucidCredential {
   export function toPlutusData(data: Credential): Constr<Data> {
     const constructor = data.type === "Key" ? 0 : 1;

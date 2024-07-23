@@ -3,19 +3,13 @@ import { Assets, C, Data, Lucid, TxComplete } from "lucid-cardano";
 
 import { calculateBatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/types.internal";
-import { Bech32 } from "./types/address.internal";
 import { Asset } from "./types/asset";
 import {
   DexV2Constant,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
 } from "./types/constants";
-import {
-  BuildLPFeeVotingTxOptions,
-  BulkOrdersOption,
-  LPFeeVote,
-  OrderOptions,
-} from "./types/dexV2";
+import { BulkOrdersOption, OrderOptions } from "./types/dexV2";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { OrderV2 } from "./types/order";
 import { lucidToNetworkEnv } from "./utils/network.internal";
@@ -348,51 +342,6 @@ export class DexV2 {
     }
   }
 
-  buildLPFeeVoting({
-    address,
-    expectedFee,
-    lpAsset,
-  }: BuildLPFeeVotingTxOptions): {
-    vote: LPFeeVote;
-    requireSigner: Bech32;
-  } {
-    const v2Configs = DexV2Constant.CONFIG[this.networkId];
-    let vote: LPFeeVote;
-    const stakeAddress = C.RewardAddress.from_address(
-      C.Address.from_bech32(address)
-    )
-      ?.to_address()
-      .to_bech32("stake");
-    invariant(
-      lpAsset.policyId === v2Configs.lpPolicyId &&
-        `${lpAsset.policyId}${lpAsset.tokenName}` !==
-          v2Configs.globalSettingAsset,
-      `Invalid V2 LP Asset: ${lpAsset.toString()}`
-    );
-    let requireSigner;
-    if (stakeAddress) {
-      vote = {
-        schemaVersion: "v1",
-        addressIdent: stakeAddress,
-        poolIdent: lpAsset.tokenName,
-        expectedFee: expectedFee,
-      };
-      requireSigner = stakeAddress;
-    } else {
-      vote = {
-        schemaVersion: "v1",
-        addressIdent: address,
-        poolIdent: lpAsset.tokenName,
-        expectedFee: expectedFee,
-      };
-      requireSigner = address;
-    }
-    return {
-      vote: vote,
-      requireSigner: requireSigner,
-    };
-  }
-
   private buildDexV2OrderAddress(senderStakeAddress: C.RewardAddress): string {
     const orderAddress =
       DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
@@ -480,7 +429,6 @@ export class DexV2 {
       dexVersion: this.dexVersion,
     });
     const limitOrders: string[] = [];
-    const feeVotings: LPFeeVote[] = [];
     const requireSignerSet = new Set<string>();
     const lucidTx = await this.lucid.newTx();
     for (let i = 0; i < orderOptions.length; i++) {
@@ -490,16 +438,6 @@ export class DexV2 {
       const orderStep = this.buildOrderStep(option, batcherFee);
       if (type === OrderV2.StepType.SWAP_EXACT_IN && option.isLimitOrder) {
         limitOrders.push(i.toString());
-      }
-      if (type === OrderV2.StepType.DEPOSIT && option.poolFee) {
-        const { vote, requireSigner } = this.buildLPFeeVoting({
-          address: sender,
-          lpAsset: option.lpAsset,
-          // Safety cast because the pool fee has been validated on the smart contract side
-          expectedFee: Number(option.poolFee.feeANumerator),
-        });
-        feeVotings.push(vote);
-        requireSignerSet.add(requireSigner);
       }
       let totalBatcherFee: bigint;
       if (type === OrderV2.StepType.PARTIAL_SWAP) {
@@ -557,7 +495,6 @@ export class DexV2 {
     lucidTx.attachMetadata(674, {
       sgs: [metadata],
       limitOrders: limitOrderMessage,
-      feeVotings: feeVotings.length > 0 ? feeVotings : undefined,
     });
 
     return await lucidTx.payToAddress(sender, reductionAssets).complete();

@@ -125,16 +125,3 @@ export type OrderOptions = (
 ) & {
   lpAsset: Asset;
 };
-
-export type BuildLPFeeVotingTxOptions = {
-  address: Address;
-  lpAsset: Asset;
-  expectedFee: number;
-};
-
-export type LPFeeVote = {
-  schemaVersion: "v1";
-  addressIdent: string;
-  expectedFee: number;
-  poolIdent: string;
-};
