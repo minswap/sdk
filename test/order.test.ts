@@ -1,13 +1,14 @@
-import JSONBig from "json-bigint";
-import { Address, Data } from "lucid-cardano";
+import { Address, Data, getAddressDetails } from "lucid-cardano";
 
 import { FIXED_BATCHER_FEE } from "../src/batcher-fee-reduction/configs.internal";
 import { FIXED_DEPOSIT_ADA } from "../src/types/constants";
 import { Asset } from "../src/types/asset";
 import { NetworkId } from "../src/types/network";
-import { OrderV1 } from "../src/types/order";
+import { OrderV1, StableOrder, OrderV2 } from "../src/types/order";
+import invariant from "@minswap/tiny-invariant";
 
 let testSender: Address;
+let testSenderPkh: string;
 let testReceiver: Address;
 let testReceiverDatumHash: string;
 let testAsset: Asset;
@@ -15,6 +16,9 @@ let networkId: NetworkId;
 beforeAll(() => {
   testSender =
     "addr_test1qpssc0r090a9u0pyvdr9y76sm2xzx04n6d4j0y5hukcx6rxz4dtgkhfdynadkea0qezv99wljdl076xkg2krm96nn8jszmh3w7";
+  const senderPkh = getAddressDetails(testSender).paymentCredential?.hash;
+  invariant(senderPkh);
+  testSenderPkh = senderPkh;
   testReceiver =
     "addr_test1wqq9fn7ynjzx3kfddmnsjn69tgm8hrr333adhvw0sfx30lqy38kcs";
   testReceiverDatumHash =
@@ -26,31 +30,37 @@ beforeAll(() => {
   networkId = NetworkId.TESTNET;
 });
 
-test("SwapExactIn Order to PlutusData Converter", () => {
-  const order1: OrderV1.Datum = {
+function buildCommonV1Datum(): Omit<
+  OrderV1.Datum,
+  "receiverDatumHash" | "step"
+> {
+  return {
     sender: testSender,
     receiver: testReceiver,
+    batcherFee: FIXED_BATCHER_FEE,
+    depositADA: FIXED_DEPOSIT_ADA,
+  };
+}
+
+test("V1: SwapExactIn Order to PlutusData Converter", () => {
+  const order1: OrderV1.Datum = {
+    ...buildCommonV1Datum(),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.SWAP_EXACT_IN,
       desiredAsset: testAsset,
       minimumReceived: 10n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const order2: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.SWAP_EXACT_IN,
       desiredAsset: testAsset,
       minimumReceived: 10n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
@@ -61,35 +71,29 @@ test("SwapExactIn Order to PlutusData Converter", () => {
     networkId,
     Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
-  expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
-  expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
 });
 
-test("SwapExactOut Order to PlutusData Converter", () => {
+test("V1: SwapExactOut Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.SWAP_EXACT_OUT,
       desiredAsset: testAsset,
       expectedReceived: 10n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const order2: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.SWAP_EXACT_OUT,
       desiredAsset: testAsset,
       expectedReceived: 10n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
@@ -100,33 +104,27 @@ test("SwapExactOut Order to PlutusData Converter", () => {
     networkId,
     Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
-  expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
-  expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
 });
 
-test("Deposit Order to PlutusData Converter", () => {
+test("V1: Deposit Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.DEPOSIT,
       minimumLP: 10n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const order2: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.DEPOSIT,
       minimumLP: 10n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
@@ -137,35 +135,29 @@ test("Deposit Order to PlutusData Converter", () => {
     networkId,
     Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
-  expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
-  expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
 });
 
-test("Withdraw Order to PlutusData Converter", () => {
+test("V1: Withdraw Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.WITHDRAW,
       minimumAssetA: 10n,
       minimumAssetB: 11n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const order2: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.WITHDRAW,
       minimumAssetA: 10n,
       minimumAssetB: 11n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
@@ -176,35 +168,29 @@ test("Withdraw Order to PlutusData Converter", () => {
     networkId,
     Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
-  expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
-  expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
 });
 
-test("Zap Order to PlutusData Converter", () => {
+test("V1: Zap Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.ZAP_IN,
       desiredAsset: testAsset,
       minimumLP: 11n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const order2: OrderV1.Datum = {
-    sender: testSender,
-    receiver: testReceiver,
+    ...buildCommonV1Datum(),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.ZAP_IN,
       desiredAsset: testAsset,
       minimumLP: 11n,
     },
-    batcherFee: FIXED_BATCHER_FEE,
-    depositADA: FIXED_DEPOSIT_ADA,
   };
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
@@ -215,6 +201,633 @@ test("Zap Order to PlutusData Converter", () => {
     networkId,
     Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
   );
-  expect(JSONBig.stringify(order1)).toEqual(JSONBig.stringify(convertedOrder1));
-  expect(JSONBig.stringify(order2)).toEqual(JSONBig.stringify(convertedOrder2));
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
+});
+
+test("Stableswap: Swap Order to PlutusData Converter", () => {
+  const order1: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: testReceiverDatumHash,
+    step: {
+      type: StableOrder.StepType.SWAP,
+      assetInIndex: 0n,
+      assetOutIndex: 1n,
+      minimumAssetOut: 11n,
+    },
+  };
+
+  const order2: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: undefined,
+    step: {
+      type: StableOrder.StepType.SWAP,
+      assetInIndex: 0n,
+      assetOutIndex: 1n,
+      minimumAssetOut: 11n,
+    },
+  };
+
+  const convertedOrder1 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+  );
+  const convertedOrder2 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+  );
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
+});
+
+test("Stableswap: Deposit Order to PlutusData Converter", () => {
+  const order1: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: testReceiverDatumHash,
+    step: {
+      type: StableOrder.StepType.DEPOSIT,
+      minimumLP: 11n,
+    },
+  };
+
+  const order2: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: undefined,
+    step: {
+      type: StableOrder.StepType.DEPOSIT,
+      minimumLP: 11n,
+    },
+  };
+
+  const convertedOrder1 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+  );
+  const convertedOrder2 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+  );
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
+});
+
+test("Stableswap: Withdraw Order to PlutusData Converter", () => {
+  const order1: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: testReceiverDatumHash,
+    step: {
+      type: StableOrder.StepType.WITHDRAW,
+      minimumAmounts: [10n, 11n],
+    },
+  };
+
+  const order2: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: undefined,
+    step: {
+      type: StableOrder.StepType.WITHDRAW,
+      minimumAmounts: [10n, 11n],
+    },
+  };
+
+  const convertedOrder1 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+  );
+  const convertedOrder2 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+  );
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
+});
+
+test("Stableswap: Withdraw Imbalance Order to PlutusData Converter", () => {
+  const order1: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: testReceiverDatumHash,
+    step: {
+      type: StableOrder.StepType.WITHDRAW_IMBALANCE,
+      withdrawAmounts: [10n, 11n],
+    },
+  };
+
+  const order2: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: undefined,
+    step: {
+      type: StableOrder.StepType.WITHDRAW_IMBALANCE,
+      withdrawAmounts: [10n, 11n],
+    },
+  };
+
+  const convertedOrder1 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+  );
+  const convertedOrder2 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+  );
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
+});
+
+test("Stableswap: Zap Out Order to PlutusData Converter", () => {
+  const order1: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: testReceiverDatumHash,
+    step: {
+      type: StableOrder.StepType.WITHDRAW_IMBALANCE,
+      withdrawAmounts: [10n, 11n],
+    },
+  };
+
+  const order2: StableOrder.Datum = {
+    ...buildCommonV1Datum(),
+    receiverDatumHash: undefined,
+    step: {
+      type: StableOrder.StepType.WITHDRAW_IMBALANCE,
+      withdrawAmounts: [10n, 11n],
+    },
+  };
+
+  const convertedOrder1 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+  );
+  const convertedOrder2 = StableOrder.Datum.fromPlutusData(
+    networkId,
+    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+  );
+  expect(order1).toEqual(convertedOrder1);
+  expect(order2).toEqual(convertedOrder2);
+});
+
+function buildV2Datums(step: OrderV2.Step): OrderV2.Datum[] {
+  return [
+    {
+      canceller: {
+        type: OrderV2.AuthorizationMethodType.SIGNATURE,
+        hash: testSenderPkh,
+      },
+      refundReceiver: testSender,
+      refundReceiverDatum: {
+        type: OrderV2.ExtraDatumType.NO_DATUM,
+      },
+      successReceiver: testReceiver,
+      successReceiverDatum: {
+        type: OrderV2.ExtraDatumType.NO_DATUM,
+      },
+      step: step,
+      lpAsset: {
+        policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+        tokenName:
+          "e08460587b08cca542bd2856b8d5e1d23bf3f63f9916fb81f6d95fda0910bf69",
+      },
+      maxBatcherFee: FIXED_BATCHER_FEE,
+      expiredOptions: undefined,
+    },
+    {
+      canceller: {
+        type: OrderV2.AuthorizationMethodType.SIGNATURE,
+        hash: testSenderPkh,
+      },
+      refundReceiver: testSender,
+      refundReceiverDatum: {
+        type: OrderV2.ExtraDatumType.DATUM_HASH,
+        hash: testReceiverDatumHash,
+      },
+      successReceiver: testReceiver,
+      successReceiverDatum: {
+        type: OrderV2.ExtraDatumType.DATUM_HASH,
+        hash: testReceiverDatumHash,
+      },
+      step: step,
+      lpAsset: {
+        policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+        tokenName:
+          "e08460587b08cca542bd2856b8d5e1d23bf3f63f9916fb81f6d95fda0910bf69",
+      },
+      maxBatcherFee: FIXED_BATCHER_FEE,
+      expiredOptions: undefined,
+    },
+    {
+      canceller: {
+        type: OrderV2.AuthorizationMethodType.SIGNATURE,
+        hash: testSenderPkh,
+      },
+      refundReceiver: testSender,
+      refundReceiverDatum: {
+        type: OrderV2.ExtraDatumType.INLINE_DATUM,
+        hash: testReceiverDatumHash,
+      },
+      successReceiver: testReceiver,
+      successReceiverDatum: {
+        type: OrderV2.ExtraDatumType.INLINE_DATUM,
+        hash: testReceiverDatumHash,
+      },
+      step: step,
+      lpAsset: {
+        policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+        tokenName:
+          "e08460587b08cca542bd2856b8d5e1d23bf3f63f9916fb81f6d95fda0910bf69",
+      },
+      maxBatcherFee: FIXED_BATCHER_FEE,
+      expiredOptions: undefined,
+    },
+    {
+      canceller: {
+        type: OrderV2.AuthorizationMethodType.SIGNATURE,
+        hash: testSenderPkh,
+      },
+      refundReceiver: testSender,
+      refundReceiverDatum: {
+        type: OrderV2.ExtraDatumType.NO_DATUM,
+      },
+      successReceiver: testReceiver,
+      successReceiverDatum: {
+        type: OrderV2.ExtraDatumType.NO_DATUM,
+      },
+      step: step,
+      lpAsset: {
+        policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+        tokenName:
+          "e08460587b08cca542bd2856b8d5e1d23bf3f63f9916fb81f6d95fda0910bf69",
+      },
+      maxBatcherFee: FIXED_BATCHER_FEE,
+      expiredOptions: {
+        expiredTime: 1721010208050n,
+        maxCancellationTip: 300_000n,
+      },
+    },
+  ];
+}
+
+test("V2: Swap Exact In Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.SWAP_EXACT_IN,
+    swapAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      swapAmount: 10000n,
+    },
+    direction: OrderV2.Direction.A_TO_B,
+    minimumReceived: 1n,
+    killable: OrderV2.Killable.PENDING_ON_FAILED,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.SWAP_EXACT_IN,
+    swapAmount: {
+      type: OrderV2.AmountType.ALL,
+      deductedAmount: 10000n,
+    },
+    direction: OrderV2.Direction.B_TO_A,
+    minimumReceived: 1n,
+    killable: OrderV2.Killable.KILL_ON_FAILED,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Stop Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.STOP,
+    swapAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      swapAmount: 10000n,
+    },
+    direction: OrderV2.Direction.A_TO_B,
+    stopReceived: 1n,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.STOP,
+    swapAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      swapAmount: 10000n,
+    },
+    direction: OrderV2.Direction.B_TO_A,
+    stopReceived: 1n,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: OCO Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.OCO,
+    swapAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      swapAmount: 10000n,
+    },
+    direction: OrderV2.Direction.A_TO_B,
+    stopReceived: 1n,
+    minimumReceived: 1n,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.OCO,
+    swapAmount: {
+      type: OrderV2.AmountType.ALL,
+      deductedAmount: 10000n,
+    },
+    direction: OrderV2.Direction.B_TO_A,
+    stopReceived: 1n,
+    minimumReceived: 1n,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Swap Exact Out Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.SWAP_EXACT_OUT,
+    maximumSwapAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      swapAmount: 10000n,
+    },
+    direction: OrderV2.Direction.A_TO_B,
+    expectedReceived: 1n,
+    killable: OrderV2.Killable.PENDING_ON_FAILED,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.SWAP_EXACT_OUT,
+    maximumSwapAmount: {
+      type: OrderV2.AmountType.ALL,
+      deductedAmount: 10000n,
+    },
+    direction: OrderV2.Direction.B_TO_A,
+    expectedReceived: 1n,
+    killable: OrderV2.Killable.KILL_ON_FAILED,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Deposit Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.DEPOSIT,
+    depositAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      depositAmountA: 10000n,
+      depositAmountB: 10000n,
+    },
+    minimumLP: 1n,
+    killable: OrderV2.Killable.PENDING_ON_FAILED,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.DEPOSIT,
+    depositAmount: {
+      type: OrderV2.AmountType.ALL,
+      deductedAmountA: 10000n,
+      deductedAmountB: 10000n,
+    },
+    minimumLP: 1n,
+    killable: OrderV2.Killable.KILL_ON_FAILED,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Withdraw Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.WITHDRAW,
+    withdrawalAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      withdrawalLPAmount: 10000n,
+    },
+    minimumAssetA: 1n,
+    minimumAssetB: 1n,
+    killable: OrderV2.Killable.PENDING_ON_FAILED,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.WITHDRAW,
+    withdrawalAmount: {
+      type: OrderV2.AmountType.ALL,
+      deductedLPAmount: 10000n,
+    },
+    minimumAssetA: 1n,
+    minimumAssetB: 1n,
+    killable: OrderV2.Killable.KILL_ON_FAILED,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Zap Out Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.ZAP_OUT,
+    withdrawalAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      withdrawalLPAmount: 10000n,
+    },
+    direction: OrderV2.Direction.A_TO_B,
+    minimumReceived: 1n,
+    killable: OrderV2.Killable.PENDING_ON_FAILED,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.ZAP_OUT,
+    withdrawalAmount: {
+      type: OrderV2.AmountType.ALL,
+      deductedLPAmount: 10000n,
+    },
+    direction: OrderV2.Direction.B_TO_A,
+    minimumReceived: 1n,
+    killable: OrderV2.Killable.KILL_ON_FAILED,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Partial Swap Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.PARTIAL_SWAP,
+    totalSwapAmount: 10000n,
+    ioRatioDenominator: 1n,
+    ioRatioNumerator: 1n,
+    hops: 3n,
+    direction: OrderV2.Direction.A_TO_B,
+    maxBatcherFeeEachTime: FIXED_BATCHER_FEE * 3n,
+    minimumSwapAmountRequired: 1000n,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.PARTIAL_SWAP,
+    totalSwapAmount: 10000n,
+    ioRatioDenominator: 1n,
+    ioRatioNumerator: 1n,
+    hops: 3n,
+    direction: OrderV2.Direction.B_TO_A,
+    maxBatcherFeeEachTime: FIXED_BATCHER_FEE * 3n,
+    minimumSwapAmountRequired: 1000n,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Withdraw Imbalance Order to PlutusData Converter", () => {
+  const step1: OrderV2.Step = {
+    type: OrderV2.StepType.WITHDRAW_IMBALANCE,
+    withdrawalAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      withdrawalLPAmount: 10000n,
+    },
+    killable: OrderV2.Killable.PENDING_ON_FAILED,
+    ratioAssetA: 1n,
+    ratioAssetB: 1n,
+    minimumAssetA: 1000n,
+  };
+  const step2: OrderV2.Step = {
+    type: OrderV2.StepType.WITHDRAW_IMBALANCE,
+    withdrawalAmount: {
+      type: OrderV2.AmountType.ALL,
+      deductedLPAmount: 10000n,
+    },
+    killable: OrderV2.Killable.KILL_ON_FAILED,
+    ratioAssetA: 1n,
+    ratioAssetB: 1n,
+    minimumAssetA: 1000n,
+  };
+  const datums: OrderV2.Datum[] = [
+    ...buildV2Datums(step1),
+    ...buildV2Datums(step2),
+  ];
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Routing Order to PlutusData Converter", () => {
+  const step: OrderV2.Step = {
+    type: OrderV2.StepType.SWAP_ROUTING,
+    swapAmount: {
+      type: OrderV2.AmountType.SPECIFIC_AMOUNT,
+      swapAmount: 10000n,
+    },
+    minimumReceived: 1n,
+    routings: [
+      {
+        direction: OrderV2.Direction.A_TO_B,
+        lpAsset: {
+          policyId: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
+          tokenName:
+            "ef4530398e53eea75ee3d02a982e87a5c680776904b5d610e63bf6970c528a12",
+        },
+      },
+      {
+        direction: OrderV2.Direction.B_TO_A,
+        lpAsset: {
+          policyId: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
+          tokenName:
+            "eebaae50fe9a09938558096cfebe0aec7dd2728dedadb3d96f02f19e756ca9b8",
+        },
+      },
+    ],
+  };
+  const datums: OrderV2.Datum[] = buildV2Datums(step);
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
+});
+
+test("V2: Donation Order to PlutusData Converter", () => {
+  const step: OrderV2.Step = {
+    type: OrderV2.StepType.DONATION,
+  };
+  const datums: OrderV2.Datum[] = buildV2Datums(step);
+  for (const datum of datums) {
+    const convertedDatum = OrderV2.Datum.fromPlutusData(
+      networkId,
+      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+    );
+
+    expect(datum).toEqual(convertedDatum);
+  }
 });
