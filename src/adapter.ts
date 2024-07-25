@@ -12,6 +12,7 @@ import {
   DexV2Constant,
   StableswapConstant,
 } from "./types/constants";
+import { FactoryV2 } from "./types/factory";
 import { NetworkId } from "./types/network";
 import { PoolV1, PoolV2, StablePool } from "./types/pool";
 import {
@@ -19,6 +20,7 @@ import {
   isValidPoolOutput,
   normalizeAssets,
 } from "./types/pool.internal";
+import { StringUtils } from "./types/string";
 import { TxHistory } from "./types/tx.internal";
 import { getScriptHashFromAddress } from "./utils/address-utils.internal";
 
@@ -389,6 +391,61 @@ export class BlockfrostAdapter {
         datum
       );
       return pool;
+    }
+
+    return null;
+  }
+
+  public async getAllFactoriesV2(): Promise<{
+    factories: FactoryV2.State[];
+    errors: unknown[];
+  }> {
+    const v2Config = DexV2Constant.CONFIG[this.networkId];
+    const utxos = await this.api.addressesUtxosAssetAll(
+      v2Config.factoryScriptHashBech32,
+      v2Config.factoryAsset
+    );
+
+    const factories: FactoryV2.State[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxos) {
+      try {
+        if (!utxo.inline_datum) {
+          throw new Error(
+            `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`
+          );
+        }
+        const factory = new FactoryV2.State(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.output_index },
+          utxo.amount,
+          utxo.inline_datum
+        );
+        factories.push(factory);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      factories: factories,
+      errors: errors,
+    };
+  }
+
+  public async getFactoryV2ByPair(
+    assetA: Asset,
+    assetB: Asset
+  ): Promise<FactoryV2.State | null> {
+    const factoryIdent = PoolV2.computeLPAssetName(assetA, assetB);
+    const { factories: allFactories } = await this.getAllFactoriesV2();
+    for (const factory of allFactories) {
+      if (
+        StringUtils.compare(factory.head, factoryIdent) < 0 &&
+        StringUtils.compare(factoryIdent, factory.tail) < 0
+      ) {
+        return factory;
+      }
     }
 
     return null;

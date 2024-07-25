@@ -373,7 +373,7 @@ export namespace PoolV2 {
         allowDynamicFee
       } = datum;
       return new Constr(0, [
-        LucidCredential.toPlutusData(poolBatchingStakeCredential),
+        new Constr(0, [LucidCredential.toPlutusData(poolBatchingStakeCredential)]),
         Asset.toPlutusData(assetA),
         Asset.toPlutusData(assetB),
         totalLiquidity,
@@ -391,6 +391,10 @@ export namespace PoolV2 {
     export function fromPlutusData(data: Constr<Data>): Datum {
       if (data.index !== 0) {
         throw new Error(`Index of Pool Datum must be 0, actual: ${data.index}`);
+      }
+      const stakeCredentialConstr = data.fields[0] as Constr<Data>
+      if (stakeCredentialConstr.index !== 0) {
+        throw new Error(`Index of Stake Credential must be 0, actual: ${stakeCredentialConstr.index}`);
       }
       let feeSharingNumerator: bigint | undefined = undefined;
       const maybeFeeSharingConstr = data.fields[8] as Constr<Data>;
@@ -412,7 +416,7 @@ export namespace PoolV2 {
       const allowDynamicFeeConstr = data.fields[9] as Constr<Data>;
       const allowDynamicFee = allowDynamicFeeConstr.index === 1;
       return {
-        poolBatchingStakeCredential: LucidCredential.fromPlutusData(data.fields[0] as Constr<Data>),
+        poolBatchingStakeCredential: LucidCredential.fromPlutusData(stakeCredentialConstr.fields[0] as Constr<Data>),
         assetA: Asset.fromPlutusData(data.fields[1] as Constr<Data>),
         assetB: Asset.fromPlutusData(data.fields[2] as Constr<Data>),
         totalLiquidity: data.fields[3] as bigint,

@@ -22,6 +22,7 @@ import {
   calculateWithdraw,
   calculateZapIn,
   Dex,
+  DexV2,
   NetworkId,
   PoolV1,
 } from "../src";
@@ -347,6 +348,25 @@ async function _cancelTxExample(
     orderUtxo,
     sender: address,
   });
+}
+
+async function _createPoolV2(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const dexV2 = new DexV2(lucid, blockFrostAdapter);
+  const txComplete = await dexV2.createPoolTx({
+    assetA: ADA,
+    assetB: {
+      policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+      tokenName: "434d",
+    },
+    amountA: 10_000000n,
+    amountB: 300_000000n,
+    tradingFeeNumerator: 100n,
+  });
+
+  return txComplete;
 }
 
 /**
