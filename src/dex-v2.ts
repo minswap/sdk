@@ -1,12 +1,12 @@
 import invariant from "@minswap/tiny-invariant";
 import {
   Assets,
-  C,
   Constr,
+  Credential,
   Data,
-  getAddressDetails,
   Lucid,
   TxComplete,
+  Utils,
 } from "lucid-cardano";
 
 import {
@@ -55,6 +55,7 @@ export class DexV2 {
   private readonly networkId: NetworkId;
   private readonly adapter: BlockfrostAdapter;
   private readonly networkEnv: NetworkEnvironment;
+  private readonly lucidUtils: Utils;
   private readonly dexVersion = DexVersion.DEX_V2;
 
   constructor(lucid: Lucid, adapter: BlockfrostAdapter) {
@@ -63,6 +64,7 @@ export class DexV2 {
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
     this.adapter = adapter;
     this.networkEnv = lucidToNetworkEnv(lucid.network);
+    this.lucidUtils = new Utils(lucid);
   }
 
   async createPoolTx({
@@ -100,7 +102,7 @@ export class DexV2 {
       policyId: config.lpPolicyId,
       tokenName: lpAssetName,
     };
-    const poolBatchingStakeCredential = getAddressDetails(
+    const poolBatchingStakeCredential = this.lucidUtils.getAddressDetails(
       config.poolBatchingAddress
     )?.stakeCredential;
     invariant(
@@ -536,32 +538,30 @@ export class DexV2 {
     }
   }
 
-  private buildDexV2OrderAddress(senderStakeAddress: C.RewardAddress): string {
+  private buildDexV2OrderAddress(senderAddressStakeCred: Credential): string {
     const orderAddress =
       DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
-    const stakeKeyHash = senderStakeAddress.payment_cred().to_keyhash();
-    invariant(stakeKeyHash, "stake keyhash not found");
-    return C.BaseAddress.new(
-      this.networkId,
-      C.StakeCredential.from_keyhash(
-        C.Ed25519KeyHash.from_bech32(orderAddress)
-      ),
-      C.StakeCredential.from_keyhash(stakeKeyHash)
-    )
-      .to_address()
-      .to_bech32("addr");
+    const orderAddressPaymentCred =
+      this.lucidUtils.getAddressDetails(orderAddress).paymentCredential;
+    invariant(
+      orderAddressPaymentCred,
+      "order address payment credentials not found"
+    );
+    return this.lucidUtils.credentialToAddress(
+      orderAddressPaymentCred,
+      senderAddressStakeCred
+    );
   }
 
   private getDexV2OrderScriptHash(): string | undefined {
     const orderAddress =
       DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
-    return C.EnterpriseAddress.new(
-      this.networkId,
-      C.StakeCredential.from_keyhash(C.Ed25519KeyHash.from_bech32(orderAddress))
-    )
-      .payment_cred()
-      .to_scripthash()
-      ?.to_hex();
+    const addrDetails = this.lucidUtils.getAddressDetails(orderAddress);
+    invariant(
+      addrDetails.paymentCredential?.type === "Script",
+      "order address should be a script address"
+    );
+    return addrDetails.paymentCredential.hash;
   }
 
   private getOrderMetadata(orderOption: OrderOptions): string {
@@ -656,10 +656,16 @@ export class DexV2 {
       } else {
         orderAssets["lovelace"] = totalBatcherFee;
       }
+      const senderPaymentCred =
+        this.lucidUtils.getAddressDetails(sender).paymentCredential;
+      invariant(
+        senderPaymentCred?.type === "Key",
+        "sender pub key hash not found"
+      );
       const orderDatum: OrderV2.Datum = {
         canceller: {
           type: OrderV2.AuthorizationMethodType.SIGNATURE,
-          hash: C.Ed25519KeyHash.from_bech32(sender).to_hex(),
+          hash: senderPaymentCred.hash,
         },
         refundReceiver: sender,
         refundReceiverDatum: {
@@ -674,9 +680,7 @@ export class DexV2 {
         maxBatcherFee: totalBatcherFee,
         expiredOptions: expiredOptions,
       };
-      const senderStakeAddress = C.RewardAddress.from_address(
-        C.Address.from_bech32(sender)
-      );
+      const senderStakeAddress = this.lucidUtils.stakeCredentialOf(sender);
       const orderAddress = senderStakeAddress
         ? this.buildDexV2OrderAddress(senderStakeAddress)
         : DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
@@ -712,53 +716,47 @@ export class DexV2 {
     const lucidTx = this.lucid.newTx();
     for (const { utxo, rawDatum } of orders) {
       const orderAddr = utxo.address;
-      const orderScriptHash = C.EnterpriseAddress.new(
-        this.networkId,
-        C.StakeCredential.from_keyhash(C.Ed25519KeyHash.from_bech32(orderAddr))
-      )
-        .payment_cred()
-        .to_scripthash()
-        ?.to_hex();
+      const orderScriptPaymentCred =
+        this.lucidUtils.getAddressDetails(orderAddr).paymentCredential;
       invariant(
-        orderScriptHash,
+        orderScriptPaymentCred?.type === "Script" &&
+          orderScriptPaymentCred.hash === v2OrderScriptHash,
         `Utxo is not belonged Minswap's order address, utxo: ${utxo.txHash}`
       );
-      if (orderScriptHash === v2OrderScriptHash) {
-        let datum: OrderV2.Datum;
-        if (utxo.datum) {
-          const rawDatum = utxo.datum;
-          datum = OrderV2.Datum.fromPlutusData(
-            this.networkId,
-            Data.from(rawDatum) as Constr<Data>
-          );
-        } else {
-          invariant(
-            utxo.datumHash && rawDatum,
-            `Minswap V2 requires datum for the order Utxo that does not contain Inline Datum`
-          );
-          datum = OrderV2.Datum.fromPlutusData(
-            this.networkId,
-            Data.from(rawDatum) as Constr<Data>
-          );
-        }
+      let datum: OrderV2.Datum;
+      if (utxo.datum) {
+        const rawDatum = utxo.datum;
+        datum = OrderV2.Datum.fromPlutusData(
+          this.networkId,
+          Data.from(rawDatum) as Constr<Data>
+        );
+      } else {
         invariant(
-          datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE,
-          "only support PubKey canceller on this function"
+          utxo.datumHash && rawDatum,
+          `Minswap V2 requires datum for the order Utxo that does not contain Inline Datum`
         );
-        requiredPubKeyHashSet.add(datum.canceller.hash);
-        const redeemer = Data.to(
-          new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
+        datum = OrderV2.Datum.fromPlutusData(
+          this.networkId,
+          Data.from(rawDatum) as Constr<Data>
         );
-        const orderRefs = await this.lucid.utxosByOutRef([
-          DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].order,
-        ]);
-        invariant(
-          orderRefs.length === 1,
-          "cannot find deployed script for Order"
-        );
-        const orderRef = orderRefs[0];
-        lucidTx.collectFrom([utxo], redeemer).readFrom([orderRef]);
       }
+      invariant(
+        datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE,
+        "only support PubKey canceller on this function"
+      );
+      requiredPubKeyHashSet.add(datum.canceller.hash);
+      const redeemer = Data.to(
+        new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
+      );
+      const orderRefs = await this.lucid.utxosByOutRef([
+        DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].order,
+      ]);
+      invariant(
+        orderRefs.length === 1,
+        "cannot find deployed script for Order"
+      );
+      const orderRef = orderRefs[0];
+      lucidTx.collectFrom([utxo], redeemer).readFrom([orderRef]);
     }
     for (const hash of requiredPubKeyHashSet.keys()) {
       lucidTx.addSignerKey(hash);
