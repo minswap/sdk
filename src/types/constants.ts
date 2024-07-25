@@ -1,4 +1,4 @@
-import { Address, OutRef,Script } from "lucid-cardano";
+import { Address, OutRef, Script } from "lucid-cardano";
 
 import { NetworkId } from "./network";
 
@@ -294,11 +294,14 @@ export namespace DexV2Constant {
     globalSettingAsset: string;
     lpPolicyId: string;
     globalSettingScriptHash: string;
+    globalSettingScriptHashBech32: string;
     orderScriptHash: string;
     poolScriptHash: string;
     poolScriptHashBech32: string;
     poolCreationAddress: Address;
+    factoryScriptHashBech32: string;
     factoryScriptHash: string;
+    factoryAddress: string;
     expiredOrderCancelAddress: string;
     poolBatchingAddress: string;
   }
@@ -319,11 +322,14 @@ export namespace DexV2Constant {
       globalSettingAsset: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b4d534753",
       lpPolicyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
       globalSettingScriptHash: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+      globalSettingScriptHashBech32: "script1664wypvm4msc3a6fzayneamr0enee5sehham7nwtavwsk2s2vg9",
       orderScriptHash: "da9525463841173ad1230b1d5a1b5d0a3116bbdeb4412327148a1b7a",
       poolScriptHash: "d6ba9b7509eac866288ff5072d2a18205ac56f744bc82dcd808cb8fe",
       poolScriptHashBech32: "script166afkagfatyxv2y075rj62scypdv2mm5f0yzmnvq3ju0uqqmszv",
       poolCreationAddress: "addr_test1zrtt4xm4p84vse3g3l6swtf2rqs943t0w39ustwdszxt3l5rajt8r8wqtygrfduwgukk73m5gcnplmztc5tl5ngy0upqhns793",
       factoryScriptHash: "6e23fe172b5b50e2ad59aded9ee8d488f74c7f4686f91b032220adad",
+      factoryScriptHashBech32: "script1dc3lu9ettdgw9t2e4hkea6x53rm5cl6xsmu3kqezyzk66vpljxc",
+      factoryAddress: "addr_test1zphz8lsh9dd4pc4dtxk7m8hg6jy0wnrlg6r0jxcrygs2mtvrajt8r8wqtygrfduwgukk73m5gcnplmztc5tl5ngy0upqjgg24z",
       expiredOrderCancelAddress: "stake_test17rytpnrpxax5p8leepgjx9cq8ecedgly6jz4xwvvv4kvzfqz6sgpf",
       poolBatchingAddress: "stake_test17rann6nth9675m0y5tz32u3rfhzcfjymanxqnfyexsufu5glcajhf",
     },
@@ -333,11 +339,14 @@ export namespace DexV2Constant {
       globalSettingAsset: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c4d534753",
       lpPolicyId: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
       globalSettingScriptHash: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
+      globalSettingScriptHashBech32: "script17kqgctyepkrd549le97cnnhxa73qekzxzctrt9rcm945c880puk",
       orderScriptHash: "c3e28c36c3447315ba5a56f33da6a6ddc1770a876a8d9f0cb3a97c4c",
       poolScriptHash: "ea07b733d932129c378af627436e7cbc2ef0bf96e0036bb51b3bde6b",
       poolScriptHashBech32: "script1agrmwv7exgffcdu27cn5xmnuhsh0p0ukuqpkhdgm800xksw7e2w",
       poolCreationAddress: "addr1z84q0denmyep98ph3tmzwsmw0j7zau9ljmsqx6a4rvaau66j2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pq777e2a",
       factoryScriptHash: "7bc5fbd41a95f561be84369631e0e35895efb0b73e0a7480bb9ed730",
+      factoryScriptHashBech32: "script100zlh4q6jh6kr05yx6trrc8rtz27lv9h8c98fq9mnmtnqfa47eg",
+      factoryAddress: "addr1z9aut775r22l2cd7ssmfvv0qudvftmaskulq5ayqhw0dwvzj2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pqgjw6pl",
       expiredOrderCancelAddress: "stake178ytpnrpxax5p8leepgjx9cq8ecedgly6jz4xwvvv4kvzfq9s6295",
       poolBatchingAddress: "stake17y02a946720zw6pw50upt2arvxsvvpvaghjtl054h0f0gjsfyjz59",
     }
@@ -422,6 +431,7 @@ export enum MetadataMessage {
   SWAP_EXACT_IN_LIMIT_ORDER = "SDK Minswap: Swap Exact In Limit Order",
   SWAP_EXACT_OUT_ORDER = "SDK Minswap: Swap Exact Out Order",
   WITHDRAW_ORDER = "SDK Minswap: Withdraw Order",
+  CREATE_POOL = "SDK Minswap: Create Pool",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;

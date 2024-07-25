@@ -1,5 +1,7 @@
 import { Constr, Data } from "lucid-cardano";
 
+import { String } from "./string";
+
 export const ADA: Asset = {
     policyId: "",
     tokenName: ""
@@ -50,5 +52,12 @@ export namespace Asset {
             policyId: data.fields[0] as string,
             tokenName: data.fields[1] as string
         }
+    }
+
+    export function compare(a1: Asset, a2: Asset): number {
+        if (a1.policyId === a2.policyId) {
+            return String.compare(a1.tokenName, a2.tokenName)
+        }
+        return String.compare(a1.policyId, a2.policyId)
     }
 }

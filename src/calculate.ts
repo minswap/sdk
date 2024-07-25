@@ -200,3 +200,25 @@ export function calculateZapIn(options: CalculateZapInOptions): bigint {
     (reserveOut - swapToAssetOutAmount)
   );
 }
+
+export namespace DexV2Calculation {
+  export const MAX_LIQUIDITY = 9_223_372_036_854_775_807n;
+  export const DEFAULT_POOL_ADA = 4_500_000n;
+  // The amount of liquidity that will be locked in pool when creating pools
+  export const MINIMUM_LIQUIDITY = 10n;
+
+  export type InitialLiquidityOptions = {
+    amountA: bigint;
+    amountB: bigint;
+  };
+  export function calculateInitialLiquidity({
+    amountA,
+    amountB,
+  }: InitialLiquidityOptions): bigint {
+    let x = sqrt(amountA * amountB);
+    if (x * x < amountA * amountB) {
+      x += 1n;
+    }
+    return x;
+  }
+}
