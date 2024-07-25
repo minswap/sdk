@@ -370,6 +370,7 @@ export namespace DexV2Constant {
     factoryAddress: string;
     expiredOrderCancelAddress: string;
     poolBatchingAddress: string;
+    orderEnterpriseAddress: string;
   };
 
   export type DeployedScripts = {
@@ -412,6 +413,8 @@ export namespace DexV2Constant {
         "stake_test17rytpnrpxax5p8leepgjx9cq8ecedgly6jz4xwvvv4kvzfqz6sgpf",
       poolBatchingAddress:
         "stake_test17rann6nth9675m0y5tz32u3rfhzcfjymanxqnfyexsufu5glcajhf",
+      orderEnterpriseAddress:
+        "addr_test1wrdf2f2x8pq3wwk3yv936ksmt59rz94mm66yzge8zj9pk7s0kjph3",
     },
     [NetworkId.MAINNET]: {
       factoryAsset:
@@ -443,6 +446,8 @@ export namespace DexV2Constant {
         "stake178ytpnrpxax5p8leepgjx9cq8ecedgly6jz4xwvvv4kvzfq9s6295",
       poolBatchingAddress:
         "stake17y02a946720zw6pw50upt2arvxsvvpvaghjtl054h0f0gjsfyjz59",
+      orderEnterpriseAddress:
+        "addr1w8p79rpkcdz8x9d6tft0x0dx5mwuzac2sa4gm8cvkw5hcnqst2ctf",
     },
   };
 
@@ -523,6 +528,12 @@ export enum MetadataMessage {
   SWAP_EXACT_IN_LIMIT_ORDER = "SDK Minswap: Swap Exact In Limit Order",
   SWAP_EXACT_OUT_ORDER = "SDK Minswap: Swap Exact Out Order",
   WITHDRAW_ORDER = "SDK Minswap: Withdraw Order",
+  STOP_ORDER = "SDK Minswap: Stop Order",
+  OCO_ORDER = "SDK Minswap: OCO Order",
+  ROUTING_ORDER = "SDK Minswap: Routing Order",
+  PARTIAL_SWAP_ORDER = "SDK Minswap: Partial Fill Order",
+  DONATION_ORDER = "Minswap: Donation Order",
+  MIXED_ORDERS = "SDK Minswap: Mixed Orders",
   CREATE_POOL = "SDK Minswap: Create Pool",
 }
 
