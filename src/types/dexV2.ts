@@ -125,3 +125,12 @@ export type OrderOptions = (
 ) & {
   lpAsset: Asset;
 };
+
+export type CancelBulkOrdersOptions = {
+  type: "ORDER_V1" | "ORDER_V2_AND_STABLESWAP";
+  orders: {
+    utxo: UTxO;
+    // Raw datum is required for Plutus V1 script (Order V1) or Plutus V2 script that is not using Inline Datum
+    rawDatum?: string;
+  }[];
+};
