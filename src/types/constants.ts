@@ -360,12 +360,14 @@ export namespace DexV2Constant {
     globalSettingAsset: string;
     lpPolicyId: string;
     globalSettingScriptHash: string;
+    globalSettingScriptHashBech32: string;
     orderScriptHash: string;
-    orderEnterpriseAddress: string;
     poolScriptHash: string;
     poolScriptHashBech32: string;
     poolCreationAddress: Address;
+    factoryScriptHashBech32: string;
     factoryScriptHash: string;
+    factoryAddress: string;
     expiredOrderCancelAddress: string;
     poolBatchingAddress: string;
   };
@@ -390,8 +392,8 @@ export namespace DexV2Constant {
       lpPolicyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
       globalSettingScriptHash:
         "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
-      orderEnterpriseAddress:
-        "addr_test1wrdf2f2x8pq3wwk3yv936ksmt59rz94mm66yzge8zj9pk7s0kjph3",
+      globalSettingScriptHashBech32:
+        "script1664wypvm4msc3a6fzayneamr0enee5sehham7nwtavwsk2s2vg9",
       orderScriptHash:
         "da9525463841173ad1230b1d5a1b5d0a3116bbdeb4412327148a1b7a",
       poolScriptHash:
@@ -402,6 +404,10 @@ export namespace DexV2Constant {
         "addr_test1zrtt4xm4p84vse3g3l6swtf2rqs943t0w39ustwdszxt3l5rajt8r8wqtygrfduwgukk73m5gcnplmztc5tl5ngy0upqhns793",
       factoryScriptHash:
         "6e23fe172b5b50e2ad59aded9ee8d488f74c7f4686f91b032220adad",
+      factoryScriptHashBech32:
+        "script1dc3lu9ettdgw9t2e4hkea6x53rm5cl6xsmu3kqezyzk66vpljxc",
+      factoryAddress:
+        "addr_test1zphz8lsh9dd4pc4dtxk7m8hg6jy0wnrlg6r0jxcrygs2mtvrajt8r8wqtygrfduwgukk73m5gcnplmztc5tl5ngy0upqjgg24z",
       expiredOrderCancelAddress:
         "stake_test17rytpnrpxax5p8leepgjx9cq8ecedgly6jz4xwvvv4kvzfqz6sgpf",
       poolBatchingAddress:
@@ -417,10 +423,10 @@ export namespace DexV2Constant {
       lpPolicyId: "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
       globalSettingScriptHash:
         "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
+      globalSettingScriptHashBech32:
+        "script17kqgctyepkrd549le97cnnhxa73qekzxzctrt9rcm945c880puk",
       orderScriptHash:
         "c3e28c36c3447315ba5a56f33da6a6ddc1770a876a8d9f0cb3a97c4c",
-      orderEnterpriseAddress:
-        "addr1w8p79rpkcdz8x9d6tft0x0dx5mwuzac2sa4gm8cvkw5hcnqst2ctf",
       poolScriptHash:
         "ea07b733d932129c378af627436e7cbc2ef0bf96e0036bb51b3bde6b",
       poolScriptHashBech32:
@@ -429,6 +435,10 @@ export namespace DexV2Constant {
         "addr1z84q0denmyep98ph3tmzwsmw0j7zau9ljmsqx6a4rvaau66j2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pq777e2a",
       factoryScriptHash:
         "7bc5fbd41a95f561be84369631e0e35895efb0b73e0a7480bb9ed730",
+      factoryScriptHashBech32:
+        "script100zlh4q6jh6kr05yx6trrc8rtz27lv9h8c98fq9mnmtnqfa47eg",
+      factoryAddress:
+        "addr1z9aut775r22l2cd7ssmfvv0qudvftmaskulq5ayqhw0dwvzj2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pqgjw6pl",
       expiredOrderCancelAddress:
         "stake178ytpnrpxax5p8leepgjx9cq8ecedgly6jz4xwvvv4kvzfq9s6295",
       poolBatchingAddress:
@@ -513,12 +523,7 @@ export enum MetadataMessage {
   SWAP_EXACT_IN_LIMIT_ORDER = "SDK Minswap: Swap Exact In Limit Order",
   SWAP_EXACT_OUT_ORDER = "SDK Minswap: Swap Exact Out Order",
   WITHDRAW_ORDER = "SDK Minswap: Withdraw Order",
-  STOP_ORDER = "SDK Minswap: Stop Order",
-  OCO_ORDER = "SDK Minswap: OCO Order",
-  ROUTING_ORDER = "SDK Minswap: Routing Order",
-  PARTIAL_SWAP_ORDER = "SDK Minswap: Partial Fill Order",
-  DONATION_ORDER = "Minswap: Donation Order",
-  MIXED_ORDERS = "SDK Minswap: Mixed Orders",
+  CREATE_POOL = "SDK Minswap: Create Pool",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;

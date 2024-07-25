@@ -1222,10 +1222,4 @@ export namespace OrderV2 {
       ]);
     }
   }
-
-  export enum Redeemer {
-    APPLY_ORDER = 0,
-    CANCEL_ORDER_BY_OWNER,
-    CANCEL_EXPIRED_ORDER_BY_ANYONE,
-  }
 }
