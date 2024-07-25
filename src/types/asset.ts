@@ -1,6 +1,6 @@
 import { Constr, Data } from "lucid-cardano";
 
-import { String } from "./string";
+import { StringUtils } from "./string";
 
 export const ADA: Asset = {
     policyId: "",
@@ -56,8 +56,8 @@ export namespace Asset {
 
     export function compare(a1: Asset, a2: Asset): number {
         if (a1.policyId === a2.policyId) {
-            return String.compare(a1.tokenName, a2.tokenName)
+            return StringUtils.compare(a1.tokenName, a2.tokenName)
         }
-        return String.compare(a1.policyId, a2.policyId)
+        return StringUtils.compare(a1.policyId, a2.policyId)
     }
 }

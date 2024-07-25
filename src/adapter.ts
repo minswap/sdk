@@ -20,7 +20,7 @@ import {
   isValidPoolOutput,
   normalizeAssets,
 } from "./types/pool.internal";
-import { String } from "./types/string";
+import { StringUtils } from "./types/string";
 import { TxHistory } from "./types/tx.internal";
 import { getScriptHashFromAddress } from "./utils/address-utils.internal";
 
@@ -441,8 +441,8 @@ export class BlockfrostAdapter {
     const { factories: allFactories } = await this.getAllFactoriesV2();
     for (const factory of allFactories) {
       if (
-        String.compare(factory.head, factoryIdent) < 0 &&
-        String.compare(factoryIdent, factory.tail) < 0
+        StringUtils.compare(factory.head, factoryIdent) < 0 &&
+        StringUtils.compare(factoryIdent, factory.tail) < 0
       ) {
         return factory;
       }
