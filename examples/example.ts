@@ -1,5 +1,6 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import invariant from "@minswap/tiny-invariant";
+import BigNumber from "bignumber.js";
 import {
   Address,
   Blockfrost,
@@ -28,7 +29,6 @@ import {
   OrderV2,
   PoolV1,
 } from "../src";
-import BigNumber from "bignumber.js";
 import { Slippage } from "../src/utils/slippage.internal";
 
 async function main(): Promise<void> {
