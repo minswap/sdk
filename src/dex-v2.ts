@@ -1,12 +1,14 @@
 import invariant from "@minswap/tiny-invariant";
 import {
+  Address,
   Assets,
   Constr,
   Credential,
   Data,
   Lucid,
+  OutRef,
   TxComplete,
-  Utils,
+  UTxO,
 } from "lucid-cardano";
 
 import {
@@ -21,11 +23,6 @@ import {
 } from ".";
 import { calculateBatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/types.internal";
-import {
-  BulkOrdersOption,
-  CancelBulkOrdersOptions,
-  OrderOptions,
-} from "./types/dexV2";
 import { FactoryV2 } from "./types/factory";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
@@ -50,12 +47,131 @@ export type CreatePoolV2Options = {
   tradingFeeNumerator: bigint;
 };
 
+export type BulkOrdersOption = {
+  networkEnv: NetworkEnvironment;
+  sender: Address;
+  orderOptions: OrderOptions[];
+  expiredOptions?: OrderV2.ExpirySetting;
+  availableUtxos: UTxO[];
+};
+
+export type OrderV2SwapRouting = {
+  lpAsset: Asset;
+  direction: OrderV2.Direction;
+};
+export type DepositOptions = {
+  type: OrderV2.StepType.DEPOSIT;
+  assetA: Asset;
+  assetB: Asset;
+  amountA: bigint;
+  amountB: bigint;
+  minimumLPReceived: bigint;
+  killOnFailed: boolean;
+};
+
+export type WithdrawOptions = {
+  type: OrderV2.StepType.WITHDRAW;
+  lpAmount: bigint;
+  minimumAssetAReceived: bigint;
+  minimumAssetBReceived: bigint;
+  killOnFailed: boolean;
+};
+
+export type SwapExactInOptions = {
+  type: OrderV2.StepType.SWAP_EXACT_IN;
+  assetIn: Asset;
+  amountIn: bigint;
+  minimumAmountOut: bigint;
+  direction: OrderV2.Direction;
+  killOnFailed: boolean;
+  isLimitOrder: boolean;
+};
+
+export type SwapExactOutOptions = {
+  type: OrderV2.StepType.SWAP_EXACT_OUT;
+  assetIn: Asset;
+  maximumAmountIn: bigint;
+  expectedReceived: bigint;
+  direction: OrderV2.Direction;
+  killOnFailed: boolean;
+};
+
+export type StopOptions = {
+  type: OrderV2.StepType.STOP;
+  assetIn: Asset;
+  amountIn: bigint;
+  stopAmount: bigint;
+  direction: OrderV2.Direction;
+};
+
+export type OCOOptions = {
+  type: OrderV2.StepType.OCO;
+  assetIn: Asset;
+  amountIn: bigint;
+  limitAmount: bigint;
+  stopAmount: bigint;
+  direction: OrderV2.Direction;
+};
+
+export type ZapOutOptions = {
+  type: OrderV2.StepType.ZAP_OUT;
+  lpAmount: bigint;
+  direction: OrderV2.Direction;
+  minimumReceived: bigint;
+  killOnFailed: boolean;
+};
+
+export type PartialSwapOptions = {
+  type: OrderV2.StepType.PARTIAL_SWAP;
+  assetIn: Asset;
+  amountIn: bigint;
+  direction: OrderV2.Direction;
+  expectedInOutRatio: [bigint, bigint];
+  maximumSwapTime: bigint;
+  minimumSwapAmountRequired: bigint;
+};
+
+export type WithdrawImbalanceOptions = {
+  type: OrderV2.StepType.WITHDRAW_IMBALANCE;
+  lpAmount: bigint;
+  ratioAssetA: bigint;
+  ratioAssetB: bigint;
+  minimumAssetA: bigint;
+  killOnFailed: boolean;
+};
+
+export type MultiRoutingOptions = {
+  type: OrderV2.StepType.SWAP_ROUTING;
+  assetIn: Asset;
+  amountIn: bigint;
+  routings: OrderV2.Route[];
+  minimumReceived: bigint;
+};
+
+export type OrderOptions = (
+  | DepositOptions
+  | WithdrawOptions
+  | SwapExactInOptions
+  | SwapExactOutOptions
+  | StopOptions
+  | OCOOptions
+  | ZapOutOptions
+  | PartialSwapOptions
+  | WithdrawImbalanceOptions
+  | MultiRoutingOptions
+) & {
+  lpAsset: Asset;
+};
+
+export type CancelBulkOrdersOptions = {
+  orderOutRefs: OutRef[];
+};
+
 export class DexV2 {
   private readonly lucid: Lucid;
   private readonly networkId: NetworkId;
   private readonly adapter: BlockfrostAdapter;
   private readonly networkEnv: NetworkEnvironment;
-  private readonly lucidUtils: Utils;
   private readonly dexVersion = DexVersion.DEX_V2;
 
   constructor(lucid: Lucid, adapter: BlockfrostAdapter) {
@@ -64,7 +180,6 @@ export class DexV2 {
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
     this.adapter = adapter;
     this.networkEnv = lucidToNetworkEnv(lucid.network);
-    this.lucidUtils = new Utils(lucid);
   }
 
   async createPoolTx({
@@ -102,7 +217,7 @@ export class DexV2 {
       policyId: config.lpPolicyId,
       tokenName: lpAssetName,
     };
-    const poolBatchingStakeCredential = this.lucidUtils.getAddressDetails(
+    const poolBatchingStakeCredential = this.lucid.utils.getAddressDetails(
       config.poolBatchingAddress
     )?.stakeCredential;
     invariant(
@@ -538,25 +653,25 @@ export class DexV2 {
     }
   }
 
-  private buildDexV2OrderAddress(senderAddressStakeCred: Credential): string {
+  private buildOrderAddress(senderAddressStakeCred: Credential): string {
     const orderAddress =
       DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
     const orderAddressPaymentCred =
-      this.lucidUtils.getAddressDetails(orderAddress).paymentCredential;
+      this.lucid.utils.getAddressDetails(orderAddress).paymentCredential;
     invariant(
       orderAddressPaymentCred,
       "order address payment credentials not found"
     );
-    return this.lucidUtils.credentialToAddress(
+    return this.lucid.utils.credentialToAddress(
       orderAddressPaymentCred,
       senderAddressStakeCred
     );
   }
 
-  private getDexV2OrderScriptHash(): string | undefined {
+  private getOrderScriptHash(): string | undefined {
     const orderAddress =
       DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
-    const addrDetails = this.lucidUtils.getAddressDetails(orderAddress);
+    const addrDetails = this.lucid.utils.getAddressDetails(orderAddress);
     invariant(
       addrDetails.paymentCredential?.type === "Script",
       "order address should be a script address"
@@ -635,8 +750,7 @@ export class DexV2 {
       dexVersion: this.dexVersion,
     });
     const limitOrders: string[] = [];
-    const requireSignerSet = new Set<string>();
-    const lucidTx = await this.lucid.newTx();
+    const lucidTx = this.lucid.newTx();
     for (let i = 0; i < orderOptions.length; i++) {
       const option = orderOptions[i];
       const { type, lpAsset } = option;
@@ -657,7 +771,7 @@ export class DexV2 {
         orderAssets["lovelace"] = totalBatcherFee;
       }
       const senderPaymentCred =
-        this.lucidUtils.getAddressDetails(sender).paymentCredential;
+        this.lucid.utils.getAddressDetails(sender).paymentCredential;
       invariant(
         senderPaymentCred?.type === "Key",
         "sender pub key hash not found"
@@ -680,9 +794,9 @@ export class DexV2 {
         maxBatcherFee: totalBatcherFee,
         expiredOptions: expiredOptions,
       };
-      const senderStakeAddress = this.lucidUtils.stakeCredentialOf(sender);
+      const senderStakeAddress = this.lucid.utils.stakeCredentialOf(sender);
       const orderAddress = senderStakeAddress
-        ? this.buildDexV2OrderAddress(senderStakeAddress)
+        ? this.buildOrderAddress(senderStakeAddress)
         : DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
       lucidTx.payToContract(
         orderAddress,
@@ -697,27 +811,37 @@ export class DexV2 {
         : this.getOrderMetadata(orderOptions[0]);
 
     const limitOrderMessage = limitOrders.length > 0 ? limitOrders : undefined;
-    if (requireSignerSet.size > 0) {
-      for (const requireSigner of requireSignerSet.keys()) {
-        lucidTx.addSignerKey(requireSigner);
-      }
-    }
     lucidTx.attachMetadata(674, {
-      sgs: [metadata],
+      msg: [metadata],
       limitOrders: limitOrderMessage,
     });
 
-    return await lucidTx.payToAddress(sender, reductionAssets).complete();
+    return lucidTx.payToAddress(sender, reductionAssets).complete();
   }
 
-  async cancelOrder({ orders }: CancelBulkOrdersOptions): Promise<TxComplete> {
-    const v2OrderScriptHash = this.getDexV2OrderScriptHash();
+  async cancelOrder({
+    orderOutRefs,
+  }: CancelBulkOrdersOptions): Promise<TxComplete> {
+    const v2OrderScriptHash = this.getOrderScriptHash();
+    const orderUtxos = await this.lucid.utxosByOutRef(orderOutRefs);
+    if (orderUtxos.length === 0) {
+      throw new Error("Order Utxos are empty");
+    }
     const requiredPubKeyHashSet = new Set<string>();
-    const lucidTx = this.lucid.newTx();
-    for (const { utxo, rawDatum } of orders) {
+    const orderRefs = await this.lucid.utxosByOutRef([
+      DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].order,
+    ]);
+    invariant(
+      orderRefs.length === 1,
+      "cannot find deployed script for V2 Order"
+    );
+
+    const orderRef = orderRefs[0];
+    const lucidTx = this.lucid.newTx().readFrom([orderRef]);
+    for (const utxo of orderUtxos) {
       const orderAddr = utxo.address;
       const orderScriptPaymentCred =
-        this.lucidUtils.getAddressDetails(orderAddr).paymentCredential;
+        this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
       invariant(
         orderScriptPaymentCred?.type === "Script" &&
           orderScriptPaymentCred.hash === v2OrderScriptHash,
@@ -730,14 +854,15 @@ export class DexV2 {
           this.networkId,
           Data.from(rawDatum) as Constr<Data>
         );
-      } else {
-        invariant(
-          utxo.datumHash && rawDatum,
-          `Minswap V2 requires datum for the order Utxo that does not contain Inline Datum`
-        );
+      } else if (utxo.datumHash) {
+        const rawDatum = await this.lucid.datumOf(utxo);
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum) as Constr<Data>
+          rawDatum as Constr<Data>
+        );
+      } else {
+        throw new Error(
+          "Utxo without Datum Hash or Inline Datum can not be spent"
         );
       }
       invariant(
@@ -745,19 +870,12 @@ export class DexV2 {
         "only support PubKey canceller on this function"
       );
       requiredPubKeyHashSet.add(datum.canceller.hash);
-      const redeemer = Data.to(
-        new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
-      );
-      const orderRefs = await this.lucid.utxosByOutRef([
-        DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].order,
-      ]);
-      invariant(
-        orderRefs.length === 1,
-        "cannot find deployed script for Order"
-      );
-      const orderRef = orderRefs[0];
-      lucidTx.collectFrom([utxo], redeemer).readFrom([orderRef]);
     }
+    const redeemer = Data.to(
+      new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
+    );
+    lucidTx.collectFrom(orderUtxos, redeemer);
+
     for (const hash of requiredPubKeyHashSet.keys()) {
       lucidTx.addSignerKey(hash);
     }
