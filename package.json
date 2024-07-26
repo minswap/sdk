@@ -44,7 +44,8 @@
     "@minswap/tiny-invariant": "^1.2.0",
     "big.js": "^6.1.1",
     "lucid-cardano": "^0.10.1",
-    "sha3": "^2.1.4"
+    "sha3": "^2.1.4",
+    "bignumber.js": "^9.1.2"
   },
   "devDependencies": {
     "@types/big.js": "^6.1.3",

@@ -48,7 +48,6 @@ export type CreatePoolV2Options = {
 };
 
 export type BulkOrdersOption = {
-  networkEnv: NetworkEnvironment;
   sender: Address;
   orderOptions: OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
@@ -210,8 +209,7 @@ export class DexV2 {
       amountB: sortedAmountB,
     });
     const remainingLiquidity =
-      DexV2Calculation.MAX_LIQUIDITY -
-      (initialLiquidity - DexV2Calculation.MINIMUM_LIQUIDITY);
+      PoolV2.MAX_LIQUIDITY - (initialLiquidity - PoolV2.MINIMUM_LIQUIDITY);
     const lpAssetName = PoolV2.computeLPAssetName(sortedAssetA, sortedAssetB);
     const lpAsset: Asset = {
       policyId: config.lpPolicyId,
@@ -240,7 +238,7 @@ export class DexV2 {
     };
 
     const poolValue: Assets = {
-      lovelace: DexV2Calculation.DEFAULT_POOL_ADA,
+      lovelace: PoolV2.DEFAULT_POOL_ADA,
       [Asset.toString(lpAsset)]: remainingLiquidity,
       [config.poolAuthenAsset]: 1n,
     };
@@ -328,7 +326,7 @@ export class DexV2 {
       )
       .mintAssets(
         {
-          [Asset.toString(lpAsset)]: DexV2Calculation.MAX_LIQUIDITY,
+          [Asset.toString(lpAsset)]: PoolV2.MAX_LIQUIDITY,
           [config.factoryAsset]: 1n,
           [config.poolAuthenAsset]: 1n,
         },

@@ -23,9 +23,13 @@ import {
   calculateZapIn,
   Dex,
   DexV2,
+  DexV2Calculation,
   NetworkId,
+  OrderV2,
   PoolV1,
 } from "../src";
+import BigNumber from "bignumber.js";
+import { Slippage } from "../src/utils/slippage.internal";
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
@@ -367,6 +371,54 @@ async function _createPoolV2(
   });
 
   return txComplete;
+}
+
+async function _swapExactInV2TxExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB: Asset = {
+    policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+    tokenName: "4d494e",
+  };
+
+  const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "could not find pool");
+
+  const swapAmount = 10_000_000n;
+  const amountOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    amountIn: swapAmount,
+    tradingFeeNumerator: pool.feeA[0],
+  });
+  // 20%
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptedAmountOut = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: amountOut,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.SWAP_EXACT_IN,
+        amountIn: swapAmount,
+        assetIn: assetA,
+        direction: OrderV2.Direction.A_TO_B,
+        minimumAmountOut: acceptedAmountOut,
+        lpAsset: pool.lpAsset,
+        isLimitOrder: false,
+        killOnFailed: false,
+      },
+    ],
+  });
 }
 
 /**
