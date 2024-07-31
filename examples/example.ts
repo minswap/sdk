@@ -25,6 +25,7 @@ import {
   Dex,
   DexV2,
   DexV2Calculation,
+  MIN,
   NetworkId,
   OrderV2,
   PoolV1,
@@ -380,10 +381,7 @@ async function _swapExactInV2TxExample(
   availableUtxos: UTxO[]
 ): Promise<TxComplete> {
   const assetA = ADA;
-  const assetB: Asset = {
-    policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
-    tokenName: "4d494e",
-  };
+  const assetB = MIN;
 
   const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
   invariant(pool, "could not find pool");
@@ -416,6 +414,50 @@ async function _swapExactInV2TxExample(
         lpAsset: pool.lpAsset,
         isLimitOrder: false,
         killOnFailed: false,
+      },
+    ],
+  });
+}
+
+async function _swapExactOutInV2Example(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+
+  const swapAmount = 8_000_000n;
+  const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "could not find pool");
+
+  const amountIn = DexV2Calculation.calculateAmountIn({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    tradingFeeNumerator: pool.feeA[0],
+    amountOut: swapAmount,
+  });
+
+  // 20%
+  const slippageTolerance = new BigNumber(20).div(100);
+  const maximumAmountIn = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: amountIn,
+    type: "up",
+  });
+  return new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.SWAP_EXACT_OUT,
+        assetIn: assetA,
+        maximumAmountIn: maximumAmountIn,
+        expectedReceived: swapAmount,
+        direction: OrderV2.Direction.A_TO_B,
+        killOnFailed: false,
+        lpAsset: pool.lpAsset,
       },
     ],
   });

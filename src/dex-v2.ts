@@ -792,10 +792,15 @@ export class DexV2 {
         maxBatcherFee: totalBatcherFee,
         expiredOptions: expiredOptions,
       };
-      const senderStakeAddress = this.lucid.utils.stakeCredentialOf(sender);
-      const orderAddress = senderStakeAddress
-        ? this.buildOrderAddress(senderStakeAddress)
-        : DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
+      let orderAddress: string;
+      try {
+        const senderStakeAddress = this.lucid.utils.stakeCredentialOf(sender);
+        orderAddress = this.buildOrderAddress(senderStakeAddress);
+      } catch (e) {
+        // if fails then sender address doesn't have stake credentials
+        orderAddress =
+          DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
+      }
       lucidTx.payToContract(
         orderAddress,
         Data.to(OrderV2.Datum.toPlutusData(orderDatum)),
