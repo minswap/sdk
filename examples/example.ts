@@ -25,12 +25,16 @@ import {
   Dex,
   DexV2,
   DexV2Calculation,
-  MIN,
   NetworkId,
   OrderV2,
   PoolV1,
 } from "../src";
 import { Slippage } from "../src/utils/slippage.internal";
+
+const MIN: Asset = {
+  policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+  tokenName: "4d494e",
+};
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
