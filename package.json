@@ -19,7 +19,8 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write **/*.ts && eslint src --fix --ext .ts",
     "check-format": "prettier --check **/*.ts && eslint src --ext .ts",
-    "exec": "ts-node --esm --experimental-specifier-resolution=node"
+    "exec": "ts-node --esm --experimental-specifier-resolution=node",
+    "example": "ts-node --esm --experimental-specifier-resolution=node examples/example.ts"
   },
   "keywords": [
     "minswap",

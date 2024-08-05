@@ -337,9 +337,7 @@ export class DexV2 {
   }
 
   private buildOrderValue(options: OrderOptions): Record<string, bigint> {
-    const orderAssets: Assets = {
-      lovelace: FIXED_DEPOSIT_ADA,
-    };
+    const orderAssets: Assets = {};
     switch (options.type) {
       case OrderV2.StepType.DEPOSIT: {
         const { assetA, assetB, amountA, amountB, minimumLPReceived } = options;
@@ -353,7 +351,7 @@ export class DexV2 {
         );
         orderAssets[Asset.toString(assetA)] = amountA;
         orderAssets[Asset.toString(assetB)] = amountB;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.WITHDRAW: {
         const {
@@ -368,7 +366,7 @@ export class DexV2 {
           "minimum asset received must be positive"
         );
         orderAssets[Asset.toString(lpAsset)] = lpAmount;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.SWAP_EXACT_IN: {
         const { assetIn, amountIn, minimumAmountOut } = options;
@@ -382,7 +380,7 @@ export class DexV2 {
         invariant(maximumAmountIn > 0n, "amount in must be positive");
         invariant(expectedReceived > 0n, "minimum amount out must be positive");
         orderAssets[Asset.toString(assetIn)] = maximumAmountIn;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.STOP: {
         const { assetIn, amountIn, stopAmount } = options;
@@ -397,14 +395,14 @@ export class DexV2 {
         invariant(stopAmount > 0n, "stop amount out must be positive");
         invariant(limitAmount > 0n, "limit amount out must be positive");
         orderAssets[Asset.toString(assetIn)] = amountIn;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.ZAP_OUT: {
         const { lpAsset, lpAmount, minimumReceived } = options;
         invariant(lpAmount > 0n, "lp amount in must be positive");
         invariant(minimumReceived > 0n, "minimum amount out must be positive");
         orderAssets[Asset.toString(lpAsset)] = lpAmount;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.PARTIAL_SWAP: {
         const { assetIn, amountIn, expectedInOutRatio } = options;
@@ -417,7 +415,7 @@ export class DexV2 {
           "expected input and output ratio must be positive"
         );
         orderAssets[Asset.toString(assetIn)] = amountIn;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.WITHDRAW_IMBALANCE: {
         const { lpAsset, lpAmount, ratioAssetA, ratioAssetB, minimumAssetA } =
@@ -428,15 +426,21 @@ export class DexV2 {
           "minimum asset and ratio received must be positive"
         );
         orderAssets[Asset.toString(lpAsset)] = lpAmount;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.SWAP_ROUTING: {
         const { assetIn, amountIn } = options;
         invariant(amountIn > 0n, "Amount must be positive");
         orderAssets[Asset.toString(assetIn)] = amountIn;
-        return orderAssets;
+        break;
       }
     }
+    if ("lovelace" in orderAssets) {
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA;
+    } else {
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA;
+    }
+    return orderAssets;
   }
 
   buildOrderStep(options: OrderOptions, finalBatcherFee: bigint): OrderV2.Step {
@@ -733,7 +737,7 @@ export class DexV2 {
     for (const option of orderOptions) {
       const orderAssets = this.buildOrderValue(option);
       for (const [asset, amt] of Object.entries(orderAssets)) {
-        if (totalOrderAssets[asset]) {
+        if (asset in totalOrderAssets) {
           totalOrderAssets[asset] += amt;
         } else {
           totalOrderAssets[asset] = amt;
@@ -818,7 +822,6 @@ export class DexV2 {
       msg: [metadata],
       limitOrders: limitOrderMessage,
     });
-
     return lucidTx.payToAddress(sender, reductionAssets).complete();
   }
 

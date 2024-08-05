@@ -38,10 +38,11 @@ const MIN: Asset = {
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
+  const blockfrostProjectId = "preprodel6eWcyCZddTV1wezpV1uNlt0GpUVAcw";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
-  const address = "<YOUR_ADDRESS>";
+  const address =
+    "addr_test1vrd9v47japxwp8540vsrh4grz4u9urfpfawwy7sf6r0vxqgm7wdxh";
   const lucid = await getBackendLucidInstance(
     network,
     blockfrostProjectId,
@@ -59,19 +60,20 @@ async function main(): Promise<void> {
 
   const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _swapExactInTxExample(
-    network,
+  const txComplete = await _swapExactOutV2TxExample(
     lucid,
     blockfrostAdapter,
     address,
     utxos
   );
   const signedTx = await txComplete
-    .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+    .signWithPrivateKey(
+      "ed25519e_sk1zplkdlsqnqtrayzgukq262rw203qdvg383rgtnpjxcpj5c2jgfvx8vz5xzkxz9exm2t08v2tfhrazp6qd260wqfs0x5vckxl6zftx7cf9f9e2"
+    )
     .complete();
   const txId = await signedTx.submit();
   // eslint-disable-next-line no-console
-  console.log(`Transaction submitted successfully: ${txId}`);
+  console.info(`Transaction submitted successfully: ${txId}`);
 }
 
 async function getPoolById(
@@ -390,7 +392,7 @@ async function _swapExactInV2TxExample(
   const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
   invariant(pool, "could not find pool");
 
-  const swapAmount = 10_000_000n;
+  const swapAmount = 5_000_000n;
   const amountOut = DexV2Calculation.calculateAmountOut({
     reserveIn: pool.reserveA,
     reserveOut: pool.reserveB,
@@ -423,7 +425,7 @@ async function _swapExactInV2TxExample(
   });
 }
 
-async function _swapExactOutInV2Example(
+async function _swapExactOutV2TxExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
@@ -432,7 +434,7 @@ async function _swapExactOutInV2Example(
   const assetA = ADA;
   const assetB = MIN;
 
-  const swapAmount = 8_000_000n;
+  const swapAmount = 10_000n;
   const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
   invariant(pool, "could not find pool");
 
