@@ -60,7 +60,7 @@ async function main(): Promise<void> {
 
   const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _swapExactOutV2TxExample(
+  const txComplete = await _depositV2TxExample(
     lucid,
     blockfrostAdapter,
     address,
@@ -464,6 +464,48 @@ async function _swapExactOutV2TxExample(
         direction: OrderV2.Direction.A_TO_B,
         killOnFailed: false,
         lpAsset: pool.lpAsset,
+      },
+    ],
+  });
+}
+
+async function _depositV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+
+  const amountA = 10_000n;
+  const amountB = 10_000n;
+
+  const pool = await blockFrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "Pool not found");
+
+  const lpAmount = DexV2Calculation.calculateDepositAmount({
+    amountA,
+    amountB,
+    poolInfo: pool.info,
+  });
+
+  const slippageTolerance = 20n;
+  const acceptableLPAmount = (lpAmount * (100n - slippageTolerance)) / 100n;
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.DEPOSIT,
+        assetA,
+        amountA: 10_000n,
+        assetB,
+        amountB: 10_000n,
+        lpAsset: pool.lpAsset,
+        minimumLPReceived: acceptableLPAmount,
+        killOnFailed: false,
       },
     ],
   });
