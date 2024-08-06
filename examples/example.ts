@@ -60,7 +60,7 @@ async function main(): Promise<void> {
 
   const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _depositV2TxExample(
+  const txComplete = await _withdrawV2TxExample(
     lucid,
     blockfrostAdapter,
     address,
@@ -490,8 +490,12 @@ async function _depositV2TxExample(
     poolInfo: pool.info,
   });
 
-  const slippageTolerance = 20n;
-  const acceptableLPAmount = (lpAmount * (100n - slippageTolerance)) / 100n;
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptableLPAmount = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: lpAmount,
+    type: "down",
+  });
 
   return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
     sender: address,
@@ -506,6 +510,55 @@ async function _depositV2TxExample(
         lpAsset: pool.lpAsset,
         minimumLPReceived: acceptableLPAmount,
         killOnFailed: false,
+      },
+    ],
+  });
+}
+
+async function _withdrawV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  // ADA-MIN Lp Asset
+  const lpAsset = {
+    policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+    tokenName:
+      "6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200",
+  };
+  const lpAmount = 20_000n;
+  const pool = await blockFrostAdapter.getV2PoolByLp(lpAsset);
+  invariant(pool, "Pool not found");
+  const { withdrawalA, withdrawalB } =
+    await DexV2Calculation.calculateWithdrawAmount({
+      withdrawalLPAmount: lpAmount,
+      totalLiquidity: pool.totalLiquidity,
+      datumReserves: pool.datumReserves,
+    });
+
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptableAmountAReceive = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: withdrawalA,
+    type: "down",
+  });
+  const acceptableAmountBReceive = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: withdrawalB,
+    type: "down",
+  });
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.WITHDRAW,
+        lpAmount: lpAmount,
+        minimumAssetAReceived: acceptableAmountAReceive,
+        minimumAssetBReceived: acceptableAmountBReceive,
+        killOnFailed: false,
+        lpAsset,
       },
     ],
   });

@@ -318,6 +318,14 @@ export class BlockfrostAdapter {
     );
   }
 
+  public async getV2PoolByLp(lpAsset: Asset): Promise<PoolV2.State | null> {
+    const { pools: allPools } = await this.getAllV2Pools();
+    return (
+      allPools.find((pool) => Asset.compare(pool.lpAsset, lpAsset) === 0) ??
+      null
+    );
+  }
+
   public async getAllStablePools(): Promise<{
     pools: StablePool.State[];
     errors: unknown[];
