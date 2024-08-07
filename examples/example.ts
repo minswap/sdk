@@ -652,6 +652,50 @@ async function _ocoV2TxExample(
   });
 }
 
+async function _zapOutV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  // ADA-MIN Lp Asset
+  const lpAsset = {
+    policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+    tokenName:
+      "6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200",
+  };
+  const lpAmount = 10_000n;
+  const pool = await blockFrostAdapter.getV2PoolByLp(lpAsset);
+  invariant(pool, "Pool not found");
+  const zapAmountOut = DexV2Calculation.calculateZapOutAmount({
+    withdrawalLPAmount: lpAmount,
+    direction: OrderV2.Direction.B_TO_A,
+    poolInfo: pool.info,
+  });
+
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptableZapOutAmount = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: zapAmountOut,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.ZAP_OUT,
+        lpAmount,
+        direction: OrderV2.Direction.B_TO_A,
+        minimumReceived: acceptableZapOutAmount,
+        killOnFailed: false,
+        lpAsset,
+      },
+    ],
+  });
+}
+
 /**
  * Initialize Lucid Instance for Browser Environment
  * @param network Network you're working on
