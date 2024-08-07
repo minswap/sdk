@@ -60,7 +60,7 @@ async function main(): Promise<void> {
 
   const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _withdrawV2TxExample(
+  const txComplete = await _stopV2TxExample(
     lucid,
     blockfrostAdapter,
     address,
@@ -559,6 +559,48 @@ async function _withdrawV2TxExample(
         minimumAssetBReceived: acceptableAmountBReceive,
         killOnFailed: false,
         lpAsset,
+      },
+    ],
+  });
+}
+
+async function _stopV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+  const amountA = 10_000n;
+
+  const pool = await blockFrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "pool not found");
+  const amountOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    amountIn: amountA,
+    tradingFeeNumerator: pool.feeA[0],
+  });
+
+  // sell at 10% down
+  const stopAmount = Slippage.apply({
+    slippage: new BigNumber(10).div(100),
+    amount: amountOut,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.STOP,
+        assetIn: assetA,
+        lpAsset: pool.lpAsset,
+        amountIn: amountA,
+        stopAmount,
+        direction: OrderV2.Direction.A_TO_B,
       },
     ],
   });

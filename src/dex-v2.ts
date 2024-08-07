@@ -373,7 +373,7 @@ export class DexV2 {
         invariant(amountIn > 0n, "amount in must be positive");
         invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
         orderAssets[Asset.toString(assetIn)] = amountIn;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.SWAP_EXACT_OUT: {
         const { assetIn, maximumAmountIn, expectedReceived } = options;
@@ -387,7 +387,7 @@ export class DexV2 {
         invariant(amountIn > 0n, "amount in must be positive");
         invariant(stopAmount > 0n, "stop amount out must be positive");
         orderAssets[Asset.toString(assetIn)] = amountIn;
-        return orderAssets;
+        break;
       }
       case OrderV2.StepType.OCO: {
         const { assetIn, amountIn, stopAmount, limitAmount } = options;
