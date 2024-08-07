@@ -606,6 +606,52 @@ async function _stopV2TxExample(
   });
 }
 
+async function _ocoV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+  const amountA = 10_000n;
+
+  const pool = await blockFrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "Pool not found");
+
+  const amountOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    amountIn: amountA,
+    tradingFeeNumerator: pool.feeA[0],
+  });
+  const limitAmount = Slippage.apply({
+    slippage: new BigNumber(20).div(100),
+    amount: amountOut,
+    type: "up",
+  });
+  const stopAmount = Slippage.apply({
+    slippage: new BigNumber(20).div(100),
+    amount: amountOut,
+    type: "down",
+  });
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.OCO,
+        amountIn: amountA,
+        assetIn: assetA,
+        lpAsset: pool.lpAsset,
+        stopAmount,
+        limitAmount,
+        direction: OrderV2.Direction.A_TO_B,
+      },
+    ],
+    availableUtxos,
+  });
+}
+
 /**
  * Initialize Lucid Instance for Browser Environment
  * @param network Network you're working on
