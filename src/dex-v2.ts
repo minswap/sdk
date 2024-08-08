@@ -807,7 +807,9 @@ export class DexV2 {
       }
       lucidTx.payToContract(
         orderAddress,
-        Data.to(OrderV2.Datum.toPlutusData(orderDatum)),
+        {
+          inline: Data.to(OrderV2.Datum.toPlutusData(orderDatum)),
+        },
         orderAssets
       );
     }
