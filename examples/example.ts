@@ -38,7 +38,7 @@ const MIN: Asset = {
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "preprodel6eWcyCZddTV1wezpV1uNlt0GpUVAcw";
+  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
@@ -67,9 +67,7 @@ async function main(): Promise<void> {
     utxos
   );
   const signedTx = await txComplete
-    .signWithPrivateKey(
-      "ed25519e_sk1zplkdlsqnqtrayzgukq262rw203qdvg383rgtnpjxcpj5c2jgfvx8vz5xzkxz9exm2t08v2tfhrazp6qd260wqfs0x5vckxl6zftx7cf9f9e2"
-    )
+    .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
     .complete();
   const txId = await signedTx.submit();
   // eslint-disable-next-line no-console
