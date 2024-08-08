@@ -126,7 +126,7 @@ export type PartialSwapOptions = {
   amountIn: bigint;
   direction: OrderV2.Direction;
   expectedInOutRatio: [bigint, bigint];
-  maximumSwapTime: bigint;
+  maximumSwapTime: number;
   minimumSwapAmountRequired: bigint;
 };
 
@@ -604,7 +604,7 @@ export class DexV2 {
           totalSwapAmount: amountIn,
           ioRatioNumerator: expectedInOutRatioNumerator,
           ioRatioDenominator: expectedInOutRatioDenominator,
-          hops: maximumSwapTime,
+          hops: BigInt(maximumSwapTime),
           minimumSwapAmountRequired: minimumSwapAmountRequired,
           maxBatcherFeeEachTime: finalBatcherFee,
         };
@@ -763,7 +763,7 @@ export class DexV2 {
       }
       let totalBatcherFee: bigint;
       if (type === OrderV2.StepType.PARTIAL_SWAP) {
-        totalBatcherFee = batcherFee * option.maximumSwapTime;
+        totalBatcherFee = batcherFee * BigInt(option.maximumSwapTime);
       } else {
         totalBatcherFee = batcherFee;
       }

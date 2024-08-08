@@ -694,6 +694,153 @@ async function _zapOutV2TxExample(
   });
 }
 
+async function _partialSwapV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+  const amountA = 10_000n;
+  const pool = await blockFrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "Pool not found");
+
+  const amountOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    amountIn: amountA,
+    tradingFeeNumerator: pool.feeA[0],
+  });
+  // 20% above market
+  const limitAmount = Slippage.apply({
+    slippage: new BigNumber(20).div(100),
+    amount: amountOut,
+    type: "up",
+  });
+
+  const gcd = calculateGcd(amountA, limitAmount);
+  const maximumSwaps = 2;
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.PARTIAL_SWAP,
+        assetIn: assetA,
+        amountIn: amountA,
+        direction: OrderV2.Direction.A_TO_B,
+        expectedInOutRatio: [amountA / gcd, limitAmount / gcd],
+        maximumSwapTime: maximumSwaps,
+        minimumSwapAmountRequired: BigInt(
+          new BigNumber(getMinimumTradePercent(maximumSwaps))
+            .div(100)
+            .multipliedBy(amountA.toString())
+            .toFixed(0)
+        ),
+        lpAsset: pool.lpAsset,
+      },
+    ],
+  });
+}
+
+async function _multiRoutingTxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = MIN;
+  const amountA = 10_000n;
+
+  // ADA-MIN Lp Asset
+  const lpAssetA = {
+    policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+    tokenName:
+      "6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200",
+  };
+  // ADA-MileCoin Lp Asset
+  const lpAssetB = {
+    policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+    tokenName:
+      "976edd2e047eedcd0d707df19155b9298d68020b8a68c2b27223539c4df57d3d",
+  };
+  const routings = [
+    {
+      lpAsset: lpAssetA,
+      direction: OrderV2.Direction.B_TO_A,
+    },
+    {
+      lpAsset: lpAssetB,
+      direction: OrderV2.Direction.A_TO_B,
+    },
+  ];
+  const pools = await Promise.all(
+    routings.map(({ lpAsset }) => blockFrostAdapter.getV2PoolByLp(lpAsset))
+  );
+  invariant(pools.length === routings.length, "pools not found");
+
+  let lastAmountIn = amountA;
+  for (let i = 0; i < routings.length; i++) {
+    const pool = pools[i];
+    invariant(pool, "Pool not found");
+    const amountOut = DexV2Calculation.calculateAmountOut({
+      reserveIn: pool.reserveA,
+      reserveOut: pool.reserveB,
+      amountIn: lastAmountIn,
+      tradingFeeNumerator: pool.feeA[0],
+    });
+    lastAmountIn = amountOut;
+  }
+
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptableOutputAmount = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: lastAmountIn,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.SWAP_ROUTING,
+        assetIn: assetA,
+        amountIn: amountA,
+        routings: [
+          {
+            lpAsset: lpAssetA,
+            direction: OrderV2.Direction.B_TO_A,
+          },
+          {
+            lpAsset: lpAssetB,
+            direction: OrderV2.Direction.A_TO_B,
+          },
+        ],
+        minimumReceived: acceptableOutputAmount,
+        lpAsset: lpAssetA,
+      },
+    ],
+  });
+}
+
+async function _cancelV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  return new DexV2(lucid, blockFrostAdapter).cancelOrder({
+    orderOutRefs: [
+      {
+        txHash:
+          "83e22abd3fad8525b02bf2fd1c8e8d0dbc37dbbe09384d666699081ee3e6f282",
+        outputIndex: 0,
+      },
+    ],
+  });
+}
+
 /**
  * Initialize Lucid Instance for Browser Environment
  * @param network Network you're working on
@@ -736,6 +883,34 @@ async function getBackendLucidInstance(
     address: address,
   });
   return lucid;
+}
+
+function calculateGcd(a: bigint, b: bigint): bigint {
+  if (!b) {
+    return a;
+  }
+  const remainder = a > b ? a % b : b % a;
+  return calculateGcd(a > b ? b : a, remainder);
+}
+
+function getMinimumTradePercent(maxTradeTime: number): number {
+  switch (maxTradeTime) {
+    case 2: {
+      return 40;
+    }
+    case 3: {
+      return 25;
+    }
+    case 4: {
+      return 20;
+    }
+    case 5: {
+      return 15;
+    }
+    default: {
+      return 100;
+    }
+  }
 }
 
 void main();
