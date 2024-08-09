@@ -60,4 +60,8 @@ export namespace Asset {
         }
         return StringUtils.compare(a1.policyId, a2.policyId)
     }
+
+    export function equals(a1: Asset, a2: Asset): boolean {
+        return a1.policyId === a2.policyId && a1.tokenName === a2.tokenName
+    }
 }

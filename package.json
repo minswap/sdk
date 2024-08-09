@@ -19,7 +19,8 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write **/*.ts && eslint src --fix --ext .ts",
     "check-format": "prettier --check **/*.ts && eslint src --ext .ts",
-    "exec": "ts-node --esm --experimental-specifier-resolution=node"
+    "exec": "ts-node --esm --experimental-specifier-resolution=node",
+    "example": "ts-node --transpile-only --esm --experimental-specifier-resolution=node examples/example.ts"
   },
   "keywords": [
     "minswap",
@@ -44,7 +45,8 @@
     "@minswap/tiny-invariant": "^1.2.0",
     "big.js": "^6.1.1",
     "lucid-cardano": "^0.10.1",
-    "sha3": "^2.1.4"
+    "sha3": "^2.1.4",
+    "bignumber.js": "^9.1.2"
   },
   "devDependencies": {
     "@types/big.js": "^6.1.3",

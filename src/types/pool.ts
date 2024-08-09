@@ -3,7 +3,7 @@ import { Constr, Credential, Data } from "lucid-cardano";
 
 import { sha3 } from "../utils/hash.internal";
 import { LucidCredential } from "./address.internal";
-import { Asset } from "./asset";
+import { ADA, Asset } from "./asset";
 import {
   DexV1Constant,
   DexV2Constant,
@@ -261,10 +261,27 @@ export namespace StablePool {
 }
 
 export namespace PoolV2 {
+  export const MAX_LIQUIDITY = 9_223_372_036_854_775_807n;
+  export const DEFAULT_POOL_ADA = 4_500_000n;
+  // The amount of liquidity that will be locked in pool when creating pools
+  export const MINIMUM_LIQUIDITY = 10n;
+  export const DEFAULT_TRADING_FEE_DENOMINATOR = 10000n;
+
   export function computeLPAssetName(assetA: Asset, assetB: Asset): string {
     const k1 = sha3(assetA.policyId + assetA.tokenName);
     const k2 = sha3(assetB.policyId + assetB.tokenName);
     return sha3(k1 + k2);
+  }
+
+  export type Info = {
+    datumReserves: [bigint, bigint];
+    valueReserves: [bigint, bigint];
+    totalLiquidity: bigint;
+    tradingFee: {
+      feeANumerator: bigint;
+      feeBNumerator: bigint;
+    };
+    feeSharingNumerator?: bigint;
   }
   export class State {
     public readonly address: string;
@@ -340,6 +357,36 @@ export namespace PoolV2 {
         ]
       } else {
         return undefined
+      }
+    }
+
+    get datumReserves(): [bigint, bigint] {
+      return [this.datum.reserveA, this.datum.reserveB]
+    }
+
+    get valueReserveA(): bigint {
+      const amount = BigInt(this.value.find((v) => v.unit === this.assetA)?.quantity ?? "0")
+      if (Asset.equals(this.datum.assetA, ADA)) {
+        return amount - DEFAULT_POOL_ADA;
+      }
+      return amount;
+    }
+
+    get valueReserveB(): bigint {
+      return BigInt(this.value.find((v) => v.unit === this.assetB)?.quantity ?? "0")
+    }
+
+    get valueReserves(): [bigint, bigint] {
+      return [this.valueReserveA, this.valueReserveB];
+    }
+
+    get info(): Info {
+      return {
+        datumReserves: this.datumReserves,
+        valueReserves: this.valueReserves,
+        totalLiquidity: this.datum.totalLiquidity,
+        tradingFee: this.datum.baseFee,
+        feeSharingNumerator: this.datum.feeSharingNumerator
       }
     }
   }

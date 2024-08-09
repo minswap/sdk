@@ -5,22 +5,22 @@ import {
   Constr,
   Data,
   Lucid,
-  Network,
   SpendingValidator,
   TxComplete,
   UTxO,
 } from "lucid-cardano";
 
-import { getBatcherFee } from "./batcher-fee-reduction/configs.internal";
+import { calculateBatcherFee } from "./batcher-fee-reduction/calculate";
+import { DexVersion } from "./batcher-fee-reduction/types.internal";
 import { Asset } from "./types/asset";
 import {
-  BATCHER_FEE_REDUCTION_SUPPORTED_ASSET,
   DexV1Constant,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
 } from "./types/constants";
-import { NetworkId } from "./types/network";
+import { NetworkEnvironment, NetworkId } from "./types/network";
 import { OrderV1 } from "./types/order";
+import { lucidToNetworkEnv } from "./utils/network.internal";
 
 /**
  * Common options for build Minswap transaction
@@ -121,14 +121,15 @@ export type BuildSwapExactInTxOptions = CommonOptions & {
 
 export class Dex {
   private readonly lucid: Lucid;
-  private readonly network: Network;
   private readonly networkId: NetworkId;
+  private readonly networkEnv: NetworkEnvironment;
+  private readonly dexVersion = DexVersion.DEX_V1;
 
   constructor(lucid: Lucid) {
     this.lucid = lucid;
-    this.network = lucid.network;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
+    this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
   async buildSwapExactInTx(
@@ -146,10 +147,12 @@ export class Dex {
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -202,10 +205,12 @@ export class Dex {
       "amount in and out must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(assetIn)]: maximumAmountIn };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -252,10 +257,12 @@ export class Dex {
       "minimum asset received must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(lpAsset)]: lpAmount };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -298,10 +305,12 @@ export class Dex {
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -349,10 +358,12 @@ export class Dex {
       [Asset.toString(assetA)]: amountA,
       [Asset.toString(assetB)]: amountB,
     };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -403,43 +414,5 @@ export class Dex {
       .attachSpendingValidator(<SpendingValidator>DexV1Constant.ORDER_SCRIPT)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .complete();
-  }
-
-  private calculateBatcherFee(
-    utxos: UTxO[],
-    orderAssets: Assets
-  ): {
-    batcherFee: bigint;
-    reductionAssets: Assets;
-  } {
-    const [minAsset, adaMINLPAsset] =
-      BATCHER_FEE_REDUCTION_SUPPORTED_ASSET[this.networkId];
-    let amountMIN = 0n;
-    let amountADAMINLP = 0n;
-    for (const utxo of utxos) {
-      if (utxo.assets[minAsset]) {
-        amountMIN += utxo.assets[minAsset];
-      }
-      if (utxo.assets[adaMINLPAsset]) {
-        amountADAMINLP += utxo.assets[adaMINLPAsset];
-      }
-    }
-    if (orderAssets[minAsset]) {
-      amountMIN -= orderAssets[minAsset];
-    }
-    if (orderAssets[adaMINLPAsset]) {
-      amountADAMINLP -= orderAssets[adaMINLPAsset];
-    }
-    const reductionAssets: Assets = {};
-    if (amountMIN > 0) {
-      reductionAssets[minAsset] = amountMIN;
-    }
-    if (amountADAMINLP > 0) {
-      reductionAssets[adaMINLPAsset] = amountADAMINLP;
-    }
-    return {
-      batcherFee: getBatcherFee(this.network, amountMIN, amountADAMINLP),
-      reductionAssets: reductionAssets,
-    };
   }
 }
