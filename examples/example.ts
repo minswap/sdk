@@ -784,12 +784,16 @@ async function _multiRoutingTxExample(
   let lastAmountIn = amountA;
   for (let i = 0; i < routings.length; i++) {
     const pool = pools[i];
+    const routing = routings[i];
     invariant(pool, "Pool not found");
     const amountOut = DexV2Calculation.calculateAmountOut({
       reserveIn: pool.reserveA,
       reserveOut: pool.reserveB,
       amountIn: lastAmountIn,
-      tradingFeeNumerator: pool.feeA[0],
+      tradingFeeNumerator:
+        routing.direction === OrderV2.Direction.A_TO_B
+          ? pool.feeA[0]
+          : pool.feeB[0],
     });
     lastAmountIn = amountOut;
   }
