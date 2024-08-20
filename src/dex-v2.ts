@@ -7,6 +7,7 @@ import {
   Data,
   Lucid,
   OutRef,
+  Tx,
   TxComplete,
   UTxO,
 } from "lucid-cardano";
@@ -52,6 +53,7 @@ export type BulkOrdersOption = {
   orderOptions: OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
   availableUtxos: UTxO[];
+  composeTx?: Tx;
 };
 
 export type OrderV2SwapRouting = {
@@ -164,6 +166,7 @@ export type OrderOptions = (
 
 export type CancelBulkOrdersOptions = {
   orderOutRefs: OutRef[];
+  composeTx? : Tx,
 };
 
 export class DexV2 {
@@ -731,7 +734,8 @@ export class DexV2 {
     orderOptions,
     expiredOptions,
     availableUtxos,
-  }: BulkOrdersOption): Promise<TxComplete> {
+    composeTx,
+  }: BulkOrdersOption): Promise<TxComplete > {
     // calculate total order value
     const totalOrderAssets: Record<string, bigint> = {};
     for (const option of orderOptions) {
@@ -824,11 +828,18 @@ export class DexV2 {
       msg: [metadata],
       limitOrders: limitOrderMessage,
     });
-    return lucidTx.payToAddress(sender, reductionAssets).complete();
+    lucidTx.payToAddress(sender, reductionAssets);
+    if (composeTx){
+      lucidTx.compose(composeTx);
+    }
+    return lucidTx.complete();
+    
   }
 
   async cancelOrder({
     orderOutRefs,
+    composeTx,
+
   }: CancelBulkOrdersOptions): Promise<TxComplete> {
     const v2OrderScriptHash = this.getOrderScriptHash();
     const orderUtxos = await this.lucid.utxosByOutRef(orderOutRefs);
@@ -890,6 +901,9 @@ export class DexV2 {
     lucidTx.attachMetadata(674, {
       msg: [MetadataMessage.CANCEL_ORDER],
     });
+    if (composeTx){
+      lucidTx.compose(composeTx);
+    }
     return lucidTx.complete();
   }
 }
