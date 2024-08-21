@@ -54,7 +54,7 @@ export type BulkOrdersOption = {
   expiredOptions?: OrderV2.ExpirySetting;
   availableUtxos: UTxO[];
   composeTx?: Tx;
-  AuthorizationMethodType? : OrderV2.AuthorizationMethodType;
+  authorizationMethodType? : OrderV2.AuthorizationMethodType;
 };
 
 export type OrderV2SwapRouting = {
@@ -737,7 +737,7 @@ export class DexV2 {
     expiredOptions,
     availableUtxos,
     composeTx,
-    AuthorizationMethodType
+    authorizationMethodType
   }: BulkOrdersOption): Promise<TxComplete > {
     // calculate total order value
     const totalOrderAssets: Record<string, bigint> = {};
@@ -783,8 +783,8 @@ export class DexV2 {
       const senderPaymentCred = this.lucid.utils.getAddressDetails(sender).paymentCredential;
       invariant( senderPaymentCred, "sender address payment credentials not found");
 
-      const canceller = AuthorizationMethodType ? { 
-        type: AuthorizationMethodType,
+      const canceller = authorizationMethodType ? { 
+        type: authorizationMethodType,
         hash: senderPaymentCred.hash,
       } : {
         type: OrderV2.AuthorizationMethodType.SIGNATURE,
