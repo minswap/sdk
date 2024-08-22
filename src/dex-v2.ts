@@ -54,7 +54,7 @@ export type BulkOrdersOption = {
   expiredOptions?: OrderV2.ExpirySetting;
   availableUtxos: UTxO[];
   composeTx?: Tx;
-  authorizationMethodType? : OrderV2.AuthorizationMethodType;
+  authorizationMethodType?: OrderV2.AuthorizationMethodType;
 };
 
 export type OrderV2SwapRouting = {
@@ -167,8 +167,8 @@ export type OrderOptions = (
 
 export type CancelBulkOrdersOptions = {
   orderOutRefs: OutRef[];
-  composeTx? : Tx,
-  AuthorizationMethodType? : OrderV2.AuthorizationMethodType;
+  composeTx?: Tx;
+  AuthorizationMethodType?: OrderV2.AuthorizationMethodType;
 };
 
 export class DexV2 {
@@ -737,8 +737,8 @@ export class DexV2 {
     expiredOptions,
     availableUtxos,
     composeTx,
-    authorizationMethodType
-  }: BulkOrdersOption): Promise<TxComplete > {
+    authorizationMethodType,
+  }: BulkOrdersOption): Promise<TxComplete> {
     // calculate total order value
     const totalOrderAssets: Record<string, bigint> = {};
     for (const option of orderOptions) {
@@ -780,16 +780,22 @@ export class DexV2 {
         orderAssets["lovelace"] = totalBatcherFee;
       }
 
-      const senderPaymentCred = this.lucid.utils.getAddressDetails(sender).paymentCredential;
-      invariant( senderPaymentCred, "sender address payment credentials not found");
+      const senderPaymentCred =
+        this.lucid.utils.getAddressDetails(sender).paymentCredential;
+      invariant(
+        senderPaymentCred,
+        "sender address payment credentials not found"
+      );
 
-      const canceller = authorizationMethodType ? { 
-        type: authorizationMethodType,
-        hash: senderPaymentCred.hash,
-      } : {
-        type: OrderV2.AuthorizationMethodType.SIGNATURE,
-        hash: senderPaymentCred.hash,
-      };
+      const canceller = authorizationMethodType
+        ? {
+            type: authorizationMethodType,
+            hash: senderPaymentCred.hash,
+          }
+        : {
+            type: OrderV2.AuthorizationMethodType.SIGNATURE,
+            hash: senderPaymentCred.hash,
+          };
       const orderDatum: OrderV2.Datum = {
         canceller: canceller,
         refundReceiver: sender,
@@ -834,17 +840,15 @@ export class DexV2 {
       limitOrders: limitOrderMessage,
     });
     lucidTx.payToAddress(sender, reductionAssets);
-    if (composeTx){
+    if (composeTx) {
       lucidTx.compose(composeTx);
     }
     return lucidTx.complete();
-    
   }
 
   async cancelOrder({
     orderOutRefs,
     composeTx,
-
   }: CancelBulkOrdersOptions): Promise<TxComplete> {
     const v2OrderScriptHash = this.getOrderScriptHash();
     const orderUtxos = await this.lucid.utxosByOutRef(orderOutRefs);
@@ -890,8 +894,8 @@ export class DexV2 {
         );
       }
 
-      if(datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE) 
-          requiredPubKeyHashSet.add(datum.canceller.hash);
+      if (datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE)
+        requiredPubKeyHashSet.add(datum.canceller.hash);
     }
     const redeemer = Data.to(
       new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
@@ -904,7 +908,7 @@ export class DexV2 {
     lucidTx.attachMetadata(674, {
       msg: [MetadataMessage.CANCEL_ORDER],
     });
-    if (composeTx){
+    if (composeTx) {
       lucidTx.compose(composeTx);
     }
     return lucidTx.complete();

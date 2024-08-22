@@ -43,6 +43,12 @@ export type GetPoolPriceParams = {
   decimalsB?: number;
 };
 
+export type GetV2PoolPriceParams = {
+  pool: PoolV2.State;
+  decimalsA?: number;
+  decimalsB?: number;
+};
+
 export type GetPoolHistoryParams = PaginationOptions & {
   id: string;
 };
@@ -324,6 +330,36 @@ export class BlockfrostAdapter {
       allPools.find((pool) => Asset.compare(pool.lpAsset, lpAsset) === 0) ??
       null
     );
+  }
+
+  /**
+   * Get pool price.
+   * @param {Object} params - The parameters to calculate pool price.
+   * @param {string} params.pool - The pool we want to get price.
+   * @param {string} [params.decimalsA] - The decimals of assetA in pool, if undefined then query from Blockfrost.
+   * @param {string} [params.decimalsB] - The decimals of assetB in pool, if undefined then query from Blockfrost.
+   * @returns {[string, string]} - Returns a pair of asset A/B price and B/A price, adjusted to decimals.
+   */
+  public async getV2PoolPrice({
+    pool,
+    decimalsA,
+    decimalsB,
+  }: GetV2PoolPriceParams): Promise<[Big, Big]> {
+    if (decimalsA === undefined) {
+      decimalsA = await this.getAssetDecimals(pool.assetA);
+    }
+    if (decimalsB === undefined) {
+      decimalsB = await this.getAssetDecimals(pool.assetB);
+    }
+    const adjustedReserveA = Big(pool.reserveA.toString()).div(
+      Big(10).pow(decimalsA)
+    );
+    const adjustedReserveB = Big(pool.reserveB.toString()).div(
+      Big(10).pow(decimalsB)
+    );
+    const priceAB = adjustedReserveA.div(adjustedReserveB);
+    const priceBA = adjustedReserveB.div(adjustedReserveA);
+    return [priceAB, priceBA];
   }
 
   public async getAllStablePools(): Promise<{
