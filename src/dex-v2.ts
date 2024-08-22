@@ -7,6 +7,7 @@ import {
   Data,
   Lucid,
   OutRef,
+  Tx,
   TxComplete,
   UTxO,
 } from "lucid-cardano";
@@ -52,6 +53,8 @@ export type BulkOrdersOption = {
   orderOptions: OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
   availableUtxos: UTxO[];
+  composeTx?: Tx;
+  authorizationMethodType? : OrderV2.AuthorizationMethodType;
 };
 
 export type OrderV2SwapRouting = {
@@ -164,6 +167,8 @@ export type OrderOptions = (
 
 export type CancelBulkOrdersOptions = {
   orderOutRefs: OutRef[];
+  composeTx? : Tx,
+  AuthorizationMethodType? : OrderV2.AuthorizationMethodType;
 };
 
 export class DexV2 {
@@ -731,7 +736,9 @@ export class DexV2 {
     orderOptions,
     expiredOptions,
     availableUtxos,
-  }: BulkOrdersOption): Promise<TxComplete> {
+    composeTx,
+    authorizationMethodType
+  }: BulkOrdersOption): Promise<TxComplete > {
     // calculate total order value
     const totalOrderAssets: Record<string, bigint> = {};
     for (const option of orderOptions) {
@@ -772,17 +779,19 @@ export class DexV2 {
       } else {
         orderAssets["lovelace"] = totalBatcherFee;
       }
-      const senderPaymentCred =
-        this.lucid.utils.getAddressDetails(sender).paymentCredential;
-      invariant(
-        senderPaymentCred?.type === "Key",
-        "sender pub key hash not found"
-      );
+
+      const senderPaymentCred = this.lucid.utils.getAddressDetails(sender).paymentCredential;
+      invariant( senderPaymentCred, "sender address payment credentials not found");
+
+      const canceller = authorizationMethodType ? { 
+        type: authorizationMethodType,
+        hash: senderPaymentCred.hash,
+      } : {
+        type: OrderV2.AuthorizationMethodType.SIGNATURE,
+        hash: senderPaymentCred.hash,
+      };
       const orderDatum: OrderV2.Datum = {
-        canceller: {
-          type: OrderV2.AuthorizationMethodType.SIGNATURE,
-          hash: senderPaymentCred.hash,
-        },
+        canceller: canceller,
         refundReceiver: sender,
         refundReceiverDatum: {
           type: OrderV2.ExtraDatumType.NO_DATUM,
@@ -824,11 +833,18 @@ export class DexV2 {
       msg: [metadata],
       limitOrders: limitOrderMessage,
     });
-    return lucidTx.payToAddress(sender, reductionAssets).complete();
+    lucidTx.payToAddress(sender, reductionAssets);
+    if (composeTx){
+      lucidTx.compose(composeTx);
+    }
+    return lucidTx.complete();
+    
   }
 
   async cancelOrder({
     orderOutRefs,
+    composeTx,
+
   }: CancelBulkOrdersOptions): Promise<TxComplete> {
     const v2OrderScriptHash = this.getOrderScriptHash();
     const orderUtxos = await this.lucid.utxosByOutRef(orderOutRefs);
@@ -873,11 +889,9 @@ export class DexV2 {
           "Utxo without Datum Hash or Inline Datum can not be spent"
         );
       }
-      invariant(
-        datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE,
-        "only support PubKey canceller on this function"
-      );
-      requiredPubKeyHashSet.add(datum.canceller.hash);
+
+      if(datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE) 
+          requiredPubKeyHashSet.add(datum.canceller.hash);
     }
     const redeemer = Data.to(
       new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
@@ -890,6 +904,9 @@ export class DexV2 {
     lucidTx.attachMetadata(674, {
       msg: [MetadataMessage.CANCEL_ORDER],
     });
+    if (composeTx){
+      lucidTx.compose(composeTx);
+    }
     return lucidTx.complete();
   }
 }
