@@ -341,7 +341,7 @@ export class DexV2 {
       .complete();
   }
 
-  private buildOrderValue(options: OrderOptions): Record<string, bigint> {
+  private buildOrderValue(options: OrderOptions): Assets {
     const orderAssets: Assets = {};
     switch (options.type) {
       case OrderV2.StepType.DEPOSIT: {
@@ -815,7 +815,7 @@ export class DexV2 {
       try {
         const senderStakeAddress = this.lucid.utils.stakeCredentialOf(sender);
         orderAddress = this.buildOrderAddress(senderStakeAddress);
-      } catch (e) {
+      } catch {
         // if fails then sender address doesn't have stake credentials
         orderAddress =
           DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
@@ -880,7 +880,7 @@ export class DexV2 {
         const rawDatum = utxo.datum;
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum) as Constr<Data>
+          Data.from(rawDatum)
         );
       } else if (utxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(utxo);
