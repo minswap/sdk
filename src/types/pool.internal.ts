@@ -29,7 +29,9 @@ export type PoolFeeSharing = {
 };
 
 export namespace PoolFeeSharing {
-  export function toPlutusData(feeSharing: PoolFeeSharing): Constr<Data> {
+  export function toPlutusData(
+    feeSharing: PoolFeeSharing
+  ): Constr<Constr<Data>> {
     const { feeTo, feeToDatumHash } = feeSharing;
     return new Constr(0, [
       AddressPlutusData.toPlutusData(feeTo),
@@ -85,7 +87,9 @@ export function checkValidPoolOutput(
   // must have 1 factory token
   if (
     value.find(
-      ({ unit }) => unit === `${DexV1Constant.FACTORY_POLICY_ID}${DexV1Constant.FACTORY_ASSET_NAME}`
+      ({ unit }) =>
+        unit ===
+        `${DexV1Constant.FACTORY_POLICY_ID}${DexV1Constant.FACTORY_ASSET_NAME}`
     )?.quantity !== "1"
   ) {
     throw new Error(`expect pool to have 1 factory token`);
@@ -101,7 +105,7 @@ export function isValidPoolOutput(
   try {
     checkValidPoolOutput(poolAddress, value, datumHash);
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
