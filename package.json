@@ -16,9 +16,9 @@
   "scripts": {
     "build": "rimraf build && rollup -c rollup.config.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest && tsc",
-    "lint": "eslint src/**/*",
+    "lint": "eslint src",
     "format": "prettier --write **/*.ts && eslint src --fix",
-    "check-format": "prettier --check **/*.ts && eslint src --ext .ts",
+    "check-format": "prettier --check **/*.ts && eslint src",
     "exec": "ts-node --esm --experimental-specifier-resolution=node",
     "example": "ts-node --transpile-only --esm --experimental-specifier-resolution=node examples/example.ts"
   },
