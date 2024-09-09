@@ -1,10 +1,9 @@
 import invariant from "@minswap/tiny-invariant";
 import { Address, Constr, Data } from "lucid-cardano";
 
-import { FACTORY_ASSET_NAME, FACTORY_POLICY_ID } from "../constants";
-import { POOL_SCRIPT_HASH } from "../constants";
 import { getScriptHashFromAddress } from "../utils/address-utils.internal";
 import { AddressPlutusData } from "./address.internal";
+import { DexV1Constant } from "./constants";
 import { NetworkId } from "./network";
 import { Value } from "./tx.internal";
 
@@ -30,7 +29,9 @@ export type PoolFeeSharing = {
 };
 
 export namespace PoolFeeSharing {
-  export function toPlutusData(feeSharing: PoolFeeSharing): Constr<Data> {
+  export function toPlutusData(
+    feeSharing: PoolFeeSharing
+  ): Constr<Constr<Data>> {
     const { feeTo, feeToDatumHash } = feeSharing;
     return new Constr(0, [
       AddressPlutusData.toPlutusData(feeTo),
@@ -80,13 +81,15 @@ export function checkValidPoolOutput(
   datumHash: string | null
 ): void {
   invariant(
-    getScriptHashFromAddress(poolAddress) === POOL_SCRIPT_HASH,
+    getScriptHashFromAddress(poolAddress) === DexV1Constant.POOL_SCRIPT_HASH,
     `invalid pool address: ${poolAddress}`
   );
   // must have 1 factory token
   if (
     value.find(
-      ({ unit }) => unit === `${FACTORY_POLICY_ID}${FACTORY_ASSET_NAME}`
+      ({ unit }) =>
+        unit ===
+        `${DexV1Constant.FACTORY_POLICY_ID}${DexV1Constant.FACTORY_ASSET_NAME}`
     )?.quantity !== "1"
   ) {
     throw new Error(`expect pool to have 1 factory token`);
@@ -102,7 +105,7 @@ export function isValidPoolOutput(
   try {
     checkValidPoolOutput(poolAddress, value, datumHash);
     return true;
-  } catch (err) {
+  } catch {
     return false;
   }
 }

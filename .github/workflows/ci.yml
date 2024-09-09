@@ -12,8 +12,8 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18.x
       - name: Install dependencies
@@ -24,5 +24,6 @@ jobs:
         run: npm run test
         env:
           BLOCKFROST_PROJECT_ID_MAINNET: ${{ secrets.BLOCKFROST_PROJECT_ID_MAINNET }}
+          BLOCKFROST_PROJECT_ID_TESTNET: ${{ secrets.BLOCKFROST_PROJECT_ID_TESTNET }}
       - name: Check format & lint
         run: npm run check-format

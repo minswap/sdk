@@ -1,5 +1,7 @@
 import Big from "big.js";
 
+import { OrderV2 } from "./types/order";
+import { PoolV2 } from "./types/pool";
 import { sqrt } from "./utils/sqrt.internal";
 
 /**
@@ -199,4 +201,275 @@ export function calculateZapIn(options: CalculateZapInOptions): bigint {
     (swapToAssetOutAmount * totalLiquidity) /
     (reserveOut - swapToAssetOutAmount)
   );
+}
+
+type Reserves = [bigint, bigint];
+type Fraction = [bigint, bigint];
+
+export namespace DexV2Calculation {
+  export type InitialLiquidityOptions = {
+    amountA: bigint;
+    amountB: bigint;
+  };
+
+  export type CalculateAmountOutOptions = {
+    reserveIn: bigint;
+    reserveOut: bigint;
+    amountIn: bigint;
+    tradingFeeNumerator: bigint;
+  };
+
+  export type CalculateAmountOutFractionOptions = {
+    reserveIn: bigint;
+    reserveOut: bigint;
+    amountIn: Fraction;
+    tradingFeeNumerator: bigint;
+  };
+
+  export type CalculateAmountInOptions = {
+    reserveIn: bigint;
+    reserveOut: bigint;
+    amountOut: bigint;
+    tradingFeeNumerator: bigint;
+  };
+
+  export type CalculateMaxInSwapOptions = {
+    reserveIn: bigint;
+    reserveOut: bigint;
+    tradingFeeNumerator: bigint;
+    ioRatio: Fraction;
+  };
+
+  export type CalculateDepositAmountOptions = {
+    amountA: bigint;
+    amountB: bigint;
+    poolInfo: PoolV2.Info;
+  };
+
+  export type CalculateDepositSwapAmountOptions = {
+    amountIn: bigint;
+    amountOut: bigint;
+    reserveIn: bigint;
+    reserveOut: bigint;
+    tradingFeeNumerator: bigint;
+  };
+
+  export type CalculateWithdrawAmountOptions = {
+    datumReserves: Reserves;
+    withdrawalLPAmount: bigint;
+    totalLiquidity: bigint;
+  };
+
+  export type CalculateZapOutAmountOptions = {
+    withdrawalLPAmount: bigint;
+    direction: OrderV2.Direction;
+    poolInfo: PoolV2.Info;
+  };
+
+  export function bigIntPow(x: bigint): bigint {
+    return x * x;
+  }
+
+  export function calculateInitialLiquidity({
+    amountA,
+    amountB,
+  }: InitialLiquidityOptions): bigint {
+    let x = sqrt(amountA * amountB);
+    if (x * x < amountA * amountB) {
+      x += 1n;
+    }
+    return x;
+  }
+
+  /* Functions using for DexV2 properties calculation */
+  export function calculateAmountOut({
+    reserveIn,
+    reserveOut,
+    amountIn,
+    tradingFeeNumerator,
+  }: CalculateAmountOutOptions): bigint {
+    const diff = PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator;
+    const inWithFee = diff * amountIn;
+    const numerator = inWithFee * reserveOut;
+    const denominator =
+      PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR * reserveIn + inWithFee;
+    return numerator / denominator;
+  }
+
+  export function calculateAmountOutFraction({
+    reserveIn,
+    reserveOut,
+    amountIn,
+    tradingFeeNumerator,
+  }: CalculateAmountOutFractionOptions): [bigint, bigint] {
+    const [amountInNumerator, amountInDenominator] = amountIn;
+    const diff = PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator;
+    const numerator = amountInNumerator * diff * reserveOut;
+    const denominator =
+      PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR * amountInDenominator * reserveIn +
+      amountInNumerator * diff;
+    return [numerator, denominator];
+  }
+
+  export function calculateAmountIn({
+    reserveIn,
+    reserveOut,
+    amountOut,
+    tradingFeeNumerator,
+  }: CalculateAmountInOptions): bigint {
+    if (amountOut >= reserveOut) {
+      throw new Error("Amount Out must be less than Reserve Out");
+    }
+    const diff = PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator;
+    const numerator =
+      reserveIn * amountOut * PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR;
+    const denominator = (reserveOut - amountOut) * diff;
+    return numerator / denominator + 1n;
+  }
+
+  export function calculateMaxInSwap({
+    reserveIn,
+    reserveOut,
+    tradingFeeNumerator,
+    ioRatio,
+  }: CalculateMaxInSwapOptions): bigint {
+    const [ioRatioNumerator, ioRatioDenominator] = ioRatio;
+    const diff = PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator;
+    const numerator =
+      ioRatioNumerator * diff * reserveOut -
+      ioRatioDenominator * PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR * reserveIn;
+    const denominator = ioRatioDenominator * diff;
+    const maxInSwap = numerator / denominator;
+    return maxInSwap > 0 ? maxInSwap : 0n;
+  }
+
+  export function calculateDepositAmount({
+    amountA,
+    amountB,
+    poolInfo,
+  }: CalculateDepositAmountOptions): bigint {
+    const { datumReserves, totalLiquidity, tradingFee } = poolInfo;
+    const [datumReserveA, datumReserveB] = [...datumReserves];
+    const ratioA = (amountA * totalLiquidity) / datumReserveA;
+    const ratioB = (amountB * totalLiquidity) / datumReserveB;
+    if (ratioA > ratioB) {
+      // Need swap a part of A to B
+      const swapAmountA = calculateDepositSwapAmount({
+        amountIn: amountA,
+        amountOut: amountB,
+        reserveIn: datumReserveA,
+        reserveOut: datumReserveB,
+        tradingFeeNumerator: tradingFee.feeANumerator,
+      });
+      const [swapAmountANumerator, swapAmountADenominator] = swapAmountA;
+      const lpAmount =
+        ((amountA * swapAmountADenominator - swapAmountANumerator) *
+          totalLiquidity) /
+        (datumReserveA * swapAmountADenominator + swapAmountANumerator);
+      return lpAmount;
+    } else if (ratioA < ratioB) {
+      // Need swap a part of B to A
+      const swapAmountB = calculateDepositSwapAmount({
+        amountIn: amountB,
+        amountOut: amountA,
+        reserveIn: datumReserveB,
+        reserveOut: datumReserveA,
+        tradingFeeNumerator: tradingFee.feeBNumerator,
+      });
+      const [swapAmountBNumerator, swapAmountBDenominator] = swapAmountB;
+      const lpAmount =
+        ((amountB * swapAmountBDenominator - swapAmountBNumerator) *
+          totalLiquidity) /
+        (datumReserveB * swapAmountBDenominator + swapAmountBNumerator);
+      return lpAmount;
+    } else {
+      return ratioA;
+    }
+  }
+
+  export function calculateDepositSwapAmount({
+    amountIn,
+    amountOut,
+    reserveIn,
+    reserveOut,
+    tradingFeeNumerator,
+  }: CalculateDepositSwapAmountOptions): Fraction {
+    const x = (amountOut + reserveOut) * reserveIn;
+    const y =
+      4n *
+      (amountOut + reserveOut) *
+      (amountOut * reserveIn * reserveIn - amountIn * reserveIn * reserveOut);
+    const z = 2n * (amountOut + reserveOut);
+    const a =
+      bigIntPow(x) *
+        bigIntPow(
+          2n * PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator
+        ) -
+      y *
+        PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR *
+        (PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator);
+    const b =
+      (2n * PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator) * x;
+    const numerator = sqrt(a) - b;
+    const denominator =
+      z * (PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator);
+    return [numerator, denominator];
+  }
+
+  export function calculateWithdrawAmount({
+    withdrawalLPAmount,
+    datumReserves,
+    totalLiquidity,
+  }: CalculateWithdrawAmountOptions): {
+    withdrawalA: bigint;
+    withdrawalB: bigint;
+  } {
+    const [datumReserveA, datumReserveB] = [...datumReserves];
+    const amountA = (withdrawalLPAmount * datumReserveA) / totalLiquidity;
+    const amountB = (withdrawalLPAmount * datumReserveB) / totalLiquidity;
+    return {
+      withdrawalA: amountA,
+      withdrawalB: amountB,
+    };
+  }
+
+  export function calculateZapOutAmount({
+    withdrawalLPAmount,
+    direction,
+    poolInfo,
+  }: CalculateZapOutAmountOptions): bigint {
+    const { datumReserves, totalLiquidity, tradingFee } = poolInfo;
+    const [datumReserveA, datumReserveB] = [...datumReserves];
+    const { withdrawalA, withdrawalB } = calculateWithdrawAmount({
+      withdrawalLPAmount: withdrawalLPAmount,
+      datumReserves: datumReserves,
+      totalLiquidity: totalLiquidity,
+    });
+
+    const reserveAAfterWithdraw = datumReserveA - withdrawalA;
+    const reserveBAfterWithdraw = datumReserveB - withdrawalB;
+    let amountOut = 0n;
+    switch (direction) {
+      case OrderV2.Direction.A_TO_B: {
+        const extraAmountOut = calculateAmountOut({
+          amountIn: withdrawalA,
+          reserveIn: reserveAAfterWithdraw,
+          reserveOut: reserveBAfterWithdraw,
+          tradingFeeNumerator: tradingFee.feeANumerator,
+        });
+        amountOut = withdrawalB + extraAmountOut;
+        return amountOut;
+      }
+      case OrderV2.Direction.B_TO_A: {
+        const extraAmountOut = calculateAmountOut({
+          amountIn: withdrawalB,
+          reserveIn: reserveBAfterWithdraw,
+          reserveOut: reserveAAfterWithdraw,
+          tradingFeeNumerator: tradingFee.feeBNumerator,
+        });
+        amountOut = withdrawalA + extraAmountOut;
+        return amountOut;
+      }
+    }
+  }
 }

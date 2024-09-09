@@ -5,24 +5,23 @@ import {
   Constr,
   Data,
   Lucid,
-  Network,
   OutputData,
   SpendingValidator,
   TxComplete,
   UTxO,
 } from "lucid-cardano";
 
-import { getBatcherFee } from "./batcher-fee-reduction/configs.internal";
+import { calculateBatcherFee } from "./batcher-fee-reduction/calculate";
+import { DexVersion } from "./batcher-fee-reduction/types.internal";
+import { Asset } from "./types/asset";
 import {
-  BATCHER_FEE_REDUCTION_SUPPORTED_ASSET,
+  DexV1Constant,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
-  ORDER_BASE_ADDRESS,
-  ORDER_SCRIPT,
-} from "./constants";
-import { Asset } from "./types/asset";
-import { NetworkId } from "./types/network";
-import { OrderDatum, OrderRedeemer, OrderStepType } from "./types/order";
+} from "./types/constants";
+import { NetworkEnvironment, NetworkId } from "./types/network";
+import { OrderV1 } from "./types/order";
+import { lucidToNetworkEnv } from "./utils/network.internal";
 
 /**
  * Common options for build Minswap transaction
@@ -133,14 +132,15 @@ export type BuildSwapExactInTxOptions = CommonOptions & {
 
 export class Dex {
   private readonly lucid: Lucid;
-  private readonly network: Network;
   private readonly networkId: NetworkId;
+  private readonly networkEnv: NetworkEnvironment;
+  private readonly dexVersion = DexVersion.DEX_V1;
 
   constructor(lucid: Lucid) {
     this.lucid = lucid;
-    this.network = lucid.network;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
+    this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
   async buildSwapExactInTx(
@@ -159,21 +159,23 @@ export class Dex {
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: customReceiver ? customReceiver.receiver : sender,
       receiverDatumHash: customReceiver?.receiverDatum?.hash,
       step: {
-        type: OrderStepType.SWAP_EXACT_IN,
+        type: OrderV1.StepType.SWAP_EXACT_IN,
         desiredAsset: assetOut,
         minimumReceived: minimumAmountOut,
       },
@@ -183,8 +185,8 @@ export class Dex {
     const tx = this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -231,21 +233,23 @@ export class Dex {
       "amount in and out must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(assetIn)]: maximumAmountIn };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: customReceiver ? customReceiver.receiver : sender,
       receiverDatumHash: customReceiver?.receiverDatum?.hash,
       step: {
-        type: OrderStepType.SWAP_EXACT_OUT,
+        type: OrderV1.StepType.SWAP_EXACT_OUT,
         desiredAsset: assetOut,
         expectedReceived: expectedAmountOut,
       },
@@ -256,8 +260,8 @@ export class Dex {
     const tx = this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -298,21 +302,23 @@ export class Dex {
       "minimum asset received must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(lpAsset)]: lpAmount };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: sender,
       receiverDatumHash: undefined,
       step: {
-        type: OrderStepType.WITHDRAW,
+        type: OrderV1.StepType.WITHDRAW,
         minimumAssetA: minimumAssetAReceived,
         minimumAssetB: minimumAssetBReceived,
       },
@@ -322,8 +328,8 @@ export class Dex {
     return await this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -344,21 +350,23 @@ export class Dex {
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: sender,
       receiverDatumHash: undefined,
       step: {
-        type: OrderStepType.ZAP_IN,
+        type: OrderV1.StepType.ZAP_IN,
         desiredAsset: assetOut,
         minimumLP: minimumLPReceived,
       },
@@ -369,8 +377,8 @@ export class Dex {
     return await this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -395,21 +403,23 @@ export class Dex {
       [Asset.toString(assetA)]: amountA,
       [Asset.toString(assetB)]: amountB,
     };
-    const { batcherFee, reductionAssets } = this.calculateBatcherFee(
-      availableUtxos,
-      orderAssets
-    );
+    const { batcherFee, reductionAssets } = calculateBatcherFee({
+      utxos: availableUtxos,
+      orderAssets,
+      networkEnv: this.networkEnv,
+      dexVersion: this.dexVersion,
+    });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
       orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
-    const datum: OrderDatum = {
+    const datum: OrderV1.Datum = {
       sender: sender,
       receiver: sender,
       receiverDatumHash: undefined,
       step: {
-        type: OrderStepType.DEPOSIT,
+        type: OrderV1.StepType.DEPOSIT,
         minimumLP: minimumLPReceived,
       },
       batcherFee: batcherFee,
@@ -418,8 +428,8 @@ export class Dex {
     return await this.lucid
       .newTx()
       .payToContract(
-        ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderDatum.toPlutusData(datum)),
+        DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
+        Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payToAddress(sender, reductionAssets)
@@ -432,13 +442,13 @@ export class Dex {
     options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
     const { orderUtxo } = options;
-    const redeemer = Data.to(new Constr(OrderRedeemer.CANCEL_ORDER, []));
+    const redeemer = Data.to(new Constr(OrderV1.Redeemer.CANCEL_ORDER, []));
     const rawDatum = orderUtxo.datum;
     invariant(
       rawDatum,
       `Cancel Order requires Order UTxOs along with its CBOR Datum`
     );
-    const orderDatum = OrderDatum.fromPlutusData(
+    const orderDatum = OrderV1.Datum.fromPlutusData(
       this.networkId,
       Data.from(rawDatum) as Constr<Data>
     );
@@ -446,47 +456,9 @@ export class Dex {
       .newTx()
       .collectFrom([orderUtxo], redeemer)
       .addSigner(orderDatum.sender)
-      .attachSpendingValidator(<SpendingValidator>ORDER_SCRIPT)
+      .attachSpendingValidator(<SpendingValidator>DexV1Constant.ORDER_SCRIPT)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .complete();
-  }
-
-  private calculateBatcherFee(
-    utxos: UTxO[],
-    orderAssets: Assets
-  ): {
-    batcherFee: bigint;
-    reductionAssets: Assets;
-  } {
-    const [minAsset, adaMINLPAsset] =
-      BATCHER_FEE_REDUCTION_SUPPORTED_ASSET[this.networkId];
-    let amountMIN = 0n;
-    let amountADAMINLP = 0n;
-    for (const utxo of utxos) {
-      if (utxo.assets[minAsset]) {
-        amountMIN += utxo.assets[minAsset];
-      }
-      if (utxo.assets[adaMINLPAsset]) {
-        amountADAMINLP += utxo.assets[adaMINLPAsset];
-      }
-    }
-    if (orderAssets[minAsset]) {
-      amountMIN -= orderAssets[minAsset];
-    }
-    if (orderAssets[adaMINLPAsset]) {
-      amountADAMINLP -= orderAssets[adaMINLPAsset];
-    }
-    const reductionAssets: Assets = {};
-    if (amountMIN > 0) {
-      reductionAssets[minAsset] = amountMIN;
-    }
-    if (amountADAMINLP > 0) {
-      reductionAssets[adaMINLPAsset] = amountADAMINLP;
-    }
-    return {
-      batcherFee: getBatcherFee(this.network, amountMIN, amountADAMINLP),
-      reductionAssets: reductionAssets,
-    };
   }
 }
 

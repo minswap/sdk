@@ -1,5 +1,6 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import invariant from "@minswap/tiny-invariant";
+import BigNumber from "bignumber.js";
 import {
   Address,
   Blockfrost,
@@ -22,17 +23,26 @@ import {
   calculateWithdraw,
   calculateZapIn,
   Dex,
+  DexV2,
+  DexV2Calculation,
   NetworkId,
-  PoolDatum,
-  PoolState,
+  OrderV2,
+  PoolV1,
 } from "../src";
+import { Slippage } from "../src/utils/slippage.internal";
+
+const MIN: Asset = {
+  policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+  tokenName: "4d494e",
+};
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
+  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
-  const address = "<YOUR_ADDRESS>";
+  const address =
+    "addr_test1vrd9v47japxwp8540vsrh4grz4u9urfpfawwy7sf6r0vxqgm7wdxh";
   const lucid = await getBackendLucidInstance(
     network,
     blockfrostProjectId,
@@ -41,6 +51,7 @@ async function main(): Promise<void> {
   );
 
   const blockfrostAdapter = new BlockfrostAdapter({
+    networkId: NetworkId.TESTNET,
     blockFrost: new BlockFrostAPI({
       projectId: blockfrostProjectId,
       network: "preprod",
@@ -49,8 +60,7 @@ async function main(): Promise<void> {
 
   const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _swapExactInTxExample(
-    network,
+  const txComplete = await _stopV2TxExample(
     lucid,
     blockfrostAdapter,
     address,
@@ -61,15 +71,15 @@ async function main(): Promise<void> {
     .complete();
   const txId = await signedTx.submit();
   // eslint-disable-next-line no-console
-  console.log(`Transaction submitted successfully: ${txId}`);
+  console.info(`Transaction submitted successfully: ${txId}`);
 }
 
 async function getPoolById(
   network: Network,
   blockfrostAdapter: BlockfrostAdapter,
   poolId: string
-): Promise<{ poolState: PoolState; poolDatum: PoolDatum }> {
-  const pool = await blockfrostAdapter.getPoolById({
+): Promise<{ poolState: PoolV1.State; poolDatum: PoolV1.Datum }> {
+  const pool = await blockfrostAdapter.getV1PoolById({
     id: poolId,
   });
   if (!pool) {
@@ -79,7 +89,7 @@ async function getPoolById(
   const rawRoolDatum = await blockfrostAdapter.getDatumByDatumHash(
     pool.datumHash
   );
-  const poolDatum = PoolDatum.fromPlutusData(
+  const poolDatum = PoolV1.Datum.fromPlutusData(
     network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET,
     Data.from(rawRoolDatum) as Constr<Data>
   );
@@ -349,6 +359,492 @@ async function _cancelTxExample(
   });
 }
 
+async function _createPoolV2(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const dexV2 = new DexV2(lucid, blockFrostAdapter);
+  const txComplete = await dexV2.createPoolTx({
+    assetA: ADA,
+    assetB: {
+      policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+      tokenName: "434d",
+    },
+    amountA: 10_000000n,
+    amountB: 300_000000n,
+    tradingFeeNumerator: 100n,
+  });
+
+  return txComplete;
+}
+
+async function _swapExactInV2TxExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+
+  const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "could not find pool");
+
+  const swapAmount = 5_000_000n;
+  const amountOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    amountIn: swapAmount,
+    tradingFeeNumerator: pool.feeA[0],
+  });
+  // 20%
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptedAmountOut = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: amountOut,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.SWAP_EXACT_IN,
+        amountIn: swapAmount,
+        assetIn: assetA,
+        direction: OrderV2.Direction.A_TO_B,
+        minimumAmountOut: acceptedAmountOut,
+        lpAsset: pool.lpAsset,
+        isLimitOrder: false,
+        killOnFailed: false,
+      },
+    ],
+  });
+}
+
+async function _swapExactOutV2TxExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+
+  const swapAmount = 10_000n;
+  const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "could not find pool");
+
+  const amountIn = DexV2Calculation.calculateAmountIn({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    tradingFeeNumerator: pool.feeA[0],
+    amountOut: swapAmount,
+  });
+
+  // 20%
+  const slippageTolerance = new BigNumber(20).div(100);
+  const maximumAmountIn = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: amountIn,
+    type: "up",
+  });
+  return new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.SWAP_EXACT_OUT,
+        assetIn: assetA,
+        maximumAmountIn: maximumAmountIn,
+        expectedReceived: swapAmount,
+        direction: OrderV2.Direction.A_TO_B,
+        killOnFailed: false,
+        lpAsset: pool.lpAsset,
+      },
+    ],
+  });
+}
+
+async function _depositV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+
+  const amountA = 10_000n;
+  const amountB = 10_000n;
+
+  const pool = await blockFrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "Pool not found");
+
+  const lpAmount = DexV2Calculation.calculateDepositAmount({
+    amountA,
+    amountB,
+    poolInfo: pool.info,
+  });
+
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptableLPAmount = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: lpAmount,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.DEPOSIT,
+        assetA,
+        amountA: 10_000n,
+        assetB,
+        amountB: 10_000n,
+        lpAsset: pool.lpAsset,
+        minimumLPReceived: acceptableLPAmount,
+        killOnFailed: false,
+      },
+    ],
+  });
+}
+
+async function _withdrawV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  // ADA-MIN Lp Asset
+  const lpAsset = {
+    policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+    tokenName:
+      "6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200",
+  };
+  const lpAmount = 20_000n;
+  const pool = await blockFrostAdapter.getV2PoolByLp(lpAsset);
+  invariant(pool, "Pool not found");
+  const { withdrawalA, withdrawalB } =
+    await DexV2Calculation.calculateWithdrawAmount({
+      withdrawalLPAmount: lpAmount,
+      totalLiquidity: pool.totalLiquidity,
+      datumReserves: pool.datumReserves,
+    });
+
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptableAmountAReceive = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: withdrawalA,
+    type: "down",
+  });
+  const acceptableAmountBReceive = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: withdrawalB,
+    type: "down",
+  });
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.WITHDRAW,
+        lpAmount: lpAmount,
+        minimumAssetAReceived: acceptableAmountAReceive,
+        minimumAssetBReceived: acceptableAmountBReceive,
+        killOnFailed: false,
+        lpAsset,
+      },
+    ],
+  });
+}
+
+async function _stopV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+  const amountA = 10_000n;
+
+  const pool = await blockFrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "pool not found");
+  const amountOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    amountIn: amountA,
+    tradingFeeNumerator: pool.feeA[0],
+  });
+
+  // sell at 10% down
+  const stopAmount = Slippage.apply({
+    slippage: new BigNumber(10).div(100),
+    amount: amountOut,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.STOP,
+        assetIn: assetA,
+        lpAsset: pool.lpAsset,
+        amountIn: amountA,
+        stopAmount,
+        direction: OrderV2.Direction.A_TO_B,
+      },
+    ],
+  });
+}
+
+async function _ocoV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+  const amountA = 10_000n;
+
+  const pool = await blockFrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "Pool not found");
+
+  const amountOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    amountIn: amountA,
+    tradingFeeNumerator: pool.feeA[0],
+  });
+  const limitAmount = Slippage.apply({
+    slippage: new BigNumber(20).div(100),
+    amount: amountOut,
+    type: "up",
+  });
+  const stopAmount = Slippage.apply({
+    slippage: new BigNumber(20).div(100),
+    amount: amountOut,
+    type: "down",
+  });
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.OCO,
+        amountIn: amountA,
+        assetIn: assetA,
+        lpAsset: pool.lpAsset,
+        stopAmount,
+        limitAmount,
+        direction: OrderV2.Direction.A_TO_B,
+      },
+    ],
+    availableUtxos,
+  });
+}
+
+async function _zapOutV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  // ADA-MIN Lp Asset
+  const lpAsset = {
+    policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+    tokenName:
+      "6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200",
+  };
+  const lpAmount = 10_000n;
+  const pool = await blockFrostAdapter.getV2PoolByLp(lpAsset);
+  invariant(pool, "Pool not found");
+  const zapAmountOut = DexV2Calculation.calculateZapOutAmount({
+    withdrawalLPAmount: lpAmount,
+    direction: OrderV2.Direction.B_TO_A,
+    poolInfo: pool.info,
+  });
+
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptableZapOutAmount = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: zapAmountOut,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.ZAP_OUT,
+        lpAmount,
+        direction: OrderV2.Direction.B_TO_A,
+        minimumReceived: acceptableZapOutAmount,
+        killOnFailed: false,
+        lpAsset,
+      },
+    ],
+  });
+}
+
+async function _partialSwapV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = ADA;
+  const assetB = MIN;
+  const amountA = 10_000n;
+  const pool = await blockFrostAdapter.getV2PoolByPair(assetA, assetB);
+  invariant(pool, "Pool not found");
+
+  const amountOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: pool.reserveA,
+    reserveOut: pool.reserveB,
+    amountIn: amountA,
+    tradingFeeNumerator: pool.feeA[0],
+  });
+  // 20% above market
+  const limitAmount = Slippage.apply({
+    slippage: new BigNumber(20).div(100),
+    amount: amountOut,
+    type: "up",
+  });
+
+  const gcd = calculateGcd(amountA, limitAmount);
+  const maximumSwaps = 2;
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.PARTIAL_SWAP,
+        assetIn: assetA,
+        amountIn: amountA,
+        direction: OrderV2.Direction.A_TO_B,
+        expectedInOutRatio: [amountA / gcd, limitAmount / gcd],
+        maximumSwapTime: maximumSwaps,
+        minimumSwapAmountRequired: BigInt(
+          new BigNumber(getMinimumTradePercent(maximumSwaps))
+            .div(100)
+            .multipliedBy(amountA.toString())
+            .toFixed(0)
+        ),
+        lpAsset: pool.lpAsset,
+      },
+    ],
+  });
+}
+
+async function _multiRoutingTxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const assetA = MIN;
+  const amountA = 10_000n;
+
+  // ADA-MIN Lp Asset
+  const lpAssetA = {
+    policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+    tokenName:
+      "6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200",
+  };
+  // ADA-MileCoin Lp Asset
+  const lpAssetB = {
+    policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
+    tokenName:
+      "976edd2e047eedcd0d707df19155b9298d68020b8a68c2b27223539c4df57d3d",
+  };
+  const routings = [
+    {
+      lpAsset: lpAssetA,
+      direction: OrderV2.Direction.B_TO_A,
+    },
+    {
+      lpAsset: lpAssetB,
+      direction: OrderV2.Direction.A_TO_B,
+    },
+  ];
+  const pools = await Promise.all(
+    routings.map(({ lpAsset }) => blockFrostAdapter.getV2PoolByLp(lpAsset))
+  );
+  invariant(pools.length === routings.length, "pools not found");
+
+  let lastAmountIn = amountA;
+  for (let i = 0; i < routings.length; i++) {
+    const pool = pools[i];
+    const routing = routings[i];
+    invariant(pool, "Pool not found");
+    const amountOut = DexV2Calculation.calculateAmountOut({
+      reserveIn: pool.reserveA,
+      reserveOut: pool.reserveB,
+      amountIn: lastAmountIn,
+      tradingFeeNumerator:
+        routing.direction === OrderV2.Direction.A_TO_B
+          ? pool.feeA[0]
+          : pool.feeB[0],
+    });
+    lastAmountIn = amountOut;
+  }
+
+  const slippageTolerance = new BigNumber(20).div(100);
+  const acceptableOutputAmount = Slippage.apply({
+    slippage: slippageTolerance,
+    amount: lastAmountIn,
+    type: "down",
+  });
+
+  return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
+    sender: address,
+    availableUtxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.SWAP_ROUTING,
+        assetIn: assetA,
+        amountIn: amountA,
+        routings: [
+          {
+            lpAsset: lpAssetA,
+            direction: OrderV2.Direction.B_TO_A,
+          },
+          {
+            lpAsset: lpAssetB,
+            direction: OrderV2.Direction.A_TO_B,
+          },
+        ],
+        minimumReceived: acceptableOutputAmount,
+        lpAsset: lpAssetA,
+      },
+    ],
+  });
+}
+
+async function _cancelV2TxExample(
+  lucid: Lucid,
+  blockFrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  return new DexV2(lucid, blockFrostAdapter).cancelOrder({
+    orderOutRefs: [
+      {
+        txHash:
+          "83e22abd3fad8525b02bf2fd1c8e8d0dbc37dbbe09384d666699081ee3e6f282",
+        outputIndex: 0,
+      },
+    ],
+  });
+}
+
 /**
  * Initialize Lucid Instance for Browser Environment
  * @param network Network you're working on
@@ -391,6 +887,34 @@ async function getBackendLucidInstance(
     address: address,
   });
   return lucid;
+}
+
+function calculateGcd(a: bigint, b: bigint): bigint {
+  if (!b) {
+    return a;
+  }
+  const remainder = a > b ? a % b : b % a;
+  return calculateGcd(a > b ? b : a, remainder);
+}
+
+function getMinimumTradePercent(maxTradeTime: number): number {
+  switch (maxTradeTime) {
+    case 2: {
+      return 40;
+    }
+    case 3: {
+      return 25;
+    }
+    case 4: {
+      return 20;
+    }
+    case 5: {
+      return 15;
+    }
+    default: {
+      return 100;
+    }
+  }
 }
 
 void main();
