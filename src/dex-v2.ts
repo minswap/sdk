@@ -27,6 +27,24 @@ import { DexVersion } from "./batcher-fee-reduction/types.internal";
 import { FactoryV2 } from "./types/factory";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
+import { buildUtxoToStoreDatum } from "./utils/tx.internal";
+
+export type V2CustomReceiver = {
+  refundReceiver: Address;
+  refundReceiverDatum?: {
+    type:
+      | OrderV2.ExtraDatumType.DATUM_HASH
+      | OrderV2.ExtraDatumType.INLINE_DATUM;
+    datum: string;
+  };
+  successReceiver: Address;
+  successReceiverDatum?: {
+    type:
+      | OrderV2.ExtraDatumType.DATUM_HASH
+      | OrderV2.ExtraDatumType.INLINE_DATUM;
+    datum: string;
+  };
+};
 
 /**
  * Options for building Pool V2 Creation transaction
@@ -50,6 +68,7 @@ export type CreatePoolV2Options = {
 
 export type BulkOrdersOption = {
   sender: Address;
+  customReceiver?: V2CustomReceiver;
   orderOptions: OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
   availableUtxos: UTxO[];
@@ -733,6 +752,7 @@ export class DexV2 {
 
   async createBulkOrdersTx({
     sender,
+    customReceiver,
     orderOptions,
     expiredOptions,
     availableUtxos,
@@ -760,6 +780,10 @@ export class DexV2 {
     });
     const limitOrders: string[] = [];
     const lucidTx = this.lucid.newTx();
+    const necessaryExtraDatums: {
+      receiver: Address;
+      datum: string;
+    }[] = [];
     for (let i = 0; i < orderOptions.length; i++) {
       const option = orderOptions[i];
       const { type, lpAsset } = option;
@@ -796,16 +820,65 @@ export class DexV2 {
             type: OrderV2.AuthorizationMethodType.SIGNATURE,
             hash: senderPaymentCred.hash,
           };
+
+      let successReceiver: Address = sender;
+      let successReceiverDatum: OrderV2.ExtraDatum = {
+        type: OrderV2.ExtraDatumType.NO_DATUM,
+      };
+      let refundReceiver: Address = sender;
+      let refundReceiverDatum: OrderV2.ExtraDatum = {
+        type: OrderV2.ExtraDatumType.NO_DATUM,
+      };
+      if (customReceiver) {
+        const {
+          successReceiver: customSuccessReceiver,
+          successReceiverDatum: customSuccessReceiverDatum,
+          refundReceiver: customRefundReceiver,
+          refundReceiverDatum: customRefundReceiverDatum,
+        } = customReceiver;
+        successReceiver = customSuccessReceiver;
+        refundReceiver = customRefundReceiver;
+        if (!customSuccessReceiverDatum) {
+          successReceiverDatum = {
+            type: OrderV2.ExtraDatumType.NO_DATUM,
+          };
+        } else {
+          const datumHash = this.lucid.utils.datumToHash(
+            customSuccessReceiverDatum.datum
+          );
+          successReceiverDatum = {
+            type: customSuccessReceiverDatum.type,
+            hash: datumHash,
+          };
+          necessaryExtraDatums.push({
+            receiver: successReceiver,
+            datum: customSuccessReceiverDatum.datum,
+          });
+        }
+        if (!customRefundReceiverDatum) {
+          refundReceiverDatum = {
+            type: OrderV2.ExtraDatumType.NO_DATUM,
+          };
+        } else {
+          const datumHash = this.lucid.utils.datumToHash(
+            customRefundReceiverDatum.datum
+          );
+          refundReceiverDatum = {
+            type: customRefundReceiverDatum.type,
+            hash: datumHash,
+          };
+          necessaryExtraDatums.push({
+            receiver: refundReceiver,
+            datum: customRefundReceiverDatum.datum,
+          });
+        }
+      }
       const orderDatum: OrderV2.Datum = {
         canceller: canceller,
-        refundReceiver: sender,
-        refundReceiverDatum: {
-          type: OrderV2.ExtraDatumType.NO_DATUM,
-        },
-        successReceiver: sender,
-        successReceiverDatum: {
-          type: OrderV2.ExtraDatumType.NO_DATUM,
-        },
+        refundReceiver: refundReceiver,
+        refundReceiverDatum: refundReceiverDatum,
+        successReceiver: successReceiver,
+        successReceiverDatum: successReceiverDatum,
         step: orderStep,
         lpAsset: lpAsset,
         maxBatcherFee: totalBatcherFee,
@@ -842,6 +915,21 @@ export class DexV2 {
     lucidTx.payToAddress(sender, reductionAssets);
     if (composeTx) {
       lucidTx.compose(composeTx);
+    }
+    for (const necessaryExtraDatum of necessaryExtraDatums) {
+      const utxoForStoringDatum = buildUtxoToStoreDatum(
+        this.lucid,
+        sender,
+        necessaryExtraDatum.receiver,
+        necessaryExtraDatum.datum
+      );
+      if (utxoForStoringDatum) {
+        lucidTx.payToAddressWithData(
+          utxoForStoringDatum.address,
+          utxoForStoringDatum.outputData,
+          utxoForStoringDatum.assets
+        );
+      }
     }
     return lucidTx.complete();
   }

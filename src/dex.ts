@@ -22,6 +22,15 @@ import {
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { OrderV1 } from "./types/order";
 import { lucidToNetworkEnv } from "./utils/network.internal";
+import { buildUtxoToStoreDatum } from "./utils/tx.internal";
+
+export type V1AndStableswapCustomReceiver = {
+  receiver: Address;
+  receiverDatum?: {
+    hash: string;
+    datum: string;
+  };
+};
 
 /**
  * Common options for build Minswap transaction
@@ -94,13 +103,7 @@ export type BuildWithdrawTxOptions = CommonOptions & {
  * @expectedAmountOut The expected Amount of Asset Out you want to receive after order is executed
  */
 export type BuildSwapExactOutTxOptions = CommonOptions & {
-  customReceiver?: {
-    receiver: Address;
-    receiverDatum?: {
-      hash: string;
-      datum: string;
-    };
-  };
+  customReceiver?: V1AndStableswapCustomReceiver;
   assetIn: Asset;
   assetOut: Asset;
   maximumAmountIn: bigint;
@@ -116,13 +119,7 @@ export type BuildSwapExactOutTxOptions = CommonOptions & {
  * @isLimitOrder Define this order is Limit Order or not
  */
 export type BuildSwapExactInTxOptions = CommonOptions & {
-  customReceiver?: {
-    receiver: Address;
-    receiverDatum?: {
-      hash: string;
-      datum: string;
-    };
-  };
+  customReceiver?: V1AndStableswapCustomReceiver;
   assetIn: Asset;
   amountIn: bigint;
   assetOut: Asset;
@@ -460,38 +457,4 @@ export class Dex {
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .complete();
   }
-}
-
-/**
- * Return a Output that pay back to @sender and include @datum
- * This function is used for @receiver of an order can be a script
- * @param lucid
- * @param sender
- * @param receiver
- * @param datum
- */
-export function buildUtxoToStoreDatum(
-  lucid: Lucid,
-  sender: Address,
-  receiver: Address,
-  datum: string
-): {
-  address: Address;
-  outputData: OutputData;
-  assets: Assets;
-} | null {
-  const receivePaymentCred =
-    lucid.utils.getAddressDetails(receiver).paymentCredential;
-  // If receiver is not a script address, we no need to store this datum On-chain because it's useless
-  if (!receivePaymentCred || receivePaymentCred.type === "Key") {
-    return null;
-  }
-
-  return {
-    address: sender,
-    assets: {},
-    outputData: {
-      inline: datum,
-    },
-  };
 }
