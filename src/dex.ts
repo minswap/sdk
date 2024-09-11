@@ -5,7 +5,6 @@ import {
   Constr,
   Data,
   Lucid,
-  OutputData,
   SpendingValidator,
   TxComplete,
   UTxO,
