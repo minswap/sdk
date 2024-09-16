@@ -23,7 +23,7 @@
     "example": "ts-node --transpile-only --esm --experimental-specifier-resolution=node examples/example.ts",
     "prisma:dbpull": "prisma db pull --schema=src/syncer/postgres/prisma/schema.prisma",
     "prisma:generate": "prisma generate --schema=src/syncer/postgres/prisma/schema.prisma",
-    "syncer:start": "ts-node --esm --experimental-specifier-resolution=node src/syncer/main.ts"
+    "syncer:start": "node --loader ts-node/esm src/syncer/main.ts"
   },
   "keywords": [
     "minswap",

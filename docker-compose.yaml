@@ -9,7 +9,7 @@ services:
     # SYNCER_REDIS_URL: redis://default:123456@redis:6379
     # OGMIOS_HOST: ogmios:1337
     # SYNCER_START_POINT: "${DEX_SYNCER_START_POINT}"
-    command: npm run syncer:start
+    command: pnpm run syncer:start
 
   redis:
     image: redis:7
