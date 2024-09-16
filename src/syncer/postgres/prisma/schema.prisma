@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:minswap@localhost:5432/syncer?schema=public" //env("DATABASE_URL")
+}
+
+model block {
+  id           BigInt  @id
+  slot         BigInt
+  header_hash  String  @db.VarChar
+  kafka_offset Decimal @db.Decimal
+}

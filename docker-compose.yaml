@@ -1,0 +1,53 @@
+services:
+  syncer:
+    build:
+      dockerfile: Dockerfile.syncer
+    restart: always
+    # environment:
+    # ENVIRONMENT:
+    # DEX_POSTGRES_URL: postgresql://dex-syncer:123456@postgres:5432/dex-syncer?schema=public&connection_limit=5
+    # SYNCER_REDIS_URL: redis://default:123456@redis:6379
+    # OGMIOS_HOST: ogmios:1337
+    # SYNCER_START_POINT: "${DEX_SYNCER_START_POINT}"
+    command: npm run syncer:start
+
+  redis:
+    image: redis:7
+    restart: always
+    command: --requirepass 123456
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: syncer
+      POSTGRES_PASSWORD: minswap
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  # ogmios:
+  #   platform: linux/amd64
+  #   image: cardanosolutions/ogmios:v6.5.0
+  #   restart: always
+  #   command: [ "--host", "0.0.0.0", "--node-socket", "/node.socket", "--node-config", "/configs/${OGMIOS_ENVIRONMENT}/config.json" ]
+  #   ports:
+  #     - 1337:1337
+  #   volumes:
+  #     - type: bind
+  #       source: $CARDANO_NODE_SOCKET_PATH
+  #       target: /node.socket
+  #     - type: bind
+  #       source: ./node-configs
+  #       target: /configs
+
+volumes:
+  redis-data: {}
+  postgres-data: {}
+  # DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose -f dev/docker-compose."$file".yaml up --build -d &&
+  # docker compose -f dev/docker-compose."$file".yaml logs -f $log_services

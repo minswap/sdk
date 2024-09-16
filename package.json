@@ -20,7 +20,10 @@
     "format": "prettier --write **/*.ts && eslint src --fix",
     "check-format": "prettier --check **/*.ts && eslint src",
     "exec": "ts-node --esm --experimental-specifier-resolution=node",
-    "example": "ts-node --transpile-only --esm --experimental-specifier-resolution=node examples/example.ts"
+    "example": "ts-node --transpile-only --esm --experimental-specifier-resolution=node examples/example.ts",
+    "prisma:dbpull": "prisma db pull --schema=src/syncer/postgres/prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema=src/syncer/postgres/prisma/schema.prisma",
+    "syncer:start": "ts-node --esm --experimental-specifier-resolution=node src/syncer/main.ts"
   },
   "keywords": [
     "minswap",
@@ -43,6 +46,7 @@
   "dependencies": {
     "@blockfrost/blockfrost-js": "^5.5.0",
     "@minswap/tiny-invariant": "^1.2.0",
+    "@prisma/client": "^5.19.1",
     "big.js": "^6.2.1",
     "bignumber.js": "^9.1.2",
     "lucid-cardano": "0.10.10",
@@ -63,6 +67,7 @@
     "jest": "^29.7.0",
     "json-bigint": "^1.0.0",
     "prettier": "3.3.3",
+    "prisma": "^5.19.1",
     "rimraf": "^6.0.1",
     "rollup": "^4.21.2",
     "rollup-plugin-dts": "^6.1.1",
@@ -74,5 +79,6 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.21.2"
-  }
+  },
+  "packageManager": "pnpm@9.5.0"
 }
