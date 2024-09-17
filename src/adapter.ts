@@ -403,6 +403,21 @@ export class BlockfrostAdapter {
     };
   }
 
+  public async getStablePoolByLpAsset(
+    lpAsset: Asset
+  ): Promise<StablePool.State> {
+    const pool = (await this.getAllStablePools()).pools.find(
+      (pool) => pool.lpAsset === Asset.toString(lpAsset)
+    );
+    invariant(
+      pool,
+      `getStablePoolByLpAsset: Can not find pool by LP Asset ${Asset.toString(
+        lpAsset
+      )}`
+    );
+    return pool;
+  }
+
   public async getStablePoolByNFT(
     nft: Asset
   ): Promise<StablePool.State | null> {

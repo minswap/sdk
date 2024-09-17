@@ -46,6 +46,7 @@
     "big.js": "^6.2.1",
     "bignumber.js": "^9.1.2",
     "lucid-cardano": "0.10.10",
+    "remeda": "^2.12.1",
     "sha3": "^2.1.4"
   },
   "devDependencies": {

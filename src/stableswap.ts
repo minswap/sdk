@@ -4,7 +4,6 @@ import {
   Lucid,
   TxComplete,
   UTxO,
-  Credential,
   Data,
   Constr,
 } from "lucid-cardano";
@@ -57,7 +56,7 @@ export type WithdrawImbalanceOptions = CommonOrderOptions & {
   withdrawAmounts: bigint[];
 };
 
-export type WithdrawOneCoinOptions = CommonOrderOptions & {
+export type ZapOutOptions = CommonOrderOptions & {
   type: StableOrder.StepType.ZAP_OUT;
   lpAmount: bigint;
   assetOutIndex: bigint;
@@ -69,7 +68,7 @@ export type OrderOptions =
   | WithdrawOptions
   | SwapOptions
   | WithdrawImbalanceOptions
-  | WithdrawOneCoinOptions;
+  | ZapOutOptions;
 
 export type BuildCancelOrderOptions = {
   orderUtxos: UTxO[];
@@ -88,14 +87,6 @@ export class Stableswap {
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
     this.adapter = adapter;
     this.networkEnv = lucidToNetworkEnv(lucid.network);
-  }
-
-  getConfigByLpAsset(lpAsset: Asset): StableswapConstant.Config {
-    const config = StableswapConstant.CONFIG[this.networkId].find(
-      (config) => config.lpAsset === Asset.toString(lpAsset)
-    );
-    invariant(config, `Invalid Stableswap LP Asset ${Asset.toString(lpAsset)}`);
-    return config;
   }
 
   buildOrderValue(option: OrderOptions): Assets {
@@ -179,7 +170,10 @@ export class Stableswap {
       case StableOrder.StepType.SWAP: {
         const { lpAsset, assetInIndex, assetOutIndex, minimumAssetOut } =
           option;
-        const poolConfig = this.getConfigByLpAsset(lpAsset);
+        const poolConfig = StableswapConstant.getConfigByLpAsset(
+          lpAsset,
+          this.networkId
+        );
         invariant(
           poolConfig,
           `Not found Stableswap config matching with LP Asset ${lpAsset.toString()}`
@@ -219,7 +213,10 @@ export class Stableswap {
       }
       case StableOrder.StepType.ZAP_OUT: {
         const { assetOutIndex, minimumAssetOut, lpAsset } = option;
-        const poolConfig = this.getConfigByLpAsset(lpAsset);
+        const poolConfig = StableswapConstant.getConfigByLpAsset(
+          lpAsset,
+          this.networkId
+        );
         invariant(
           poolConfig,
           `Not found Stableswap config matching with LP Asset ${lpAsset.toString()}`
@@ -274,7 +271,10 @@ export class Stableswap {
 
   async buildCreateTx(options: OrderOptions): Promise<TxComplete> {
     const { sender, availableUtxos, lpAsset } = options;
-    const config = this.getConfigByLpAsset(lpAsset);
+    const config = StableswapConstant.getConfigByLpAsset(
+      lpAsset,
+      this.networkId
+    );
     const orderAssets = this.buildOrderValue(options);
     const step = this.buildOrderStep(options);
     const { batcherFee, reductionAssets } = calculateBatcherFee({
@@ -311,30 +311,6 @@ export class Stableswap {
     return await tx.complete();
   }
 
-  getConfigFromStableswapOrderAddress(
-    address: Address
-  ): StableswapConstant.Config {
-    const config = StableswapConstant.CONFIG[this.networkId].find((config) => {
-      return address === config.orderAddress;
-    });
-    invariant(config, `Invalid Stableswap Order Address: ${address}`);
-    return config;
-  }
-
-  getStableswapReferencesScript(
-    lpAsset: Asset
-  ): StableswapConstant.DeployedScripts {
-    const refScript =
-      StableswapConstant.DEPLOYED_SCRIPTS[this.networkId][
-        Asset.toString(lpAsset)
-      ];
-    invariant(
-      refScript,
-      `Invalid Stableswap LP Asset ${Asset.toString(lpAsset)}`
-    );
-    return refScript;
-  }
-
   async buildCancelOrdersTx(
     options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
@@ -342,9 +318,13 @@ export class Stableswap {
 
     const redeemer = Data.to(new Constr(StableOrder.Redeemer.CANCEL_ORDER, []));
     for (const utxo of options.orderUtxos) {
-      const config = this.getConfigFromStableswapOrderAddress(utxo.address);
-      const referencesScript = this.getStableswapReferencesScript(
-        Asset.fromString(config.lpAsset)
+      const config = StableswapConstant.getConfigFromStableswapOrderAddress(
+        utxo.address,
+        this.networkId
+      );
+      const referencesScript = StableswapConstant.getStableswapReferencesScript(
+        Asset.fromString(config.lpAsset),
+        this.networkId
       );
       let datum: StableOrder.Datum;
       if (utxo.datum) {

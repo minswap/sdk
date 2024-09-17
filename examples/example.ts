@@ -1,3 +1,5 @@
+// TODO: remove all console.log
+
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import invariant from "@minswap/tiny-invariant";
 import BigNumber from "bignumber.js";
@@ -28,8 +30,12 @@ import {
   NetworkId,
   OrderV2,
   PoolV1,
+  StableOrder,
+  StableswapCalculation,
+  StableswapConstant,
 } from "../src";
 import { Slippage } from "../src/utils/slippage.internal";
+import { Stableswap } from "../src/stableswap";
 
 const MIN: Asset = {
   policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
@@ -842,6 +848,206 @@ async function _cancelV2TxExample(
         outputIndex: 0,
       },
     ],
+  });
+}
+
+async function _swapStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  const swapAmount = 1_000n;
+
+  const amountOut = StableswapCalculation.calculateSwapAmount({
+    inIndex: 0,
+    outIndex: 1,
+    amountIn: swapAmount,
+    amp: pool.amp,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    fee: config.fee,
+    adminFee: config.adminFee,
+    feeDenominator: config.feeDenominator,
+  });
+
+  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    lpAsset: lpAsset,
+    type: StableOrder.StepType.SWAP,
+    assetIn: Asset.fromString(config.assets[0]),
+    assetInAmount: swapAmount,
+    assetInIndex: 0n,
+    assetOutIndex: 1n,
+    minimumAssetOut: amountOut,
+  });
+}
+
+async function _depositStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  const amountIns = [100_000n, 1_000n];
+
+  const lpAmount = StableswapCalculation.calculateDeposit({
+    amountIns: amountIns,
+    totalLiquidity: pool.totalLiquidity,
+    amp: pool.amp,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    fee: config.fee,
+    adminFee: config.adminFee,
+    feeDenominator: config.feeDenominator,
+  });
+  console.log(lpAmount);
+  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    lpAsset: lpAsset,
+    type: StableOrder.StepType.DEPOSIT,
+    assetsAmount: [
+      [Asset.fromString(pool.assets[0]), 100_000n],
+      [Asset.fromString(pool.assets[1]), 1_000n],
+    ],
+    minimumLPReceived: lpAmount,
+    totalLiquidity: pool.totalLiquidity,
+  });
+}
+
+async function _withdrawStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  const lpAmount = 10_000n;
+
+  const amountOuts = StableswapCalculation.calculateWithdraw({
+    withdrawalLPAmount: lpAmount,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    totalLiquidity: pool.totalLiquidity,
+  });
+  console.log(amountOuts);
+  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    lpAsset: lpAsset,
+    type: StableOrder.StepType.WITHDRAW,
+    lpAmount: lpAmount,
+    minimumAmounts: amountOuts,
+  });
+}
+
+async function _withdrawImbalanceStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  const withdrawAmounts = [1234n, 5678n];
+
+  const lpAmount = StableswapCalculation.calculateWithdrawImbalance({
+    withdrawAmounts: withdrawAmounts,
+    totalLiquidity: pool.totalLiquidity,
+    amp: pool.amp,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    fee: config.fee,
+    adminFee: config.adminFee,
+    feeDenominator: config.feeDenominator,
+  });
+  console.log(lpAmount);
+  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    lpAsset: lpAsset,
+    type: StableOrder.StepType.WITHDRAW_IMBALANCE,
+    lpAmount: lpAmount,
+    withdrawAmounts: withdrawAmounts,
+  });
+}
+async function _zapOutStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  const lpAmount = 12345n;
+  const outIndex = 0;
+  const amountOut = StableswapCalculation.calculateZapOut({
+    amountLpIn: lpAmount,
+    outIndex: outIndex,
+    totalLiquidity: pool.totalLiquidity,
+    amp: pool.amp,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    fee: config.fee,
+    adminFee: config.adminFee,
+    feeDenominator: config.feeDenominator,
+  });
+  console.log(lpAmount);
+  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    lpAsset: lpAsset,
+    type: StableOrder.StepType.ZAP_OUT,
+    lpAmount: lpAmount,
+    assetOutIndex: BigInt(outIndex),
+    minimumAssetOut: amountOut,
   });
 }
 
