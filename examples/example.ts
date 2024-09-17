@@ -885,7 +885,6 @@ async function _swapStableExample(
       {
         lpAsset: lpAsset,
         type: StableOrder.StepType.SWAP,
-        assetIn: Asset.fromString(config.assets[0]),
         assetInAmount: swapAmount,
         assetInIndex: 0n,
         assetOutIndex: 1n,
@@ -1079,10 +1078,6 @@ async function _bulkOrderStableExample(
   );
   const lpAmount = 12345n;
   const outIndex = 0;
-  const config = StableswapConstant.getConfigByLpAsset(
-    lpAsset,
-    NetworkId.TESTNET
-  );
 
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
@@ -1098,7 +1093,6 @@ async function _bulkOrderStableExample(
       {
         lpAsset: lpAsset,
         type: StableOrder.StepType.SWAP,
-        assetIn: Asset.fromString(config.assets[0]),
         assetInAmount: 1000n,
         assetInIndex: 0n,
         assetOutIndex: 1n,
