@@ -3,12 +3,13 @@ services:
     build:
       dockerfile: Dockerfile.syncer
     restart: always
-    # environment:
-    # ENVIRONMENT:
-    # DEX_POSTGRES_URL: postgresql://dex-syncer:123456@postgres:5432/dex-syncer?schema=public&connection_limit=5
-    # SYNCER_REDIS_URL: redis://default:123456@redis:6379
-    # OGMIOS_HOST: ogmios:1337
-    # SYNCER_START_POINT: "${DEX_SYNCER_START_POINT}"
+    environment:
+      ENVIRONMENT: testnet-preprod
+      OGMIOS_HOST: ogmios
+      OGMIOS_PORT: 1337
+      REDIS_URL: redis://default:123456@redis:6379
+      POSTGRES_URL: postgresql://postgres:minswap@postgres:5432/syncer?schema=public&connection_limit=5
+      SYNC_START_POINT: "7790880c9f0ff09990f253dd1bf1a55d2a2e5340bf694e5c0bb166439e513e45.10918782"
     command: pnpm run syncer:start
 
   redis:
@@ -27,24 +28,25 @@ services:
       POSTGRES_DB: syncer
       POSTGRES_PASSWORD: minswap
     volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./src/syncer/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-  # ogmios:
-  #   platform: linux/amd64
-  #   image: cardanosolutions/ogmios:v6.5.0
-  #   restart: always
-  #   command: [ "--host", "0.0.0.0", "--node-socket", "/node.socket", "--node-config", "/configs/${OGMIOS_ENVIRONMENT}/config.json" ]
-  #   ports:
-  #     - 1337:1337
-  #   volumes:
-  #     - type: bind
-  #       source: $CARDANO_NODE_SOCKET_PATH
-  #       target: /node.socket
-  #     - type: bind
-  #       source: ./node-configs
-  #       target: /configs
+
+  ogmios:
+    platform: linux/amd64
+    image: cardanosolutions/ogmios:v6.5.0
+    restart: always
+    command: [ "--host", "0.0.0.0", "--node-socket", "/node.socket", "--node-config", "/configs/${OGMIOS_ENVIRONMENT}/config.json" ]
+    ports:
+      - 1337:1337
+    volumes:
+      - type: bind
+        source: $CARDANO_NODE_SOCKET_PATH
+        target: /node.socket
+      - type: bind
+        source: ./node-configs
+        target: /configs
 
 volumes:
   redis-data: {}

@@ -4,12 +4,62 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:minswap@localhost:5432/syncer?schema=public" //env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-model block {
-  id           BigInt  @id
-  slot         BigInt
-  header_hash  String  @db.VarChar
-  kafka_offset Decimal @db.Decimal
+model Block {
+  id          BigInt @id
+  slot        BigInt
+  header_hash String @db.VarChar
+
+  @@map("block")
+}
+
+model PoolV1 {
+  id               BigInt  @id @default(autoincrement())
+  lp_asset         String  @db.VarChar
+  asset_a          String  @db.VarChar
+  asset_b          String  @db.VarChar
+  reserve_a        Decimal @db.Decimal
+  reserve_b        Decimal @db.Decimal
+  total_liquidity  Decimal @db.Decimal
+  created_tx_id    String  @db.VarChar
+  created_tx_index Int
+  pool_address     String  @db.VarChar
+  slot             BigInt
+  block_id         BigInt
+
+  @@map("pool_v1")
+}
+
+model PoolV2 {
+  id               BigInt  @id @default(autoincrement())
+  lp_asset         String  @db.VarChar
+  asset_a          String  @db.VarChar
+  asset_b          String  @db.VarChar
+  datum_reserve_a  Decimal @db.Decimal
+  datum_reserve_b  Decimal @db.Decimal
+  value_reserve_a  Decimal @db.Decimal
+  value_reserve_b  Decimal @db.Decimal
+  total_liquidity  Decimal @db.Decimal
+  pool_address     String  @db.VarChar
+  created_tx_id    String  @db.VarChar
+  created_tx_index Int
+  slot             BigInt
+  block_id         BigInt
+
+  @@map("pool_v2")
+}
+
+model StablePool {
+  id               BigInt  @id @default(autoincrement())
+  lp_asset         String  @db.VarChar
+  total_liquidity  Decimal @db.Decimal
+  created_tx_id    String  @db.VarChar
+  created_tx_index Int
+  datum            String  @db.VarChar
+  slot             BigInt
+  block_id         BigInt
+
+  @@map("stable_pool")
 }

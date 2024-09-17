@@ -12,3 +12,16 @@ export function lucidToNetworkEnv(network: Network): NetworkEnvironment {
   }
   throw new Error("Not supported");
 }
+
+export function parseEnvironment(s: string): NetworkEnvironment {
+  switch (s) {
+    case "mainnet":
+      return NetworkEnvironment.MAINNET;
+    case "testnet-preview":
+      return NetworkEnvironment.TESTNET_PREVIEW;
+    case "testnet-preprod":
+      return NetworkEnvironment.TESTNET_PREPROD;
+    default:
+      throw new Error(`Unexpected environment ${s}`);
+  }
+}
