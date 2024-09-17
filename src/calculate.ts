@@ -1,10 +1,10 @@
+import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 import { zipWith } from "remeda";
 
 import { OrderV2 } from "./types/order";
 import { PoolV2 } from "./types/pool";
 import { sqrt } from "./utils/sqrt.internal";
-import invariant from "@minswap/tiny-invariant";
 
 /**
  * Options to calculate Amount Out & Price Impact while swapping exact in
@@ -737,7 +737,6 @@ export namespace StableswapCalculation {
     );
 
     let newDatumBalances: bigint[] = [];
-    let newValueBalances: bigint[] = [];
     let lpAmount = 0n;
     if (totalLiquidity === 0n) {
       for (let i = 0; i < length; ++i) {

@@ -1,8 +1,8 @@
+import invariant from "@minswap/tiny-invariant";
 import { Address, OutRef, Script } from "lucid-cardano";
 
-import { NetworkId } from "./network";
 import { Asset } from "..";
-import invariant from "@minswap/tiny-invariant";
+import { NetworkId } from "./network";
 
 export namespace DexV1Constant {
   export const ORDER_BASE_ADDRESS: Record<number, Address> = {
