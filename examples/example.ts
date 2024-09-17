@@ -32,8 +32,8 @@ import {
   StableswapCalculation,
   StableswapConstant,
 } from "../src";
-import { Slippage } from "../src/utils/slippage.internal";
 import { Stableswap } from "../src/stableswap";
+import { Slippage } from "../src/utils/slippage.internal";
 
 const MIN: Asset = {
   policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
@@ -74,7 +74,6 @@ async function main(): Promise<void> {
     .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
     .complete();
   const txId = await signedTx.submit();
-  // eslint-disable-next-line no-console
   console.info(`Transaction submitted successfully: ${txId}`);
 }
 
@@ -1070,15 +1069,59 @@ async function _zapOutStableExample(
   });
 }
 
+async function _bulkOrderStableExample(
+  lucid: Lucid,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const lpAmount = 12345n;
+  const outIndex = 0;
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  return new Stableswap(lucid).buildCreateTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.ZAP_OUT,
+        lpAmount: lpAmount,
+        assetOutIndex: BigInt(outIndex),
+        minimumAssetOut: 1n,
+      },
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.SWAP,
+        assetIn: Asset.fromString(config.assets[0]),
+        assetInAmount: 1000n,
+        assetInIndex: 0n,
+        assetOutIndex: 1n,
+        minimumAssetOut: 1n,
+      },
+    ],
+  });
+}
+
 async function _cancelStableExample(lucid: Lucid): Promise<TxComplete> {
   const orderUtxos = await lucid.utxosByOutRef([
     {
       txHash:
-        "f1c873201c3638860dc7d831a2266a7b0f46e48674da27fd0bcd1dc0c3835889",
+        "c3ad8e0aa159a22a14088474908e5c23ba6772a6aa82f8250e7e8eaa1016b2d8",
+      outputIndex: 0,
+    },
+    {
+      txHash:
+        "72e57a1fd90bf0b9291a6fa8e04793099d51df7844813689dde67ce3eea03c1f",
       outputIndex: 0,
     },
   ]);
-  invariant(orderUtxos.length === 1, "Can not find order to cancel");
+  invariant(orderUtxos.length === 2, "Can not find order to cancel");
   return new Stableswap(lucid).buildCancelOrdersTx({
     orderUtxos: orderUtxos,
   });
