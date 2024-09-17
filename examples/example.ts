@@ -1010,6 +1010,7 @@ async function _withdrawImbalanceStableExample(
     withdrawAmounts: withdrawAmounts,
   });
 }
+
 async function _zapOutStableExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
@@ -1039,7 +1040,7 @@ async function _zapOutStableExample(
     adminFee: config.adminFee,
     feeDenominator: config.feeDenominator,
   });
-  console.log(lpAmount);
+  console.log(amountOut);
   return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
@@ -1047,7 +1048,24 @@ async function _zapOutStableExample(
     type: StableOrder.StepType.ZAP_OUT,
     lpAmount: lpAmount,
     assetOutIndex: BigInt(outIndex),
-    minimumAssetOut: amountOut,
+    minimumAssetOut: amountOut + 10n,
+  });
+}
+
+async function _cancelStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const orderUtxos = await lucid.utxosByOutRef([
+    {
+      txHash:
+        "f1c873201c3638860dc7d831a2266a7b0f46e48674da27fd0bcd1dc0c3835889",
+      outputIndex: 0,
+    },
+  ]);
+  invariant(orderUtxos.length === 1, "Can not find order to cancel");
+  return new Stableswap(lucid, blockfrostAdapter).buildCancelOrdersTx({
+    orderUtxos: orderUtxos,
   });
 }
 

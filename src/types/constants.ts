@@ -377,14 +377,14 @@ export namespace StableswapConstant {
   }
 
   export function getStableswapReferencesScript(
-    lpAsset: Asset,
+    nftAsset: Asset,
     networkId: NetworkId
   ): StableswapConstant.DeployedScripts {
     const refScript =
-      StableswapConstant.DEPLOYED_SCRIPTS[networkId][Asset.toString(lpAsset)];
+      StableswapConstant.DEPLOYED_SCRIPTS[networkId][Asset.toString(nftAsset)];
     invariant(
       refScript,
-      `Invalid Stableswap LP Asset ${Asset.toString(lpAsset)}`
+      `Invalid Stableswap Nft Asset ${Asset.toString(nftAsset)}`
     );
     return refScript;
   }

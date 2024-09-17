@@ -323,7 +323,7 @@ export class Stableswap {
         this.networkId
       );
       const referencesScript = StableswapConstant.getStableswapReferencesScript(
-        Asset.fromString(config.lpAsset),
+        Asset.fromString(config.nftAsset),
         this.networkId
       );
       let datum: StableOrder.Datum;
