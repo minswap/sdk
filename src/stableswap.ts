@@ -15,14 +15,17 @@ import {
   MetadataMessage,
   StableOrder,
   StableswapConstant,
+  V1AndStableswapCustomReceiver,
 } from ".";
 import { calculateBatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/types.internal";
 import { Asset } from "./types/asset";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
+import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
 export type CommonOrderOptions = {
+  customReceiver?: V1AndStableswapCustomReceiver;
   sender: Address;
   availableUtxos: UTxO[];
   lpAsset: Asset;
@@ -77,15 +80,13 @@ export type BuildCancelOrderOptions = {
 export class Stableswap {
   private readonly lucid: Lucid;
   private readonly networkId: NetworkId;
-  private readonly adapter: BlockfrostAdapter;
   private readonly networkEnv: NetworkEnvironment;
   private readonly dexVersion = DexVersion.STABLESWAP;
 
-  constructor(lucid: Lucid, adapter: BlockfrostAdapter) {
+  constructor(lucid: Lucid) {
     this.lucid = lucid;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
-    this.adapter = adapter;
     this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
@@ -188,6 +189,10 @@ export class Stableswap {
           `Invalid assetOutIndex, must be between 0-${assetLength - 1n}`
         );
         invariant(
+          assetInIndex !== assetOutIndex,
+          `assetOutIndex and amountInIndex must be different`
+        );
+        invariant(
           minimumAssetOut > 0n,
           "minimum asset out amount must be positive"
         );
@@ -270,7 +275,7 @@ export class Stableswap {
   }
 
   async buildCreateTx(options: OrderOptions): Promise<TxComplete> {
-    const { sender, availableUtxos, lpAsset } = options;
+    const { sender, availableUtxos, lpAsset, customReceiver } = options;
     const config = StableswapConstant.getConfigByLpAsset(
       lpAsset,
       this.networkId
@@ -283,15 +288,15 @@ export class Stableswap {
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
     });
-    if (orderAssets["lovelace"]) {
-      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
+    if ("lovelace" in orderAssets) {
+      orderAssets["lovelace"] += batcherFee;
     } else {
-      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
+      orderAssets["lovelace"] = batcherFee;
     }
     const datum: StableOrder.Datum = {
       sender: sender,
-      receiver: sender,
-      receiverDatumHash: undefined,
+      receiver: customReceiver ? customReceiver.receiver : sender,
+      receiverDatumHash: customReceiver?.receiverDatum?.hash,
       step: step,
       batcherFee: batcherFee,
       depositADA: FIXED_DEPOSIT_ADA,
@@ -308,6 +313,21 @@ export class Stableswap {
       .payToAddress(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [this.getOrderMetadata(options)] });
+    if (customReceiver && customReceiver.receiverDatum) {
+      const utxoForStoringDatum = buildUtxoToStoreDatum(
+        this.lucid,
+        sender,
+        customReceiver.receiver,
+        customReceiver.receiverDatum.datum
+      );
+      if (utxoForStoringDatum) {
+        tx.payToAddressWithData(
+          utxoForStoringDatum.address,
+          utxoForStoringDatum.outputData,
+          utxoForStoringDatum.assets
+        );
+      }
+    }
     return await tx.complete();
   }
 
@@ -356,9 +376,9 @@ export class Stableswap {
       const orderRef = orderRefs[0];
       tx.readFrom([orderRef])
         .collectFrom([utxo], redeemer)
-        .addSigner(datum.sender)
-        .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] });
+        .addSigner(datum.sender);
     }
+    tx.attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] });
     return await tx.complete();
   }
 }

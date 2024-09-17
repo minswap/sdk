@@ -42,6 +42,7 @@ const MIN: Asset = {
   tokenName: "4d494e",
 };
 
+
 async function main(): Promise<void> {
   const network: Network = "Preprod";
   const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
@@ -881,7 +882,7 @@ async function _swapStableExample(
     feeDenominator: config.feeDenominator,
   });
 
-  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+  return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
     lpAsset: lpAsset,
@@ -923,7 +924,7 @@ async function _depositStableExample(
     feeDenominator: config.feeDenominator,
   });
   console.log(lpAmount);
-  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+  return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
     lpAsset: lpAsset,
@@ -962,7 +963,7 @@ async function _withdrawStableExample(
     totalLiquidity: pool.totalLiquidity,
   });
   console.log(amountOuts);
-  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+  return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
     lpAsset: lpAsset,
@@ -1001,7 +1002,7 @@ async function _withdrawImbalanceStableExample(
     feeDenominator: config.feeDenominator,
   });
   console.log(lpAmount);
-  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+  return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
     lpAsset: lpAsset,
@@ -1041,21 +1042,18 @@ async function _zapOutStableExample(
     feeDenominator: config.feeDenominator,
   });
   console.log(amountOut);
-  return new Stableswap(lucid, blockfrostAdapter).buildCreateTx({
+  return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
     lpAsset: lpAsset,
     type: StableOrder.StepType.ZAP_OUT,
     lpAmount: lpAmount,
     assetOutIndex: BigInt(outIndex),
-    minimumAssetOut: amountOut + 10n,
+    minimumAssetOut: amountOut,
   });
 }
 
-async function _cancelStableExample(
-  lucid: Lucid,
-  blockfrostAdapter: BlockfrostAdapter
-): Promise<TxComplete> {
+async function _cancelStableExample(lucid: Lucid): Promise<TxComplete> {
   const orderUtxos = await lucid.utxosByOutRef([
     {
       txHash:
@@ -1064,7 +1062,7 @@ async function _cancelStableExample(
     },
   ]);
   invariant(orderUtxos.length === 1, "Can not find order to cancel");
-  return new Stableswap(lucid, blockfrostAdapter).buildCancelOrdersTx({
+  return new Stableswap(lucid).buildCancelOrdersTx({
     orderUtxos: orderUtxos,
   });
 }
