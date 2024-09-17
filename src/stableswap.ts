@@ -23,14 +23,7 @@ import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
-export type CommonOrderOptions = {
-  customReceiver?: V1AndStableswapCustomReceiver;
-  sender: Address;
-  availableUtxos: UTxO[];
-  lpAsset: Asset;
-};
-
-export type SwapOptions = CommonOrderOptions & {
+export type SwapOptions = {
   type: StableOrder.StepType.SWAP;
   assetIn: Asset;
   assetInAmount: bigint;
@@ -39,38 +32,48 @@ export type SwapOptions = CommonOrderOptions & {
   minimumAssetOut: bigint;
 };
 
-export type DepositOptions = CommonOrderOptions & {
+export type DepositOptions = {
   type: StableOrder.StepType.DEPOSIT;
   assetsAmount: [Asset, bigint][];
   minimumLPReceived: bigint;
   totalLiquidity: bigint;
 };
 
-export type WithdrawOptions = CommonOrderOptions & {
+export type WithdrawOptions = {
   type: StableOrder.StepType.WITHDRAW;
   lpAmount: bigint;
   minimumAmounts: bigint[];
 };
 
-export type WithdrawImbalanceOptions = CommonOrderOptions & {
+export type WithdrawImbalanceOptions = {
   type: StableOrder.StepType.WITHDRAW_IMBALANCE;
   lpAmount: bigint;
   withdrawAmounts: bigint[];
 };
 
-export type ZapOutOptions = CommonOrderOptions & {
+export type ZapOutOptions = {
   type: StableOrder.StepType.ZAP_OUT;
   lpAmount: bigint;
   assetOutIndex: bigint;
   minimumAssetOut: bigint;
 };
 
-export type OrderOptions =
+export type OrderOptions = (
   | DepositOptions
   | WithdrawOptions
   | SwapOptions
   | WithdrawImbalanceOptions
-  | ZapOutOptions;
+  | ZapOutOptions
+) & {
+  lpAsset: Asset;
+  customReceiver?: V1AndStableswapCustomReceiver;
+};
+
+export type BulkOrdersOption = {
+  options: OrderOptions[];
+  sender: Address;
+  availableUtxos: UTxO[];
+};
 
 export type BuildCancelOrderOptions = {
   orderUtxos: UTxO[];
@@ -273,60 +276,87 @@ export class Stableswap {
     }
   }
 
-  async buildCreateTx(options: OrderOptions): Promise<TxComplete> {
-    const { sender, availableUtxos, lpAsset, customReceiver } = options;
-    const config = StableswapConstant.getConfigByLpAsset(
-      lpAsset,
-      this.networkId
+  async buildCreateTx(options: BulkOrdersOption): Promise<TxComplete> {
+    const { sender, availableUtxos, options: orderOptions } = options;
+
+    invariant(
+      orderOptions.length > 0,
+      "Stableswap.buildCreateTx: Need at least 1 order to build"
     );
-    const orderAssets = this.buildOrderValue(options);
-    const step = this.buildOrderStep(options);
+    // calculate total order value
+    const totalOrderAssets: Record<string, bigint> = {};
+    for (const option of orderOptions) {
+      const orderAssets = this.buildOrderValue(option);
+      for (const [asset, amt] of Object.entries(orderAssets)) {
+        if (asset in totalOrderAssets) {
+          totalOrderAssets[asset] += amt;
+        } else {
+          totalOrderAssets[asset] = amt;
+        }
+      }
+    }
+
+    // calculate batcher fee
     const { batcherFee, reductionAssets } = calculateBatcherFee({
       utxos: availableUtxos,
-      orderAssets,
+      orderAssets: totalOrderAssets,
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
     });
-    if ("lovelace" in orderAssets) {
-      orderAssets["lovelace"] += batcherFee;
-    } else {
-      orderAssets["lovelace"] = batcherFee;
-    }
-    const datum: StableOrder.Datum = {
-      sender: sender,
-      receiver: customReceiver ? customReceiver.receiver : sender,
-      receiverDatumHash: customReceiver?.receiverDatum?.hash,
-      step: step,
-      batcherFee: batcherFee,
-      depositADA: FIXED_DEPOSIT_ADA,
-    };
-    const tx = this.lucid
-      .newTx()
-      .payToContract(
+
+    const tx = this.lucid.newTx();
+    for (const orderOption of orderOptions) {
+      const config = StableswapConstant.getConfigByLpAsset(
+        orderOption.lpAsset,
+        this.networkId
+      );
+      const { customReceiver } = orderOption;
+      const orderAssets = this.buildOrderValue(orderOption);
+      const step = this.buildOrderStep(orderOption);
+      if ("lovelace" in orderAssets) {
+        orderAssets["lovelace"] += batcherFee;
+      } else {
+        orderAssets["lovelace"] = batcherFee;
+      }
+      const datum: StableOrder.Datum = {
+        sender: sender,
+        receiver: customReceiver ? customReceiver.receiver : sender,
+        receiverDatumHash: customReceiver?.receiverDatum?.hash,
+        step: step,
+        batcherFee: batcherFee,
+        depositADA: FIXED_DEPOSIT_ADA,
+      };
+      tx.payToContract(
         config.orderAddress,
         {
           inline: Data.to(StableOrder.Datum.toPlutusData(datum)),
         },
         orderAssets
-      )
-      .payToAddress(sender, reductionAssets)
-      .addSigner(sender)
-      .attachMetadata(674, { msg: [this.getOrderMetadata(options)] });
-    if (customReceiver && customReceiver.receiverDatum) {
-      const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
-        sender,
-        customReceiver.receiver,
-        customReceiver.receiverDatum.datum
-      );
-      if (utxoForStoringDatum) {
-        tx.payToAddressWithData(
-          utxoForStoringDatum.address,
-          utxoForStoringDatum.outputData,
-          utxoForStoringDatum.assets
+      ).payToAddress(sender, reductionAssets);
+
+      if (customReceiver && customReceiver.receiverDatum) {
+        const utxoForStoringDatum = buildUtxoToStoreDatum(
+          this.lucid,
+          sender,
+          customReceiver.receiver,
+          customReceiver.receiverDatum.datum
         );
+        if (utxoForStoringDatum) {
+          tx.payToAddressWithData(
+            utxoForStoringDatum.address,
+            utxoForStoringDatum.outputData,
+            utxoForStoringDatum.assets
+          );
+        }
       }
     }
+    tx.attachMetadata(674, {
+      msg: [
+        orderOptions.length > 1
+          ? MetadataMessage.MIXED_ORDERS
+          : this.getOrderMetadata(orderOptions[0]),
+      ],
+    });
     return await tx.complete();
   }
 

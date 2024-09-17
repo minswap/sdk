@@ -726,9 +726,6 @@ export namespace StableswapCalculation {
     feeDenominator,
   }: StableswapCalculateDepositOptions): bigint {
     const tempDatumBalances = [...datumBalances];
-    const feeAmounts = tempDatumBalances.map((_) => 0n);
-    const assetVolumes = tempDatumBalances.map((_) => 0n);
-    const poolVolumes = tempDatumBalances.map((_) => 0n);
 
     const length = multiples.length;
     invariant(
@@ -792,16 +789,12 @@ export namespace StableswapCalculation {
         const idealBalance = (d1 * oldBalance) / d0;
         let different = 0n;
         // In this case, liquidity pool has to swap the amount of other assets to get @different assets[i]
-        // Because the pool volumes is counted only for destination asset of the swap so we skip the "else" condition
         if (newBalance > idealBalance) {
           different = newBalance - idealBalance;
-          poolVolumes[i] = different;
         } else {
           different = idealBalance - newBalance;
         }
-        assetVolumes[i] = different;
         const tradingFeeAmount = (specialFee * different) / feeDenominator;
-        feeAmounts[i] = tradingFeeAmount;
         const adminFeeAmount = (tradingFeeAmount * adminFee) / feeDenominator;
         newDatumBalances.push(newBalance - adminFeeAmount);
         newDatBalancesWithTradingFee.push(newBalance - tradingFeeAmount);

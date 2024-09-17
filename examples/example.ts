@@ -882,13 +882,17 @@ async function _swapStableExample(
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
-    lpAsset: lpAsset,
-    type: StableOrder.StepType.SWAP,
-    assetIn: Asset.fromString(config.assets[0]),
-    assetInAmount: swapAmount,
-    assetInIndex: 0n,
-    assetOutIndex: 1n,
-    minimumAssetOut: amountOut,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.SWAP,
+        assetIn: Asset.fromString(config.assets[0]),
+        assetInAmount: swapAmount,
+        assetInIndex: 0n,
+        assetOutIndex: 1n,
+        minimumAssetOut: amountOut,
+      },
+    ],
   });
 }
 
@@ -924,14 +928,18 @@ async function _depositStableExample(
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
-    lpAsset: lpAsset,
-    type: StableOrder.StepType.DEPOSIT,
-    assetsAmount: [
-      [Asset.fromString(pool.assets[0]), 100_000n],
-      [Asset.fromString(pool.assets[1]), 1_000n],
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.DEPOSIT,
+        assetsAmount: [
+          [Asset.fromString(pool.assets[0]), 100_000n],
+          [Asset.fromString(pool.assets[1]), 1_000n],
+        ],
+        minimumLPReceived: lpAmount,
+        totalLiquidity: pool.totalLiquidity,
+      },
     ],
-    minimumLPReceived: lpAmount,
-    totalLiquidity: pool.totalLiquidity,
   });
 }
 
@@ -963,10 +971,14 @@ async function _withdrawStableExample(
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
-    lpAsset: lpAsset,
-    type: StableOrder.StepType.WITHDRAW,
-    lpAmount: lpAmount,
-    minimumAmounts: amountOuts,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.WITHDRAW,
+        lpAmount: lpAmount,
+        minimumAmounts: amountOuts,
+      },
+    ],
   });
 }
 
@@ -1002,10 +1014,14 @@ async function _withdrawImbalanceStableExample(
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
-    lpAsset: lpAsset,
-    type: StableOrder.StepType.WITHDRAW_IMBALANCE,
-    lpAmount: lpAmount,
-    withdrawAmounts: withdrawAmounts,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.WITHDRAW_IMBALANCE,
+        lpAmount: lpAmount,
+        withdrawAmounts: withdrawAmounts,
+      },
+    ],
   });
 }
 
@@ -1042,11 +1058,15 @@ async function _zapOutStableExample(
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
-    lpAsset: lpAsset,
-    type: StableOrder.StepType.ZAP_OUT,
-    lpAmount: lpAmount,
-    assetOutIndex: BigInt(outIndex),
-    minimumAssetOut: amountOut,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.ZAP_OUT,
+        lpAmount: lpAmount,
+        assetOutIndex: BigInt(outIndex),
+        minimumAssetOut: amountOut,
+      },
+    ],
   });
 }
 
