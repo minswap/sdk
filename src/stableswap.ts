@@ -10,7 +10,6 @@ import {
 } from "lucid-cardano";
 
 import {
-  BlockfrostAdapter,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
   StableOrder,

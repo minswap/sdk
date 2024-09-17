@@ -1,5 +1,3 @@
-// TODO: remove all console.log
-
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import invariant from "@minswap/tiny-invariant";
 import BigNumber from "bignumber.js";
@@ -41,7 +39,6 @@ const MIN: Asset = {
   policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
   tokenName: "4d494e",
 };
-
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
@@ -923,7 +920,7 @@ async function _depositStableExample(
     adminFee: config.adminFee,
     feeDenominator: config.feeDenominator,
   });
-  console.log(lpAmount);
+
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
@@ -962,7 +959,7 @@ async function _withdrawStableExample(
     datumBalances: pool.datum.balances,
     totalLiquidity: pool.totalLiquidity,
   });
-  console.log(amountOuts);
+
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
@@ -1001,7 +998,7 @@ async function _withdrawImbalanceStableExample(
     adminFee: config.adminFee,
     feeDenominator: config.feeDenominator,
   });
-  console.log(lpAmount);
+
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
@@ -1041,7 +1038,7 @@ async function _zapOutStableExample(
     adminFee: config.adminFee,
     feeDenominator: config.feeDenominator,
   });
-  console.log(amountOut);
+
   return new Stableswap(lucid).buildCreateTx({
     sender: address,
     availableUtxos: availableUtxos,
