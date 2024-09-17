@@ -25,7 +25,6 @@ import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
 export type SwapOptions = {
   type: StableOrder.StepType.SWAP;
-  assetIn: Asset;
   assetInAmount: bigint;
   assetInIndex: bigint;
   assetOutIndex: bigint;
@@ -121,9 +120,13 @@ export class Stableswap {
         break;
       }
       case StableOrder.StepType.SWAP: {
-        const { assetInAmount, assetIn } = option;
+        const { assetInAmount, assetInIndex, lpAsset } = option;
+        const poolConfig = StableswapConstant.getConfigByLpAsset(
+          lpAsset,
+          this.networkId
+        );
         invariant(assetInAmount > 0n, "asset in amount must be positive");
-        orderAssets[Asset.toString(assetIn)] = assetInAmount;
+        orderAssets[poolConfig.assets[Number(assetInIndex)]] = assetInAmount;
         break;
       }
       case StableOrder.StepType.WITHDRAW:
