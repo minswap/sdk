@@ -412,7 +412,7 @@ export class BlockfrostAdapter {
 
   public async getStablePoolByLpAsset(
     lpAsset: Asset
-  ): Promise<StablePool.State> {
+  ): Promise<StablePool.State | null> {
     const config = StableswapConstant.CONFIG[this.networkId].find(
       (cfg) => cfg.lpAsset === Asset.toString(lpAsset)
     );
@@ -426,10 +426,11 @@ export class BlockfrostAdapter {
       config.poolAddress,
       config.nftAsset
     );
-    invariant(poolUtxos.length === 1, `Can not find pool utxo in blockchain`);
-    const poolUtxo = poolUtxos[0];
-    const pool = await this.parseStablePoolState(poolUtxo);
-    return pool;
+    if (poolUtxos.length === 1) {
+      const poolUtxo = poolUtxos[0];
+      return await this.parseStablePoolState(poolUtxo);
+    }
+    return null;
   }
 
   public async getStablePoolByNFT(
@@ -443,29 +444,14 @@ export class BlockfrostAdapter {
         `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`
       );
     }
-    const utxos = await this.api.addressesUtxosAssetAll(
+    const poolUtxos = await this.api.addressesUtxosAssetAll(
       poolAddress,
       Asset.toString(nft)
     );
-    for (const utxo of utxos) {
-      let datum: string;
-      if (utxo.inline_datum) {
-        datum = utxo.inline_datum;
-      } else if (utxo.data_hash) {
-        datum = await this.getDatumByDatumHash(utxo.data_hash);
-      } else {
-        throw new Error("Cannot find datum of Stable Pool");
-      }
-      const pool = new StablePool.State(
-        this.networkId,
-        utxo.address,
-        { txHash: utxo.tx_hash, index: utxo.output_index },
-        utxo.amount,
-        datum
-      );
-      return pool;
+    if (poolUtxos.length === 1) {
+      const poolUtxo = poolUtxos[0];
+      return await this.parseStablePoolState(poolUtxo);
     }
-
     return null;
   }
 

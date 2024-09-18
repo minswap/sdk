@@ -864,6 +864,8 @@ async function _swapStableExample(
 
   const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
 
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+
   const swapAmount = 1_000n;
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
@@ -912,6 +914,8 @@ async function _depositStableExample(
   );
 
   const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
   // This order deposits 100_000n tDJED and 1_000n tiUSD into the pool.
@@ -962,6 +966,8 @@ async function _withdrawStableExample(
 
   const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
 
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+
   const lpAmount = 10_000n;
 
   const amountOuts = StableswapCalculation.calculateWithdraw({
@@ -1000,6 +1006,8 @@ async function _withdrawImbalanceStableExample(
   );
 
   const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
   const withdrawAmounts = [1234n, 5678n];
 
@@ -1045,6 +1053,8 @@ async function _zapOutStableExample(
   );
 
   const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
   // This order withdraws xxx tiUSD by 12345 Lp Assets from the pool.
