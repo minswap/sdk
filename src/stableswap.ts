@@ -23,6 +23,10 @@ import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
+/**
+ * @property {bigint} assetInIndex - Index of asset you want to swap in config assets
+ * @property {bigint} assetOutIndex - Index of asset you want to receive in config assets
+ */
 export type SwapOptions = {
   type: StableOrder.StepType.SWAP;
   assetInAmount: bigint;
@@ -50,6 +54,9 @@ export type WithdrawImbalanceOptions = {
   withdrawAmounts: bigint[];
 };
 
+/**
+ * @property {bigint} assetOutIndex - Index of asset you want to receive in config assets
+ */
 export type ZapOutOptions = {
   type: StableOrder.StepType.ZAP_OUT;
   lpAmount: bigint;

@@ -866,6 +866,9 @@ async function _swapStableExample(
 
   const swapAmount = 1_000n;
 
+  // This pool have 2 assets in config. They are [tDJED, tiUSD].
+  // Index-0 Asset is tDJED. Index-1 Asset is tiUSD.
+  // This order swap 1_000n tDJED to ... tiUSD.
   const amountOut = StableswapCalculation.calculateSwapAmount({
     inIndex: 0,
     outIndex: 1,
@@ -910,6 +913,8 @@ async function _depositStableExample(
 
   const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
 
+  // This pool have 2 assets in config. They are [tDJED, tiUSD].
+  // This order deposit 100_000n tDJED and 1_000n tiUSD to pool.
   const amountIns = [100_000n, 1_000n];
 
   const lpAmount = StableswapCalculation.calculateDeposit({
@@ -998,6 +1003,8 @@ async function _withdrawImbalanceStableExample(
 
   const withdrawAmounts = [1234n, 5678n];
 
+  // This pool have 2 assets in config. They are [tDJED, tiUSD].
+  // This order withdraw exactly 1234n tDJED and 5678n tiUSD from pool.
   const lpAmount = StableswapCalculation.calculateWithdrawImbalance({
     withdrawAmounts: withdrawAmounts,
     totalLiquidity: pool.totalLiquidity,
@@ -1039,6 +1046,8 @@ async function _zapOutStableExample(
 
   const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
 
+  // This pool have 2 assets in config. They are [tDJED, tiUSD].
+  // This order withdraw xxx tiUSD by 12345 Lp Asset from pool.
   const lpAmount = 12345n;
   const outIndex = 0;
   const amountOut = StableswapCalculation.calculateZapOut({

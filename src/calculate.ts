@@ -627,6 +627,11 @@ export namespace StableswapCalculation {
     feeDenominator: bigint;
   };
 
+  /**
+   * @property {number} inIndex - index of asset in config assets that you want to swap
+   * @property {bigint} amountIn - amount of asset that you want to swap
+   * @property {number} outIndex - index of asset in config assets that you want to receive
+   */
   export type StableswapCalculateSwapOptions =
     CommonStableswapCalculationOptions & {
       inIndex: number;
@@ -634,6 +639,10 @@ export namespace StableswapCalculation {
       amountIn: bigint;
     };
 
+  /**
+   * @property {bigint[]} amountIns - amount of assets that you want to deposit ordering by assets in config
+   * @property {bigint} totalLiquidity - amount of asset that you want to swap
+   */
   export type StableswapCalculateDepositOptions =
     CommonStableswapCalculationOptions & {
       amountIns: bigint[];
@@ -648,12 +657,19 @@ export namespace StableswapCalculation {
     totalLiquidity: bigint;
   };
 
+  /**
+   * @property {bigint[]} withdrawAmounts - exactly amount of assets that you want to withdraw ordering by assets in config
+   */
   export type StableswapCalculateWithdrawImbalanceOptions =
     CommonStableswapCalculationOptions & {
       withdrawAmounts: bigint[];
       totalLiquidity: bigint;
     };
 
+  /**
+   * @property {bigint} amountLpIn - exactly LP amount that you want to withdraw
+   * @property {number} outIndex - index of asset that you want to zap out in config assets
+   */
   export type StableswapCalculateZapOutOptions =
     CommonStableswapCalculationOptions & {
       amountLpIn: bigint;
@@ -661,6 +677,9 @@ export namespace StableswapCalculation {
       totalLiquidity: bigint;
     };
 
+  /**
+   * @returns amount of asset that you want to receive.
+   */
   export function calculateSwapAmount({
     inIndex,
     outIndex,
@@ -715,6 +734,9 @@ export namespace StableswapCalculation {
     return amountOut;
   }
 
+  /**
+   * @returns amount of liquidity asset you receive.
+   */
   export function calculateDeposit({
     amountIns,
     amp,
@@ -816,6 +838,9 @@ export namespace StableswapCalculation {
     return lpAmount;
   }
 
+  /**
+   * @returns amounts of asset you can receive ordering by config assets
+   */
   export function calculateWithdraw({
     withdrawalLPAmount,
     multiples,
@@ -848,6 +873,9 @@ export namespace StableswapCalculation {
     return amountOuts;
   }
 
+  /**
+   * @returns lp asset amount you need to provide to receive exactly amount of assets in the pool
+   */
   export function calculateWithdrawImbalance({
     withdrawAmounts,
     amp,
@@ -929,6 +957,9 @@ export namespace StableswapCalculation {
     return lpAmount;
   }
 
+  /**
+   * @returns amount asset amount you want receive
+   */
   export function calculateZapOut({
     amountLpIn,
     outIndex,
