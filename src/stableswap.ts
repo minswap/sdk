@@ -343,9 +343,6 @@ export class Stableswap {
         },
         orderAssets
       );
-      if (Object.keys(reductionAssets).length !== 0) {
-        tx.payToAddress(sender, reductionAssets);
-      }
 
       if (customReceiver && customReceiver.receiverDatum) {
         const utxoForStoringDatum = buildUtxoToStoreDatum(
@@ -362,6 +359,9 @@ export class Stableswap {
           );
         }
       }
+    }
+    if (Object.keys(reductionAssets).length !== 0) {
+      tx.payToAddress(sender, reductionAssets);
     }
     tx.attachMetadata(674, {
       msg: [
