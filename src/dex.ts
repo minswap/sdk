@@ -185,8 +185,10 @@ export class Dex {
         Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
       .addSigner(sender);
+    if (Object.keys(reductionAssets).length !== 0) {
+      tx.payToAddress(sender, reductionAssets);
+    }
     if (isLimitOrder) {
       tx.attachMetadata(674, {
         msg: [MetadataMessage.SWAP_EXACT_IN_LIMIT_ORDER],

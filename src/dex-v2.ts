@@ -911,7 +911,9 @@ export class DexV2 {
       msg: [metadata],
       limitOrders: limitOrderMessage,
     });
-    lucidTx.payToAddress(sender, reductionAssets);
+    if (Object.keys(reductionAssets).length !== 0) {
+      lucidTx.payToAddress(sender, reductionAssets);
+    }
     if (composeTx) {
       lucidTx.compose(composeTx);
     }

@@ -2,7 +2,7 @@ import { Assets, UTxO } from "lucid-cardano";
 
 import { NetworkEnvironment } from "../types/network";
 import {
-  FIXED_BATCHER_FEE,
+  BATCHER_FEE_CONFIG,
   getActiveBatcherFee,
   getReducedBatcherFee,
 } from "./configs.internal";
@@ -23,10 +23,11 @@ export function calculateBatcherFee({
   reductionAssets: Assets;
 } {
   const reductionAssets: Assets = {};
+  const standardFee = BATCHER_FEE_CONFIG[networkEnv][dexVersion].standardFee;
   const activeBatcherFeeConfig = getActiveBatcherFee(networkEnv, dexVersion);
   if (!activeBatcherFeeConfig) {
     return {
-      batcherFee: FIXED_BATCHER_FEE,
+      batcherFee: standardFee,
       reductionAssets,
     };
   }
@@ -40,19 +41,19 @@ export function calculateBatcherFee({
       }
     }
   }
-  const eligibleReductionAssets: Assets = {};
   for (const { asset } of activeBatcherFeeConfig.assets) {
     if (asset in totalAssets) {
-      eligibleReductionAssets[asset] = totalAssets[asset];
+      reductionAssets[asset] = totalAssets[asset];
       if (asset in orderAssets) {
-        eligibleReductionAssets[asset] -= orderAssets[asset];
+        reductionAssets[asset] -= orderAssets[asset];
       }
     }
   }
   return {
     batcherFee: getReducedBatcherFee(
+      standardFee,
       activeBatcherFeeConfig,
-      eligibleReductionAssets
+      reductionAssets
     ),
     reductionAssets: reductionAssets,
   };
