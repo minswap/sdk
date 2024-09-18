@@ -33,6 +33,7 @@ export function getActiveBatcherFee(
 }
 
 export function getReducedBatcherFee(
+  standardFee: bigint,
   activeReductionConfig: BatcherFeeReductionConfig,
   reductionAssets: Assets
 ): bigint {
@@ -54,9 +55,9 @@ export function getReducedBatcherFee(
       ? new BigNumber(1)
       : totalReductionAmountRatio;
 
-  const maximumReduction = new BigNumber(FIXED_BATCHER_FEE.toString())
+  const maximumReduction = new BigNumber(standardFee.toString())
     .minus(minFee.toString())
-    .div(FIXED_BATCHER_FEE.toString())
+    .div(standardFee.toString())
     .multipliedBy(100);
 
   // Apply the ratio to calculate batcher fee reduction
@@ -64,10 +65,10 @@ export function getReducedBatcherFee(
     .multipliedBy(maximumReductionAmountRatio)
     .div(100);
 
-  // New batcher fee = (1 - reduction) * DEFAULT BATCHER FEE
+  // New batcher fee = (1 - reduction) * standardFee
   const finalFee = new BigNumber(1)
     .minus(totalReduction)
-    .multipliedBy(new BigNumber(FIXED_BATCHER_FEE.toString()))
+    .multipliedBy(new BigNumber(standardFee.toString()))
     .toFixed(0);
   return BigInt(finalFee);
 }
