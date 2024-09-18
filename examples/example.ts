@@ -878,7 +878,7 @@ async function _swapStableExample(
     feeDenominator: config.feeDenominator,
   });
 
-  return new Stableswap(lucid).buildCreateTx({
+  return new Stableswap(lucid).createBulkOrdersTx({
     sender: address,
     availableUtxos: availableUtxos,
     options: [
@@ -923,7 +923,7 @@ async function _depositStableExample(
     feeDenominator: config.feeDenominator,
   });
 
-  return new Stableswap(lucid).buildCreateTx({
+  return new Stableswap(lucid).createBulkOrdersTx({
     sender: address,
     availableUtxos: availableUtxos,
     options: [
@@ -966,7 +966,7 @@ async function _withdrawStableExample(
     totalLiquidity: pool.totalLiquidity,
   });
 
-  return new Stableswap(lucid).buildCreateTx({
+  return new Stableswap(lucid).createBulkOrdersTx({
     sender: address,
     availableUtxos: availableUtxos,
     options: [
@@ -1009,7 +1009,7 @@ async function _withdrawImbalanceStableExample(
     feeDenominator: config.feeDenominator,
   });
 
-  return new Stableswap(lucid).buildCreateTx({
+  return new Stableswap(lucid).createBulkOrdersTx({
     sender: address,
     availableUtxos: availableUtxos,
     options: [
@@ -1053,7 +1053,7 @@ async function _zapOutStableExample(
     feeDenominator: config.feeDenominator,
   });
 
-  return new Stableswap(lucid).buildCreateTx({
+  return new Stableswap(lucid).createBulkOrdersTx({
     sender: address,
     availableUtxos: availableUtxos,
     options: [
@@ -1079,7 +1079,7 @@ async function _bulkOrderStableExample(
   const lpAmount = 12345n;
   const outIndex = 0;
 
-  return new Stableswap(lucid).buildCreateTx({
+  return new Stableswap(lucid).createBulkOrdersTx({
     sender: address,
     availableUtxos: availableUtxos,
     options: [

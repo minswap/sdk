@@ -279,7 +279,7 @@ export class Stableswap {
     }
   }
 
-  async buildCreateTx(options: BulkOrdersOption): Promise<TxComplete> {
+  async createBulkOrdersTx(options: BulkOrdersOption): Promise<TxComplete> {
     const { sender, availableUtxos, options: orderOptions } = options;
 
     invariant(
@@ -335,7 +335,10 @@ export class Stableswap {
           inline: Data.to(StableOrder.Datum.toPlutusData(datum)),
         },
         orderAssets
-      ).payToAddress(sender, reductionAssets);
+      );
+      if (Object.keys(reductionAssets).length !== 0) {
+        tx.payToAddress(sender, reductionAssets);
+      }
 
       if (customReceiver && customReceiver.receiverDatum) {
         const utxoForStoringDatum = buildUtxoToStoreDatum(
