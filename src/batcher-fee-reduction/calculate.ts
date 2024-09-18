@@ -41,12 +41,11 @@ export function calculateBatcherFee({
       }
     }
   }
-  const eligibleReductionAssets: Assets = {};
   for (const { asset } of activeBatcherFeeConfig.assets) {
     if (asset in totalAssets) {
-      eligibleReductionAssets[asset] = totalAssets[asset];
+      reductionAssets[asset] = totalAssets[asset];
       if (asset in orderAssets) {
-        eligibleReductionAssets[asset] -= orderAssets[asset];
+        reductionAssets[asset] -= orderAssets[asset];
       }
     }
   }
@@ -54,7 +53,7 @@ export function calculateBatcherFee({
     batcherFee: getReducedBatcherFee(
       standardFee,
       activeBatcherFeeConfig,
-      eligibleReductionAssets
+      reductionAssets
     ),
     reductionAssets: reductionAssets,
   };
