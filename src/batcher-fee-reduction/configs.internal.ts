@@ -36,14 +36,15 @@ export function getReducedBatcherFee(
   activeReductionConfig: BatcherFeeReductionConfig,
   reductionAssets: Assets
 ): bigint {
-  const totalReductionAmountRatio = new BigNumber(0);
+  let totalReductionAmountRatio = new BigNumber(0);
   const { assets, minFee } = activeReductionConfig;
   for (const { asset, maximumAmount } of assets) {
     if (asset in reductionAssets) {
       const reductionAmount = new BigNumber(
         reductionAssets[asset].toString()
       ).div(maximumAmount.toString());
-      totalReductionAmountRatio.plus(reductionAmount);
+      totalReductionAmountRatio =
+        totalReductionAmountRatio.plus(reductionAmount);
     }
   }
 
@@ -159,12 +160,12 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e", // MIN
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e", // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
           ],
@@ -176,17 +177,17 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e", // MIN
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e", // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
             {
               asset:
-                "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b.6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200", // ADA-MIN LP V2
+                "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200", // ADA-MIN LP V2
               maximumAmount: 100_000_000n,
             },
           ],
@@ -203,13 +204,13 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e",
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e",
               // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d",
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d",
               // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
@@ -222,17 +223,17 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e", // MIN
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e", // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
             {
               asset:
-                "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b.6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200", // ADA-MIN LP V2
+                "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200", // ADA-MIN LP V2
               maximumAmount: 100_000_000n,
             },
           ],
@@ -249,12 +250,12 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e", // MIN
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e", // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
           ],
@@ -266,17 +267,17 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e", // MIN
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e", // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
             {
               asset:
-                "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b.6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200", // ADA-MIN LP V2
+                "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b6c3ea488e6ff940bb6fb1b18fd605b5931d9fefde6440117015ba484cf321200", // ADA-MIN LP V2
               maximumAmount: 100_000_000n,
             },
           ],
@@ -295,12 +296,12 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e", // MIN
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e", // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
           ],
@@ -317,12 +318,12 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e", // MIN
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e", // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
           ],
@@ -339,12 +340,12 @@ export const BATCHER_FEE_CONFIG: Record<
           assets: [
             {
               asset:
-                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72.4d494e", // MIN
+                "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e", // MIN
               maximumAmount: 10_000_000n,
             },
             {
               asset:
-                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86.3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
+                "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d863bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d", // ADA-MIN LP
               maximumAmount: 100_000_000n,
             },
           ],
