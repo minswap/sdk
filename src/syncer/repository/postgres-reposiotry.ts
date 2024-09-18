@@ -84,11 +84,11 @@ export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryRea
       const rollbackBlock = await this.prismaClientInTx.block.findFirst({
         where: {
           slot: {
-            lt: point.slot
+            gt: point.slot
           }
         },
         orderBy: {
-          slot: "desc"
+          slot: "asc"
         }
       })
       const rollbackBlockId = rollbackBlock ? rollbackBlock.id : 0n

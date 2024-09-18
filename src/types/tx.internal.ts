@@ -21,8 +21,8 @@ export type TxHistory = {
 export namespace Value {
   export function fromOgmiosValue(ogmiosValue: OgmiosSchema.Value): Value {
     const value: Value = [];
-    for (const [cyrencySymbol, tokenNameMap] of Object.entries(ogmiosValue)) {
-      if (cyrencySymbol === "ada") {
+    for (const [currencySymbol, tokenNameMap] of Object.entries(ogmiosValue)) {
+      if (currencySymbol === "ada") {
         value.push({
           unit: "lovelace",
           quantity: tokenNameMap.lovelace.toString()
@@ -30,7 +30,7 @@ export namespace Value {
       } else {
         for (const [tokenName, amount] of Object.entries(tokenNameMap)) {
           value.push({
-            unit: `${cyrencySymbol}${tokenName}`,
+            unit: `${currencySymbol}${tokenName}`,
             quantity: amount.toString()
           })
         }
