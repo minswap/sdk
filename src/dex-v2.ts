@@ -68,7 +68,6 @@ export type CreatePoolV2Options = {
 
 export type BulkOrdersOption = {
   sender: Address;
-  customReceiver?: V2CustomReceiver;
   orderOptions: OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
   availableUtxos: UTxO[];
@@ -182,6 +181,7 @@ export type OrderOptions = (
   | MultiRoutingOptions
 ) & {
   lpAsset: Asset;
+  customReceiver?: V2CustomReceiver;
 };
 
 export type CancelBulkOrdersOptions = {
@@ -752,7 +752,6 @@ export class DexV2 {
 
   async createBulkOrdersTx({
     sender,
-    customReceiver,
     orderOptions,
     expiredOptions,
     availableUtxos,
@@ -786,7 +785,7 @@ export class DexV2 {
     }[] = [];
     for (let i = 0; i < orderOptions.length; i++) {
       const option = orderOptions[i];
-      const { type, lpAsset } = option;
+      const { type, lpAsset, customReceiver } = option;
       const orderAssets = this.buildOrderValue(option);
       const orderStep = this.buildOrderStep(option, batcherFee);
       if (type === OrderV2.StepType.SWAP_EXACT_IN && option.isLimitOrder) {

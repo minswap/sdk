@@ -142,6 +142,29 @@ test("getAllStablePools", async () => {
   expect(mainnetPools.length === numberOfStablePoolsMainnet);
 });
 
+test("getStablePoolByLPAsset", async () => {
+  const testnetCfgs = StableswapConstant.CONFIG[NetworkId.TESTNET];
+  const mainnetCfgs = StableswapConstant.CONFIG[NetworkId.MAINNET];
+
+  for (const cfg of testnetCfgs) {
+    const pool = await adapterTestnet.getStablePoolByLpAsset(
+      Asset.fromString(cfg.lpAsset)
+    );
+    expect(pool).not.toBeNull();
+    expect(pool?.nft).toEqual(cfg.nftAsset);
+    expect(pool?.assets).toEqual(cfg.assets);
+  }
+
+  for (const cfg of mainnetCfgs) {
+    const pool = await adapterMainnet.getStablePoolByLpAsset(
+      Asset.fromString(cfg.lpAsset)
+    );
+    expect(pool).not.toBeNull();
+    expect(pool?.nft).toEqual(cfg.nftAsset);
+    expect(pool?.assets).toEqual(cfg.assets);
+  }
+});
+
 test("getStablePoolByNFT", async () => {
   const testnetCfgs = StableswapConstant.CONFIG[NetworkId.TESTNET];
   const mainnetCfgs = StableswapConstant.CONFIG[NetworkId.MAINNET];
