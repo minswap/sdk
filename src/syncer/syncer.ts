@@ -1,7 +1,6 @@
 import * as Ogmios from "@cardano-ogmios/client";
 import * as OgmiosSchema from "@cardano-ogmios/schema";
 import { backOff } from "exponential-backoff";
-import { Data } from "lucid-cardano";
 
 import { DexV1Constant, DexV2Constant, SECURITY_PARAM, StableswapConstant } from "../types/constants";
 import { PoolV1, PoolV2, StablePool } from "../types/pool";
@@ -128,8 +127,12 @@ export class Syncer {
                   throw Error("Datum raw not found.")
                 }
                 const poolV1 = new PoolV1.State(address, txIn, value, datumHash);
-                const { totalLiquidity } = PoolV1.Datum.fromPlutusData(networkId, Data.from(tx.datums[datumHash]))
-                await repo.createPoolV1(block, poolV1, totalLiquidity);
+                await repo.createPoolV1({
+                  block: block,
+                  pool: poolV1,
+                  networkId: networkId,
+                  rawDatum: tx.datums[datumHash]
+                });
               } catch (err) {
                 console.log(`Invalid minswap v1 transaction: ${tx.id}`, err)
               }

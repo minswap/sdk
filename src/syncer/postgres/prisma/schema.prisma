@@ -25,7 +25,9 @@ model PoolV1 {
   total_liquidity  Decimal @db.Decimal
   created_tx_id    String  @db.VarChar
   created_tx_index Int
+  value            String  @db.VarChar
   pool_address     String  @db.VarChar
+  raw_datum        String  @db.VarChar
   slot             BigInt
   block_id         BigInt
 
@@ -42,7 +44,9 @@ model PoolV2 {
   value_reserve_a  Decimal @db.Decimal
   value_reserve_b  Decimal @db.Decimal
   total_liquidity  Decimal @db.Decimal
+  value            String  @db.VarChar
   pool_address     String  @db.VarChar
+  raw_datum        String  @db.VarChar
   created_tx_id    String  @db.VarChar
   created_tx_index Int
   slot             BigInt
@@ -57,7 +61,9 @@ model StablePool {
   total_liquidity  Decimal @db.Decimal
   created_tx_id    String  @db.VarChar
   created_tx_index Int
-  datum            String  @db.VarChar
+  pool_address     String  @db.VarChar
+  value            String  @db.VarChar
+  raw_datum        String  @db.VarChar
   slot             BigInt
   block_id         BigInt
 

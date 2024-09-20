@@ -7,13 +7,6 @@ CREATE TABLE block
   header_hash VARCHAR NOT NULL
 );
 
--- CREATE TABLE transaction
--- (
---   id       BIGSERIAL PRIMARY KEY,
---   tx_id    VARCHAR NOT NULL UNIQUE,
---   block_id BIGINT  NOT NULL
--- );
-
 CREATE TABLE pool_v1
 (
   id               BIGSERIAL PRIMARY KEY,
@@ -25,7 +18,9 @@ CREATE TABLE pool_v1
   total_liquidity  DECIMAL NOT NULL,
   created_tx_id    VARCHAR NOT NULL,
   created_tx_index INTEGER NOT NULL,
+  value            VARCHAR NOT NULL,
   pool_address     VARCHAR NOT NULL,
+  raw_datum        VARCHAR NOT NULL,
   slot             BIGINT  NOT NULL,
   block_id         BIGINT  NOT NULL
 );
@@ -41,7 +36,9 @@ CREATE TABLE pool_v2
   value_reserve_a  DECIMAL NOT NULL,
   value_reserve_b  DECIMAL NOT NULL,
   total_liquidity  DECIMAL NOT NULL,
+  value            VARCHAR NOT NULL,
   pool_address     VARCHAR NOT NULL,
+  raw_datum        VARCHAR NOT NULL,
   created_tx_id    VARCHAR NOT NULL,
   created_tx_index INTEGER NOT NULL,
   slot             BIGINT  NOT NULL,
@@ -55,7 +52,9 @@ CREATE TABLE stable_pool
   total_liquidity  DECIMAL NOT NULL,
   created_tx_id    VARCHAR NOT NULL,
   created_tx_index INTEGER NOT NULL,
-  datum            VARCHAR NOT NULL,
+  pool_address     VARCHAR NOT NULL,
+  value            VARCHAR NOT NULL,
+  raw_datum        VARCHAR NOT NULL,
   slot             BIGINT  NOT NULL,
   block_id         BIGINT  NOT NULL
 );

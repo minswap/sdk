@@ -1,12 +1,14 @@
 import * as OgmiosSchema from "@cardano-ogmios/schema";
 import * as Prisma from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+import JSONBig from "json-bigint"
 import { Data } from "lucid-cardano";
 
 import { Asset } from "../../types/asset";
 import { SECURITY_PARAM } from "../../types/constants";
-import { NetworkEnvironment } from "../../types/network";
+import { NetworkEnvironment, NetworkId } from "../../types/network";
 import { PoolV1, PoolV2, StablePool } from "../../types/pool";
+import { normalizeAssets } from "../../types/pool.internal";
 
 export type PrismaClientInTx = Omit<Prisma.PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
@@ -44,6 +46,124 @@ export class PostgresRepositoryReader {
       id: block.header_hash,
       slot: Number(block.slot),
     }));
+  }
+
+  async getPoolV1ByCreatedTxId(txId: string): Promise<Prisma.PoolV1 | null> {
+    return await this.prismaClientInTx.poolV1.findFirst({
+      where: {
+        created_tx_id: txId
+      }
+    })
+  }
+
+  async getPoolV1ByLpAsset(lpAsset: string): Promise<Prisma.PoolV1 | null> {
+    return await this.prismaClientInTx.poolV1.findFirst({
+      where: {
+        lp_asset: lpAsset
+      },
+      orderBy: {
+        id: "desc"
+      },
+    })
+  }
+
+  async getLastPoolV1State(offset: number, limit: number, orderBy: "asc" | "desc"): Promise<Prisma.PoolV1[]> {
+    return await this.prismaClientInTx.$queryRawUnsafe(`
+      WITH T AS (SELECT DISTINCT ON (lp_asset) * FROM pool_v1 ORDER BY lp_asset, id DESC)
+      SELECT * FROM T ORDER BY id ${orderBy} OFFSET ${offset} LIMIT ${limit};  
+    `)
+  }
+
+  async getHistoricalPoolV1ByLpAsset(lpAsset: string, offset: number, limit: number, orderBy: "asc" | "desc"): Promise<Prisma.PoolV1[]> {
+    return await this.prismaClientInTx.poolV1.findMany({
+      where: {
+        lp_asset: lpAsset
+      },
+      skip: offset * limit,
+      take: limit,
+      orderBy: {
+        id: orderBy
+      }
+    })
+  }
+
+  async getHistoricalPoolsV1(offset: number, limit: number, orderBy: "asc" | "desc"): Promise<Prisma.PoolV1[]> {
+    return await this.prismaClientInTx.poolV1.findMany({
+      skip: offset * limit,
+      take: limit,
+      orderBy: {
+        id: orderBy
+      }
+    })
+  }
+
+  async getAllLastPoolV2State(): Promise<Prisma.PoolV2[]> {
+    return await this.prismaClientInTx.$queryRawUnsafe(`
+      WITH T AS (SELECT DISTINCT ON (lp_asset) * FROM pool_v2 ORDER BY lp_asset, id DESC)
+      SELECT * FROM T ORDER BY id ASC;  
+    `)
+  }
+
+  async getLastPoolV2State(offset: number, limit: number, orderBy: "asc" | "desc"): Promise<Prisma.PoolV2[]> {
+    return await this.prismaClientInTx.$queryRawUnsafe(`
+      WITH T AS (SELECT DISTINCT ON (lp_asset) * FROM pool_v2 ORDER BY lp_asset, id DESC)
+      SELECT * FROM T ORDER BY id ${orderBy} OFFSET ${offset} LIMIT ${limit};  
+    `)
+  }
+
+  async getHistoricalPoolsV2(offset: number, limit: number, orderBy: "asc" | "desc"): Promise<Prisma.PoolV2[]> {
+    return await this.prismaClientInTx.poolV2.findMany({
+      skip: offset * limit,
+      take: limit,
+      orderBy: {
+        id: orderBy
+      }
+    })
+  }
+
+  async getPoolV2ByPair(assetA: Asset, assetB: Asset): Promise<Prisma.PoolV2 | null> {
+    const [normalizedAssetA, normalizedAssetB] = normalizeAssets(
+      Asset.toString(assetA),
+      Asset.toString(assetB)
+    );
+    return await this.prismaClientInTx.poolV2.findFirst({
+      where: {
+        asset_a: normalizedAssetA,
+        asset_b: normalizedAssetB
+      },
+      orderBy: {
+        id: "desc"
+      }
+    })
+  }
+
+  async getPoolV2ByLpAsset(lpAsset: Asset): Promise<Prisma.PoolV2 | null> {
+    return await this.prismaClientInTx.poolV2.findFirst({
+      where: {
+        lp_asset: Asset.toString(lpAsset)
+      },
+      orderBy: {
+        id: "desc"
+      },
+    })
+  }
+
+  async getAllLastStablePoolState(): Promise<Prisma.StablePool[]> {
+    return await this.prismaClientInTx.$queryRawUnsafe(`
+      WITH T AS (SELECT DISTINCT ON (lp_asset) * FROM stable_pool ORDER BY lp_asset, id DESC)
+      SELECT * FROM T ORDER BY id DESC; 
+    `)
+  }
+
+  async getStablePoolByLpAsset(lpAsset: string): Promise<Prisma.StablePool | null> {
+    return await this.prismaClientInTx.stablePool.findFirst({
+      where: {
+        lp_asset: lpAsset
+      },
+      orderBy: {
+        id: "desc"
+      },
+    })
   }
 }
 
@@ -91,32 +211,35 @@ export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryRea
           slot: "asc"
         }
       })
-      const rollbackBlockId = rollbackBlock ? rollbackBlock.id : 0n
+      if (!rollbackBlock) {
+        return 0
+      }
+
       const deletedBlocks = await this.prismaClientInTx.block.deleteMany({
         where: {
           id: {
-            gt: rollbackBlockId
+            gte: rollbackBlock.id
           }
         }
       })
       await this.prismaClientInTx.poolV1.deleteMany({
         where: {
           id: {
-            gt: rollbackBlockId
+            gte: rollbackBlock.id
           }
         }
       })
       await this.prismaClientInTx.poolV2.deleteMany({
         where: {
           id: {
-            gt: rollbackBlockId
+            gte: rollbackBlock.id
           }
         }
       })
       await this.prismaClientInTx.stablePool.deleteMany({
         where: {
           id: {
-            gt: rollbackBlockId
+            gte: rollbackBlock.id
           }
         }
       })
@@ -124,7 +247,9 @@ export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryRea
     }
   }
 
-  async createPoolV1(block: OgmiosSchema.BlockPraos, pool: PoolV1.State, totalLiquidity: bigint): Promise<void> {
+  async createPoolV1(params: { block: OgmiosSchema.BlockPraos, pool: PoolV1.State, rawDatum: string, networkId: NetworkId }): Promise<void> {
+    const { block, pool, rawDatum, networkId } = params;
+    const { totalLiquidity } = PoolV1.Datum.fromPlutusData(networkId, Data.from(rawDatum))
     await this.prismaClientInTx.poolV1.create({
       data: {
         lp_asset: pool.assetLP,
@@ -135,7 +260,9 @@ export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryRea
         total_liquidity: new Decimal(totalLiquidity.toString()),
         created_tx_id: pool.txIn.txHash,
         created_tx_index: pool.txIn.index,
+        value: JSONBig.stringify(pool.value),
         pool_address: pool.address,
+        raw_datum: rawDatum,
         slot: BigInt(block.slot),
         block_id: BigInt(block.height),
       }
@@ -155,7 +282,9 @@ export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryRea
         total_liquidity: new Decimal(pool.totalLiquidity.toString()),
         created_tx_id: pool.txIn.txHash,
         created_tx_index: pool.txIn.index,
+        value: JSONBig.stringify(pool.value),
         pool_address: pool.address,
+        raw_datum: pool.datumRaw,
         slot: BigInt(block.slot),
         block_id: BigInt(block.height),
       }
@@ -169,7 +298,9 @@ export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryRea
         total_liquidity: new Decimal(pool.totalLiquidity.toString()),
         created_tx_id: pool.txIn.txHash,
         created_tx_index: pool.txIn.index,
-        datum: Data.to(StablePool.Datum.toPlutusData(pool.datum)),
+        pool_address: pool.address,
+        value: JSONBig.stringify(pool.value),
+        raw_datum: Data.to(StablePool.Datum.toPlutusData(pool.datum)),
         slot: BigInt(block.slot),
         block_id: BigInt(block.height),
       }

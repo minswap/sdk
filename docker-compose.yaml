@@ -7,7 +7,7 @@ services:
       ENVIRONMENT: testnet-preprod
       OGMIOS_HOST: ogmios
       OGMIOS_PORT: 1337
-      REDIS_URL: redis://default:123456@redis:6379
+      REDIS_URL: redis://default:minswap@redis:6379
       POSTGRES_URL: postgresql://postgres:minswap@postgres:5432/syncer?schema=public&connection_limit=5
       SYNC_START_POINT: "7790880c9f0ff09990f253dd1bf1a55d2a2e5340bf694e5c0bb166439e513e45.10918782"
     command: pnpm run syncer:start
@@ -15,7 +15,7 @@ services:
   redis:
     image: redis:7
     restart: always
-    command: --requirepass 123456
+    command: --requirepass minswap
     ports:
       - "6379:6379"
     volumes:
@@ -51,5 +51,3 @@ services:
 volumes:
   redis-data: {}
   postgres-data: {}
-  # DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose -f dev/docker-compose."$file".yaml up --build -d &&
-  # docker compose -f dev/docker-compose."$file".yaml logs -f $log_services
