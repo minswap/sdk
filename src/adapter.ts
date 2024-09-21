@@ -1,11 +1,21 @@
 import {
   BlockFrostAPI,
   BlockfrostServerError,
+  Responses,
 } from "@blockfrost/blockfrost-js";
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
 import invariant from "@minswap/tiny-invariant";
+import * as Prisma from "@prisma/client";
 import Big from "big.js";
+import JSONBig from "json-bigint";
+import {
+  C,
+  fromHex,
+  SLOT_CONFIG_NETWORK,
+  slotToBeginUnixTime,
+} from "lucid-cardano";
 
+import { PostgresRepositoryReader } from "./syncer/repository/postgres-reposiotry";
 import { Asset } from "./types/asset";
 import {
   DexV1Constant,
@@ -13,7 +23,7 @@ import {
   StableswapConstant,
 } from "./types/constants";
 import { FactoryV2 } from "./types/factory";
-import { NetworkId } from "./types/network";
+import { NetworkEnvironment, NetworkId } from "./types/network";
 import { PoolV1, PoolV2, StablePool } from "./types/pool";
 import {
   checkValidPoolOutput,
@@ -21,19 +31,23 @@ import {
   normalizeAssets,
 } from "./types/pool.internal";
 import { StringUtils } from "./types/string";
-import { TxHistory } from "./types/tx.internal";
+import { TxHistory, TxIn, Value } from "./types/tx.internal";
 import { getScriptHashFromAddress } from "./utils/address-utils.internal";
+import { networkEnvToLucidNetwork } from "./utils/network.internal";
 
-export type BlockfrostAdapterOptions = {
-  networkId: NetworkId;
-  blockFrost: BlockFrostAPI;
+export type GetPoolInTxParams = {
+  txHash: string;
+};
+
+export type GetPoolByIdParams = {
+  id: string;
 };
 
 export type GetPoolsParams = Omit<PaginationOptions, "page"> & {
   page: number;
 };
 
-export type GetPoolByIdParams = {
+export type GetPoolHistoryParams = PaginationOptions & {
   id: string;
 };
 
@@ -49,61 +63,18 @@ export type GetV2PoolPriceParams = {
   decimalsB?: number;
 };
 
-export type GetPoolHistoryParams = PaginationOptions & {
-  id: string;
-};
+interface Adapter {
+  getAssetDecimals(asset: string): Promise<number>;
 
-export type GetPoolInTxParams = {
-  txHash: string;
-};
-
-export type GetStablePoolInTxParams = {
-  networkId: NetworkId;
-  txHash: string;
-};
-
-export class BlockfrostAdapter {
-  private readonly api: BlockFrostAPI;
-  private readonly networkId: NetworkId;
-
-  constructor({ networkId, blockFrost }: BlockfrostAdapterOptions) {
-    this.networkId = networkId;
-    this.api = blockFrost;
-  }
+  getDatumByDatumHash(datumHash: string): Promise<string>;
 
   /**
-   * @returns The latest pools or empty array if current page is after last page
+   * Get pool state in a transaction.
+   * @param {Object} params - The parameters.
+   * @param {string} params.txHash - The transaction hash containing pool output. One of the way to acquire is by calling getPoolHistory.
+   * @returns {PoolV1.State} - Returns the pool state or null if the transaction doesn't contain pool.
    */
-  public async getV1Pools({
-    page,
-    count = 100,
-    order = "asc",
-  }: GetPoolsParams): Promise<PoolV1.State[]> {
-    const utxos = await this.api.addressesUtxos(
-      DexV1Constant.POOL_SCRIPT_HASH,
-      {
-        count,
-        order,
-        page,
-      }
-    );
-    return utxos
-      .filter((utxo) =>
-        isValidPoolOutput(utxo.address, utxo.amount, utxo.data_hash)
-      )
-      .map((utxo) => {
-        invariant(
-          utxo.data_hash,
-          `expect pool to have datum hash, got ${utxo.data_hash}`
-        );
-        return new PoolV1.State(
-          utxo.address,
-          { txHash: utxo.tx_hash, index: utxo.output_index },
-          utxo.amount,
-          utxo.data_hash
-        );
-      });
-  }
+  getV1PoolInTx({ txHash }: GetPoolInTxParams): Promise<PoolV1.State | null>;
 
   /**
    * Get a specific pool by its ID.
@@ -111,11 +82,126 @@ export class BlockfrostAdapter {
    * @param {string} params.pool - The pool ID. This is the asset name of a pool's NFT and LP tokens. It can also be acquired by calling pool.id.
    * @returns {PoolV1.State | null} - Returns the pool or null if not found.
    */
+  getV1PoolById({ id }: GetPoolByIdParams): Promise<PoolV1.State | null>;
+
+  /**
+   * @returns The latest pools or empty array if current page is after last page
+   */
+  getV1Pools(params: GetPoolsParams): Promise<PoolV1.State[]>;
+
+  getV1PoolHistory(params: GetPoolHistoryParams): Promise<TxHistory[]>;
+
+  /**
+   * Get pool price.
+   * @param {Object} params - The parameters to calculate pool price.
+   * @param {string} params.pool - The pool we want to get price.
+   * @param {string} [params.decimalsA] - The decimals of assetA in pool, if undefined then query from Blockfrost.
+   * @param {string} [params.decimalsB] - The decimals of assetB in pool, if undefined then query from Blockfrost.
+   * @returns {[string, string]} - Returns a pair of asset A/B price and B/A price, adjusted to decimals.
+   */
+  getV1PoolPrice(params: GetPoolPriceParams): Promise<[Big, Big]>;
+
+  getAllV2Pools(): Promise<{ pools: PoolV2.State[]; errors: unknown[] }>;
+
+  getV2Pools(
+    params: GetPoolsParams
+  ): Promise<{ pools: PoolV2.State[]; errors: unknown[] }>;
+
+  getV2PoolByPair(assetA: Asset, assetB: Asset): Promise<PoolV2.State | null>;
+
+  getV2PoolByLp(lpAsset: Asset): Promise<PoolV2.State | null>;
+
+  /**
+   * Get pool price.
+   * @param {Object} params - The parameters to calculate pool price.
+   * @param {string} params.pool - The pool we want to get price.
+   * @param {string} [params.decimalsA] - The decimals of assetA in pool, if undefined then query from Blockfrost.
+   * @param {string} [params.decimalsB] - The decimals of assetB in pool, if undefined then query from Blockfrost.
+   * @returns {[string, string]} - Returns a pair of asset A/B price and B/A price, adjusted to decimals.
+   */
+  getV2PoolPrice(params: GetV2PoolPriceParams): Promise<[Big, Big]>;
+
+  getAllFactoriesV2(): Promise<{
+    factories: FactoryV2.State[];
+    errors: unknown[];
+  }>;
+
+  getFactoryV2ByPair(
+    assetA: Asset,
+    assetB: Asset
+  ): Promise<FactoryV2.State | null>;
+
+  getAllStablePools(): Promise<{
+    pools: StablePool.State[];
+    errors: unknown[];
+  }>;
+
+  getStablePoolByLpAsset(lpAsset: Asset): Promise<StablePool.State | null>;
+
+  getStablePoolByNFT(nft: Asset): Promise<StablePool.State | null>;
+}
+
+export class BlockfrostAdapter implements Adapter {
+  protected readonly networkId: NetworkId;
+  private readonly blockFrostApi: BlockFrostAPI;
+
+  constructor(networkId: NetworkId, blockFrostApi: BlockFrostAPI) {
+    this.networkId = networkId;
+    this.blockFrostApi = blockFrostApi;
+  }
+
+  public async getAssetDecimals(asset: string): Promise<number> {
+    if (asset === "lovelace") {
+      return 6;
+    }
+    try {
+      const assetAInfo = await this.blockFrostApi.assetsById(asset);
+      return assetAInfo.metadata?.decimals ?? 0;
+    } catch (err) {
+      if (err instanceof BlockfrostServerError && err.status_code === 404) {
+        return 0;
+      }
+      throw err;
+    }
+  }
+
+  public async getDatumByDatumHash(datumHash: string): Promise<string> {
+    const scriptsDatum = await this.blockFrostApi.scriptsDatumCbor(datumHash);
+    return scriptsDatum.cbor;
+  }
+
+  public async getV1PoolInTx({
+    txHash,
+  }: GetPoolInTxParams): Promise<PoolV1.State | null> {
+    const poolTx = await this.blockFrostApi.txsUtxos(txHash);
+    const poolUtxo = poolTx.outputs.find(
+      (o) =>
+        getScriptHashFromAddress(o.address) === DexV1Constant.POOL_SCRIPT_HASH
+    );
+    if (!poolUtxo) {
+      return null;
+    }
+
+    checkValidPoolOutput(poolUtxo.address, poolUtxo.amount, poolUtxo.data_hash);
+    invariant(
+      poolUtxo.data_hash,
+      `expect pool to have datum hash, got ${poolUtxo.data_hash}`
+    );
+
+    const txIn: TxIn = { txHash: txHash, index: poolUtxo.output_index };
+    return new PoolV1.State(
+      poolUtxo.address,
+      txIn,
+      poolUtxo.amount,
+      poolUtxo.data_hash
+    );
+  }
+
   public async getV1PoolById({
     id,
   }: GetPoolByIdParams): Promise<PoolV1.State | null> {
     const nft = `${DexV1Constant.POOL_NFT_POLICY_ID}${id}`;
-    const nftTxs = await this.api.assetsTransactions(nft, {
+    const nftTxs = await this.blockFrostApi.assetsTransactions(nft, {
       count: 1,
       page: 1,
       order: "desc",
@@ -126,6 +212,34 @@ export class BlockfrostAdapter {
     return this.getV1PoolInTx({ txHash: nftTxs[0].tx_hash });
   }
 
+  public async getV1Pools({
+    page,
+    count = 100,
+    order = "asc",
+  }: GetPoolsParams): Promise<PoolV1.State[]> {
+    const utxos = await this.blockFrostApi.addressesUtxos(
+      DexV1Constant.POOL_SCRIPT_HASH,
+      { count, order, page }
+    );
+    return utxos
+      .filter((utxo) =>
+        isValidPoolOutput(utxo.address, utxo.amount, utxo.data_hash)
+      )
+      .map((utxo) => {
+        invariant(
+          utxo.data_hash,
+          `expect pool to have datum hash, got ${utxo.data_hash}`
+        );
+        const txIn: TxIn = { txHash: utxo.tx_hash, index: utxo.output_index };
+        return new PoolV1.State(
+          utxo.address,
+          txIn,
+          utxo.amount,
+          utxo.data_hash
+        );
+      });
+  }
+
   public async getV1PoolHistory({
     id,
     page = 1,
@@ -133,11 +247,12 @@ export class BlockfrostAdapter {
     order = "desc",
   }: GetPoolHistoryParams): Promise<TxHistory[]> {
     const nft = `${DexV1Constant.POOL_NFT_POLICY_ID}${id}`;
-    const nftTxs = await this.api.assetsTransactions(nft, {
+    const nftTxs = await this.blockFrostApi.assetsTransactions(nft, {
       count,
       page,
       order,
     });
+    console.log(JSONBig.stringify(nftTxs));
     return nftTxs.map(
       (tx): TxHistory => ({
         txHash: tx.tx_hash,
@@ -148,59 +263,6 @@ export class BlockfrostAdapter {
     );
   }
 
-  /**
-   * Get pool state in a transaction.
-   * @param {Object} params - The parameters.
-   * @param {string} params.txHash - The transaction hash containing pool output. One of the way to acquire is by calling getPoolHistory.
-   * @returns {PoolV1.State} - Returns the pool state or null if the transaction doesn't contain pool.
-   */
-  public async getV1PoolInTx({
-    txHash,
-  }: GetPoolInTxParams): Promise<PoolV1.State | null> {
-    const poolTx = await this.api.txsUtxos(txHash);
-    const poolUtxo = poolTx.outputs.find(
-      (o) =>
-        getScriptHashFromAddress(o.address) === DexV1Constant.POOL_SCRIPT_HASH
-    );
-    if (!poolUtxo) {
-      return null;
-    }
-    checkValidPoolOutput(poolUtxo.address, poolUtxo.amount, poolUtxo.data_hash);
-    invariant(
-      poolUtxo.data_hash,
-      `expect pool to have datum hash, got ${poolUtxo.data_hash}`
-    );
-    return new PoolV1.State(
-      poolUtxo.address,
-      { txHash: txHash, index: poolUtxo.output_index },
-      poolUtxo.amount,
-      poolUtxo.data_hash
-    );
-  }
-
-  public async getAssetDecimals(asset: string): Promise<number> {
-    if (asset === "lovelace") {
-      return 6;
-    }
-    try {
-      const assetAInfo = await this.api.assetsById(asset);
-      return assetAInfo.metadata?.decimals ?? 0;
-    } catch (err) {
-      if (err instanceof BlockfrostServerError && err.status_code === 404) {
-        return 0;
-      }
-      throw err;
-    }
-  }
-
-  /**
-   * Get pool price.
-   * @param {Object} params - The parameters to calculate pool price.
-   * @param {string} params.pool - The pool we want to get price.
-   * @param {string} [params.decimalsA] - The decimals of assetA in pool, if undefined then query from Blockfrost.
-   * @param {string} [params.decimalsB] - The decimals of assetB in pool, if undefined then query from Blockfrost.
-   * @returns {[string, string]} - Returns a pair of asset A/B price and B/A price, adjusted to decimals.
-   */
   public async getV1PoolPrice({
     pool,
     decimalsA,
@@ -223,17 +285,12 @@ export class BlockfrostAdapter {
     return [priceAB, priceBA];
   }
 
-  public async getDatumByDatumHash(datumHash: string): Promise<string> {
-    const scriptsDatum = await this.api.scriptsDatumCbor(datumHash);
-    return scriptsDatum.cbor;
-  }
-
   public async getAllV2Pools(): Promise<{
     pools: PoolV2.State[];
     errors: unknown[];
   }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
-    const utxos = await this.api.addressesUtxosAssetAll(
+    const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       v2Config.poolScriptHashBech32,
       v2Config.poolAuthenAsset
     );
@@ -272,14 +329,10 @@ export class BlockfrostAdapter {
     errors: unknown[];
   }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
-    const utxos = await this.api.addressesUtxosAsset(
+    const utxos = await this.blockFrostApi.addressesUtxosAsset(
       v2Config.poolScriptHashBech32,
       v2Config.poolAuthenAsset,
-      {
-        count,
-        order,
-        page,
-      }
+      { count, order, page }
     );
 
     const pools: PoolV2.State[] = [];
@@ -332,14 +385,6 @@ export class BlockfrostAdapter {
     );
   }
 
-  /**
-   * Get pool price.
-   * @param {Object} params - The parameters to calculate pool price.
-   * @param {string} params.pool - The pool we want to get price.
-   * @param {string} [params.decimalsA] - The decimals of assetA in pool, if undefined then query from Blockfrost.
-   * @param {string} [params.decimalsB] - The decimals of assetB in pool, if undefined then query from Blockfrost.
-   * @returns {[string, string]} - Returns a pair of asset A/B price and B/A price, adjusted to decimals.
-   */
   public async getV2PoolPrice({
     pool,
     decimalsA,
@@ -362,105 +407,12 @@ export class BlockfrostAdapter {
     return [priceAB, priceBA];
   }
 
-  private async parseStablePoolState(
-    utxo: Awaited<ReturnType<typeof this.api.addressesUtxosAll>>[0]
-  ): Promise<StablePool.State> {
-    let datum: string;
-    if (utxo.inline_datum) {
-      datum = utxo.inline_datum;
-    } else if (utxo.data_hash) {
-      datum = await this.getDatumByDatumHash(utxo.data_hash);
-    } else {
-      throw new Error("Cannot find datum of Stable Pool");
-    }
-    const pool = new StablePool.State(
-      this.networkId,
-      utxo.address,
-      { txHash: utxo.tx_hash, index: utxo.output_index },
-      utxo.amount,
-      datum
-    );
-    return pool;
-  }
-
-  public async getAllStablePools(): Promise<{
-    pools: StablePool.State[];
-    errors: unknown[];
-  }> {
-    const poolAddresses = StableswapConstant.CONFIG[this.networkId].map(
-      (cfg) => cfg.poolAddress
-    );
-    const pools: StablePool.State[] = [];
-    const errors: unknown[] = [];
-    for (const poolAddr of poolAddresses) {
-      const utxos = await this.api.addressesUtxosAll(poolAddr);
-      try {
-        for (const utxo of utxos) {
-          const pool = await this.parseStablePoolState(utxo);
-          pools.push(pool);
-        }
-      } catch (err) {
-        errors.push(err);
-      }
-    }
-
-    return {
-      pools: pools,
-      errors: errors,
-    };
-  }
-
-  public async getStablePoolByLpAsset(
-    lpAsset: Asset
-  ): Promise<StablePool.State | null> {
-    const config = StableswapConstant.CONFIG[this.networkId].find(
-      (cfg) => cfg.lpAsset === Asset.toString(lpAsset)
-    );
-    invariant(
-      config,
-      `getStablePoolByLpAsset: Can not find stableswap config by LP Asset ${Asset.toString(
-        lpAsset
-      )}`
-    );
-    const poolUtxos = await this.api.addressesUtxosAssetAll(
-      config.poolAddress,
-      config.nftAsset
-    );
-    if (poolUtxos.length === 1) {
-      const poolUtxo = poolUtxos[0];
-      return await this.parseStablePoolState(poolUtxo);
-    }
-    return null;
-  }
-
-  public async getStablePoolByNFT(
-    nft: Asset
-  ): Promise<StablePool.State | null> {
-    const poolAddress = StableswapConstant.CONFIG[this.networkId].find(
-      (cfg) => cfg.nftAsset === Asset.toString(nft)
-    )?.poolAddress;
-    if (!poolAddress) {
-      throw new Error(
-        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`
-      );
-    }
-    const poolUtxos = await this.api.addressesUtxosAssetAll(
-      poolAddress,
-      Asset.toString(nft)
-    );
-    if (poolUtxos.length === 1) {
-      const poolUtxo = poolUtxos[0];
-      return await this.parseStablePoolState(poolUtxo);
-    }
-    return null;
-  }
-
   public async getAllFactoriesV2(): Promise<{
     factories: FactoryV2.State[];
     errors: unknown[];
   }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
-    const utxos = await this.api.addressesUtxosAssetAll(
+    const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       v2Config.factoryScriptHashBech32,
       v2Config.factoryAsset
     );
@@ -508,5 +460,349 @@ export class BlockfrostAdapter {
     }
 
     return null;
+  }
+
+  private async parseStablePoolState(
+    utxo: Responses["address_utxo_content"][0]
+  ): Promise<StablePool.State> {
+    let datum: string;
+    if (utxo.inline_datum) {
+      datum = utxo.inline_datum;
+    } else if (utxo.data_hash) {
+      datum = await this.getDatumByDatumHash(utxo.data_hash);
+    } else {
+      throw new Error("Cannot find datum of Stable Pool");
+    }
+    const pool = new StablePool.State(
+      this.networkId,
+      utxo.address,
+      { txHash: utxo.tx_hash, index: utxo.output_index },
+      utxo.amount,
+      datum
+    );
+    return pool;
+  }
+
+  public async getAllStablePools(): Promise<{
+    pools: StablePool.State[];
+    errors: unknown[];
+  }> {
+    const poolAddresses = StableswapConstant.CONFIG[this.networkId].map(
+      (cfg) => cfg.poolAddress
+    );
+    const pools: StablePool.State[] = [];
+    const errors: unknown[] = [];
+    for (const poolAddr of poolAddresses) {
+      const utxos = await this.blockFrostApi.addressesUtxosAll(poolAddr);
+      try {
+        for (const utxo of utxos) {
+          const pool = await this.parseStablePoolState(utxo);
+          pools.push(pool);
+        }
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+
+    return {
+      pools: pools,
+      errors: errors,
+    };
+  }
+
+  public async getStablePoolByLpAsset(
+    lpAsset: Asset
+  ): Promise<StablePool.State | null> {
+    const config = StableswapConstant.CONFIG[this.networkId].find(
+      (cfg) => cfg.lpAsset === Asset.toString(lpAsset)
+    );
+    invariant(
+      config,
+      `getStablePoolByLpAsset: Can not find stableswap config by LP Asset ${Asset.toString(
+        lpAsset
+      )}`
+    );
+    const poolUtxos = await this.blockFrostApi.addressesUtxosAssetAll(
+      config.poolAddress,
+      config.nftAsset
+    );
+    if (poolUtxos.length === 1) {
+      const poolUtxo = poolUtxos[0];
+      return await this.parseStablePoolState(poolUtxo);
+    }
+    return null;
+  }
+
+  public async getStablePoolByNFT(
+    nft: Asset
+  ): Promise<StablePool.State | null> {
+    const poolAddress = StableswapConstant.CONFIG[this.networkId].find(
+      (cfg) => cfg.nftAsset === Asset.toString(nft)
+    )?.poolAddress;
+    if (!poolAddress) {
+      throw new Error(
+        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`
+      );
+    }
+    const poolUtxos = await this.blockFrostApi.addressesUtxosAssetAll(
+      poolAddress,
+      Asset.toString(nft)
+    );
+    if (poolUtxos.length === 1) {
+      const poolUtxo = poolUtxos[0];
+      return await this.parseStablePoolState(poolUtxo);
+    }
+    return null;
+  }
+}
+
+export type MinswapAdapterConstructor = {
+  networkId: NetworkId;
+  networkEnv: NetworkEnvironment;
+  blockFrostApi: BlockFrostAPI;
+  repository: PostgresRepositoryReader;
+};
+
+export class MinswapAdapter extends BlockfrostAdapter {
+  private readonly networkEnv: NetworkEnvironment;
+  private readonly repository: PostgresRepositoryReader;
+
+  constructor({
+    networkId,
+    networkEnv,
+    blockFrostApi,
+    repository,
+  }: MinswapAdapterConstructor) {
+    super(networkId, blockFrostApi);
+    this.networkEnv = networkEnv;
+    this.repository = repository;
+  }
+
+  private prismaPoolV1ToPoolV1State(prismaPool: Prisma.PoolV1): PoolV1.State {
+    const address = prismaPool.pool_address;
+    const txIn: TxIn = {
+      txHash: prismaPool.created_tx_id,
+      index: prismaPool.created_tx_index,
+    };
+    const value: Value = JSONBig({
+      alwaysParseAsBig: true,
+      useNativeBigInt: true,
+    }).parse(prismaPool.value);
+    const datumHash = C.hash_plutus_data(
+      C.PlutusData.from_bytes(fromHex(prismaPool.raw_datum))
+    ).to_hex();
+    return new PoolV1.State(address, txIn, value, datumHash);
+  }
+
+  override async getV1PoolInTx({
+    txHash,
+  }: GetPoolInTxParams): Promise<PoolV1.State | null> {
+    const prismaPool = await this.repository.getPoolV1ByCreatedTxId(txHash);
+    if (!prismaPool) {
+      return null;
+    }
+    return this.prismaPoolV1ToPoolV1State(prismaPool);
+  }
+
+  override async getV1PoolById({
+    id,
+  }: GetPoolByIdParams): Promise<PoolV1.State | null> {
+    const lpAsset = `${DexV1Constant.LP_POLICY_ID}${id}`;
+    const prismaPool = await this.repository.getPoolV1ByLpAsset(lpAsset);
+    if (!prismaPool) {
+      return null;
+    }
+    return this.prismaPoolV1ToPoolV1State(prismaPool);
+  }
+
+  override async getV1Pools({
+    page,
+    count = 100,
+    order = "asc",
+  }: GetPoolsParams): Promise<PoolV1.State[]> {
+    const prismaPools = await this.repository.getLastPoolV1State(
+      page - 1,
+      count,
+      order
+    );
+    if (prismaPools.length === 0) {
+      return [];
+    }
+    return prismaPools.map(this.prismaPoolV1ToPoolV1State);
+  }
+
+  override async getV1PoolHistory({
+    id,
+    page = 1,
+    count = 100,
+    order = "desc",
+  }: GetPoolHistoryParams): Promise<TxHistory[]> {
+    const lpAsset = `${DexV1Constant.LP_POLICY_ID}${id}`;
+    const prismaPools = await this.repository.getHistoricalPoolV1ByLpAsset(
+      lpAsset,
+      page - 1,
+      count,
+      order
+    );
+    if (prismaPools.length === 0) {
+      return [];
+    }
+
+    const network = networkEnvToLucidNetwork(this.networkEnv);
+    return prismaPools.map(
+      (prismaPool): TxHistory => ({
+        txHash: prismaPool.created_tx_id,
+        txIndex: prismaPool.created_tx_index,
+        blockHeight: Number(prismaPool.block_id),
+        time: new Date(
+          slotToBeginUnixTime(
+            Number(prismaPool.slot),
+            SLOT_CONFIG_NETWORK[network]
+          )
+        ),
+      })
+    );
+  }
+
+  private prismaPoolV2ToPoolV2State(prismaPool: Prisma.PoolV2): PoolV2.State {
+    const txIn: TxIn = {
+      txHash: prismaPool.created_tx_id,
+      index: prismaPool.created_tx_index,
+    };
+    const value: Value = JSONBig({
+      alwaysParseAsBig: true,
+      useNativeBigInt: true,
+    }).parse(prismaPool.value);
+    return new PoolV2.State(
+      this.networkId,
+      prismaPool.pool_address,
+      txIn,
+      value,
+      prismaPool.raw_datum
+    );
+  }
+
+  override async getAllV2Pools(): Promise<{
+    pools: PoolV2.State[];
+    errors: unknown[];
+  }> {
+    const prismaPools = await this.repository.getAllLastPoolV2State();
+    return {
+      pools: prismaPools.map((pool) => this.prismaPoolV2ToPoolV2State(pool)),
+      errors: [],
+    };
+  }
+
+  override async getV2Pools({
+    page,
+    count = 100,
+    order = "asc",
+  }: GetPoolsParams): Promise<{
+    pools: PoolV2.State[];
+    errors: unknown[];
+  }> {
+    const prismaPools = await this.repository.getLastPoolV2State(
+      page - 1,
+      count,
+      order
+    );
+    return {
+      pools: prismaPools.map((pool) => this.prismaPoolV2ToPoolV2State(pool)),
+      errors: [],
+    };
+  }
+
+  override async getV2PoolByPair(
+    assetA: Asset,
+    assetB: Asset
+  ): Promise<PoolV2.State | null> {
+    const prismaPool = await this.repository.getPoolV2ByPair(assetA, assetB);
+    if (!prismaPool) {
+      return null;
+    }
+    return this.prismaPoolV2ToPoolV2State(prismaPool);
+  }
+
+  override async getV2PoolByLp(lpAsset: Asset): Promise<PoolV2.State | null> {
+    const prismaPool = await this.repository.getPoolV2ByLpAsset(lpAsset);
+    if (!prismaPool) {
+      return null;
+    }
+    return this.prismaPoolV2ToPoolV2State(prismaPool);
+  }
+
+  private prismaStablePoolToStablePoolState(
+    prismaPool: Prisma.StablePool
+  ): StablePool.State {
+    const txIn: TxIn = {
+      txHash: prismaPool.created_tx_id,
+      index: prismaPool.created_tx_index,
+    };
+    const value: Value = JSONBig({
+      alwaysParseAsBig: true,
+      useNativeBigInt: true,
+    }).parse(prismaPool.value);
+    return new StablePool.State(
+      this.networkId,
+      prismaPool.pool_address,
+      txIn,
+      value,
+      prismaPool.raw_datum
+    );
+  }
+
+  override async getAllStablePools(): Promise<{
+    pools: StablePool.State[];
+    errors: unknown[];
+  }> {
+    const prismaPools = await this.repository.getAllLastStablePoolState();
+    return {
+      pools: prismaPools.map((pool) =>
+        this.prismaStablePoolToStablePoolState(pool)
+      ),
+      errors: [],
+    };
+  }
+
+  override async getStablePoolByNFT(
+    nft: Asset
+  ): Promise<StablePool.State | null> {
+    const config = StableswapConstant.CONFIG[this.networkId].find(
+      (cfg) => cfg.nftAsset === Asset.toString(nft)
+    );
+    if (!config) {
+      throw new Error(
+        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`
+      );
+    }
+
+    const prismaStablePool = await this.repository.getStablePoolByLpAsset(
+      config.lpAsset
+    );
+    if (!prismaStablePool) {
+      return null;
+    }
+    return this.prismaStablePoolToStablePoolState(prismaStablePool);
+  }
+
+  override async getStablePoolByLpAsset(
+    lpAsset: Asset
+  ): Promise<StablePool.State | null> {
+    const config = StableswapConstant.CONFIG[this.networkId].find(
+      (cfg) => cfg.lpAsset === Asset.toString(lpAsset)
+    );
+    if (!config) {
+      throw new Error(
+        `Cannot find Stable Pool having NFT ${Asset.toString(lpAsset)}`
+      );
+    }
+
+    const prismaStablePool = await this.repository.getStablePoolByLpAsset(
+      config.lpAsset
+    );
+    if (!prismaStablePool) {
+      return null;
+    }
+    return this.prismaStablePoolToStablePoolState(prismaStablePool);
   }
 }
