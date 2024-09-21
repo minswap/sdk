@@ -175,7 +175,7 @@ export class BlockfrostAdapter implements Adapter {
   }: GetPoolInTxParams): Promise<PoolV1.State | null> {
     const poolTx = await this.blockFrostApi.txsUtxos(txHash);
     const poolUtxo = poolTx.outputs.find(
-      (o) =>
+      (o: typeof poolTx.outputs[number]) =>
         getScriptHashFromAddress(o.address) === DexV1Constant.POOL_SCRIPT_HASH
     );
     if (!poolUtxo) {
@@ -222,10 +222,10 @@ export class BlockfrostAdapter implements Adapter {
       { count, order, page }
     );
     return utxos
-      .filter((utxo) =>
+      .filter((utxo: typeof utxos[number]) =>
         isValidPoolOutput(utxo.address, utxo.amount, utxo.data_hash)
       )
-      .map((utxo) => {
+      .map((utxo: typeof utxos[number]) => {
         invariant(
           utxo.data_hash,
           `expect pool to have datum hash, got ${utxo.data_hash}`
@@ -254,7 +254,7 @@ export class BlockfrostAdapter implements Adapter {
     });
     console.log(JSONBig.stringify(nftTxs));
     return nftTxs.map(
-      (tx): TxHistory => ({
+      (tx: typeof nftTxs[number]): TxHistory => ({
         txHash: tx.tx_hash,
         txIndex: tx.tx_index,
         blockHeight: tx.block_height,
