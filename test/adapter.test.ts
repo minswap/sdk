@@ -1,5 +1,4 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { jest } from "@jest/globals";
 
 import {
   ADA,
