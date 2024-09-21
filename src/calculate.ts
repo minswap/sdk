@@ -1,4 +1,6 @@
+import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
+import { zipWith } from "remeda";
 
 import { OrderV2 } from "./types/order";
 import { PoolV2 } from "./types/pool";
@@ -471,5 +473,542 @@ export namespace DexV2Calculation {
         return amountOut;
       }
     }
+  }
+}
+
+export namespace StableswapCalculation {
+  export function getD(mulBalances: bigint[], amp: bigint): bigint {
+    const sumMulBalances = mulBalances.reduce(
+      (sum, balance) => sum + balance,
+      0n
+    );
+    if (sumMulBalances === 0n) {
+      return 0n;
+    }
+
+    const length = BigInt(mulBalances.length);
+    let dPrev = 0n;
+    let d = sumMulBalances;
+    const ann = amp * length;
+
+    for (let i = 0; i < 255; i++) {
+      let dp = d;
+      for (const mulBalance of mulBalances) {
+        dp = (dp * d) / (mulBalance * length);
+      }
+      dPrev = d;
+      d =
+        ((ann * sumMulBalances + dp * length) * d) /
+        ((ann - 1n) * d + (length + 1n) * dp);
+      if (d > dPrev) {
+        if (d - dPrev <= 1n) {
+          break;
+        }
+      } else {
+        if (dPrev - d <= 1n) {
+          break;
+        }
+      }
+    }
+    return d;
+  }
+
+  export function getY(
+    i: number,
+    j: number,
+    x: bigint,
+    xp: bigint[],
+    amp: bigint
+  ): bigint {
+    if (i === j || i < 0 || j < 0 || i >= xp.length || j >= xp.length) {
+      throw Error(
+        `getY failed: i and j must be different and less than length of xp`
+      );
+    }
+    const length = BigInt(xp.length);
+    const d = getD(xp, amp);
+    let c = d;
+    let s = 0n;
+    const ann = amp * length;
+
+    let _x = 0n;
+    for (let index = 0; index < Number(length); index++) {
+      if (index === i) {
+        _x = x;
+      } else if (index !== j) {
+        _x = xp[index];
+      } else {
+        continue;
+      }
+      s += _x;
+      c = (c * d) / (_x * length);
+    }
+
+    c = (c * d) / (ann * length);
+    const b = s + d / ann;
+    let yPrev = 0n;
+    let y = d;
+    for (let index = 0; index < 255; index++) {
+      yPrev = y;
+      y = (y * y + c) / (2n * y + b - d);
+      if (y > yPrev) {
+        if (y - yPrev <= 1n) {
+          break;
+        }
+      } else {
+        if (yPrev - y <= 1n) {
+          break;
+        }
+      }
+    }
+    return y;
+  }
+
+  export function getYD(
+    i: number,
+    xp: bigint[],
+    amp: bigint,
+    d: bigint
+  ): bigint {
+    const length = BigInt(xp.length);
+    invariant(
+      0 <= i && i < xp.length,
+      `getYD failed: i must be less than length of xp`
+    );
+    let c = d;
+    let s = 0n;
+    const ann = amp * length;
+
+    let _x = 0n;
+    for (let index = 0; index < Number(length); index++) {
+      if (index !== i) {
+        _x = xp[index];
+      } else {
+        continue;
+      }
+      s += _x;
+      c = (c * d) / (_x * length);
+    }
+    c = (c * d) / (ann * length);
+    const b = s + d / ann;
+    let yPrev = 0n;
+    let y = d;
+    for (let index = 0; index < 255; index++) {
+      yPrev = y;
+      y = (y * y + c) / (2n * y + b - d);
+      if (y > yPrev) {
+        if (y - yPrev <= 1n) {
+          break;
+        }
+      } else {
+        if (yPrev - y <= 1n) {
+          break;
+        }
+      }
+    }
+    return y;
+  }
+
+  export function getDMem(
+    balances: bigint[],
+    multiples: bigint[],
+    amp: bigint
+  ): bigint {
+    const mulBalances = zipWith(balances, multiples, (a, b) => a * b);
+    return getD(mulBalances, amp);
+  }
+
+  type CommonStableswapCalculationOptions = {
+    amp: bigint;
+    multiples: bigint[];
+    datumBalances: bigint[];
+    fee: bigint;
+    adminFee: bigint;
+    feeDenominator: bigint;
+  };
+
+  /**
+   * @property {number} inIndex - index of asset in config assets that you want to swap
+   * @property {bigint} amountIn - amount of asset that you want to swap
+   * @property {number} outIndex - index of asset in config assets that you want to receive
+   */
+  export type StableswapCalculateSwapOptions =
+    CommonStableswapCalculationOptions & {
+      inIndex: number;
+      outIndex: number;
+      amountIn: bigint;
+    };
+
+  /**
+   * @property {bigint[]} amountIns - amount of assets that you want to deposit ordering by assets in config
+   * @property {bigint} totalLiquidity - amount of asset that you want to swap
+   */
+  export type StableswapCalculateDepositOptions =
+    CommonStableswapCalculationOptions & {
+      amountIns: bigint[];
+      totalLiquidity: bigint;
+    };
+
+  export type StableswapCalculateWithdrawOptions = Omit<
+    CommonStableswapCalculationOptions,
+    "amp" | "fee" | "adminFee" | "feeDenominator"
+  > & {
+    withdrawalLPAmount: bigint;
+    totalLiquidity: bigint;
+  };
+
+  /**
+   * @property {bigint[]} withdrawAmounts - exactly amount of assets that you want to withdraw ordering by assets in config
+   */
+  export type StableswapCalculateWithdrawImbalanceOptions =
+    CommonStableswapCalculationOptions & {
+      withdrawAmounts: bigint[];
+      totalLiquidity: bigint;
+    };
+
+  /**
+   * @property {bigint} amountLpIn - exactly LP amount that you want to withdraw
+   * @property {number} outIndex - index of asset that you want to zap out in config assets
+   */
+  export type StableswapCalculateZapOutOptions =
+    CommonStableswapCalculationOptions & {
+      amountLpIn: bigint;
+      outIndex: number;
+      totalLiquidity: bigint;
+    };
+
+  /**
+   * @returns amount of asset that you want to receive.
+   */
+  export function calculateSwapAmount({
+    inIndex,
+    outIndex,
+    amountIn,
+    amp,
+    multiples,
+    datumBalances,
+    fee,
+    adminFee,
+    feeDenominator,
+  }: StableswapCalculateSwapOptions): bigint {
+    const tempDatumBalances = [...datumBalances];
+
+    const length = multiples.length;
+    invariant(
+      amountIn > 0,
+      `calculateExchange error: amountIn ${amountIn} must be positive.`
+    );
+    invariant(
+      0 <= inIndex && inIndex < length,
+      `calculateExchange error: inIndex ${inIndex} is not valid, must be within 0-${
+        length - 1
+      }`
+    );
+    invariant(
+      0 <= outIndex && outIndex < length,
+      `calculateExchange error: outIndex ${outIndex} is not valid, must be within 0-${
+        length - 1
+      }`
+    );
+    invariant(inIndex !== outIndex, `inIndex must be different from outIndex`);
+    const mulBalances = zipWith(tempDatumBalances, multiples, (a, b) => a * b);
+    const mulIn = multiples[inIndex];
+    const mulOut = multiples[outIndex];
+    const x = mulBalances[inIndex] + amountIn * mulIn;
+    const y = getY(inIndex, outIndex, x, mulBalances, amp);
+
+    const dy = mulBalances[outIndex] - y;
+    const dyFee = (dy * fee) / feeDenominator;
+    const dyAdminFee = (dyFee * adminFee) / feeDenominator;
+    const amountOut = (dy - dyFee) / mulOut;
+    const newDatumBalanceOut = (y + (dyFee - dyAdminFee)) / mulOut;
+
+    invariant(
+      amountOut > 0,
+      `calculateExchange error: amountIn is too small, amountOut (${amountOut}) must be positive.`
+    );
+    invariant(
+      newDatumBalanceOut > 0,
+      `calculateExchange error: newDatumBalanceOut (${newDatumBalanceOut}) must be positive.`
+    );
+    return amountOut;
+  }
+
+  /**
+   * @returns amount of liquidity asset you receive.
+   */
+  export function calculateDeposit({
+    amountIns,
+    amp,
+    multiples,
+    datumBalances,
+    totalLiquidity,
+    fee,
+    adminFee,
+    feeDenominator,
+  }: StableswapCalculateDepositOptions): bigint {
+    const tempDatumBalances = [...datumBalances];
+
+    const length = multiples.length;
+    invariant(
+      amountIns.length === length,
+      `calculateDeposit error: amountIns's length ${amountIns.length} is invalid, amountIns's length must be ${length}`
+    );
+
+    let newDatumBalances: bigint[] = [];
+    let lpAmount = 0n;
+    if (totalLiquidity === 0n) {
+      for (let i = 0; i < length; ++i) {
+        invariant(
+          amountIns[i] > 0n,
+          `calculateDeposit error: amount index ${i} must be positive in case totalLiquidity = 0`
+        );
+      }
+      newDatumBalances = zipWith(tempDatumBalances, amountIns, (a, b) => a + b);
+      const d1 = getDMem(newDatumBalances, multiples, amp);
+      invariant(
+        d1 > 0,
+        `calculateDeposit: d1 must be greater than 0 in case totalLiquidity = 0`
+      );
+      lpAmount = d1;
+    } else {
+      let sumIns = 0n;
+      for (let i = 0; i < length; ++i) {
+        if (amountIns[i] < 0n) {
+          invariant(
+            amountIns[i] > 0n,
+            `calculateDeposit error: amountIns index ${i} must be non-negative`
+          );
+        }
+        sumIns += amountIns[i];
+      }
+      invariant(
+        sumIns > 0,
+        `calculateDeposit error: sum of amountIns must be positive`
+      );
+
+      const newDatumBalanceWithoutFee = zipWith(
+        tempDatumBalances,
+        amountIns,
+        (a, b) => a + b
+      );
+
+      const d0 = getDMem(tempDatumBalances, multiples, amp);
+      const d1 = getDMem(newDatumBalanceWithoutFee, multiples, amp);
+
+      invariant(
+        d1 > d0,
+        `calculateDeposit: d1 must be greater than d0 in case totalLiquidity > 0, d1: ${d1}, d0: ${d0}`
+      );
+
+      const specialFee = (fee * BigInt(length)) / (4n * (BigInt(length) - 1n));
+
+      const newDatBalancesWithTradingFee: bigint[] = [];
+      for (let i = 0; i < tempDatumBalances.length; i++) {
+        const oldBalance = tempDatumBalances[i];
+        const newBalance = newDatumBalanceWithoutFee[i];
+
+        const idealBalance = (d1 * oldBalance) / d0;
+        let different = 0n;
+        // In this case, liquidity pool has to swap the amount of other assets to get @different assets[i]
+        if (newBalance > idealBalance) {
+          different = newBalance - idealBalance;
+        } else {
+          different = idealBalance - newBalance;
+        }
+        const tradingFeeAmount = (specialFee * different) / feeDenominator;
+        const adminFeeAmount = (tradingFeeAmount * adminFee) / feeDenominator;
+        newDatumBalances.push(newBalance - adminFeeAmount);
+        newDatBalancesWithTradingFee.push(newBalance - tradingFeeAmount);
+      }
+      for (let i = 0; i < length; ++i) {
+        invariant(
+          newDatBalancesWithTradingFee[i] > 0,
+          `calculateDeposit error: deposit amount is too small, newDatBalancesWithTradingFee must be positive`
+        );
+      }
+      const d2 = getDMem(newDatBalancesWithTradingFee, multiples, amp);
+      lpAmount = (totalLiquidity * (d2 - d0)) / d0;
+    }
+
+    invariant(
+      lpAmount > 0,
+      `calculateDeposit error: deposit amount is too small, lpAmountOut ${lpAmount} must be positive`
+    );
+    return lpAmount;
+  }
+
+  /**
+   * @returns amounts of asset you can receive ordering by config assets
+   */
+  export function calculateWithdraw({
+    withdrawalLPAmount,
+    multiples,
+    datumBalances,
+    totalLiquidity,
+  }: StableswapCalculateWithdrawOptions): bigint[] {
+    const tempDatumBalances = [...datumBalances];
+
+    const length = multiples.length;
+    invariant(
+      withdrawalLPAmount > 0,
+      `calculateWithdraw error: withdrawalLPAmount must be positive`
+    );
+    const amountOuts = tempDatumBalances.map(
+      (balance) => (balance * withdrawalLPAmount) / totalLiquidity
+    );
+    let sumOuts = 0n;
+    for (let i = 0; i < length; ++i) {
+      invariant(
+        amountOuts[i] >= 0n,
+        `calculateWithdraw error: amountOuts must be non-negative`
+      );
+      sumOuts += amountOuts[i];
+    }
+    invariant(
+      sumOuts > 0n,
+      `calculateWithdraw error: sum of amountOuts must be positive`
+    );
+
+    return amountOuts;
+  }
+
+  /**
+   * @returns lp asset amount you need to provide to receive exactly amount of assets in the pool
+   */
+  export function calculateWithdrawImbalance({
+    withdrawAmounts,
+    amp,
+    multiples,
+    datumBalances,
+    totalLiquidity,
+    fee,
+    feeDenominator,
+  }: StableswapCalculateWithdrawImbalanceOptions): bigint {
+    const tempDatumBalances = [...datumBalances];
+
+    const length = multiples.length;
+
+    invariant(
+      withdrawAmounts.length === length,
+      `calculateWithdrawImbalance error: withdrawAmounts's length ${withdrawAmounts.length} is invalid, withdrawAmounts's length must be ${length}`
+    );
+
+    let sumOuts = 0n;
+    for (let i = 0; i < length; ++i) {
+      invariant(
+        withdrawAmounts[i] >= 0n,
+        `calculateDeposit error: amountIns must be non-negative`
+      );
+
+      sumOuts += withdrawAmounts[i];
+    }
+    invariant(
+      sumOuts > 0n,
+      `calculateWithdrawImbalance error: sum of withdrawAmounts must be positive`
+    );
+
+    const specialFee = (fee * BigInt(length)) / (4n * (BigInt(length) - 1n));
+
+    const newDatBalancesWithoutFee = zipWith(
+      tempDatumBalances,
+      withdrawAmounts,
+      (a, b) => a - b
+    );
+    for (let i = 0; i < length; ++i) {
+      invariant(
+        newDatBalancesWithoutFee[i] > 0n,
+        `calculateWithdrawImbalance error: not enough asset index ${i}`
+      );
+    }
+    const d0 = getDMem(tempDatumBalances, multiples, amp);
+    const d1 = getDMem(newDatBalancesWithoutFee, multiples, amp);
+
+    const newDatBalancesWithTradingFee = [];
+    for (let i = 0; i < length; ++i) {
+      const idealBalance = (d1 * tempDatumBalances[i]) / d0;
+      let different = 0n;
+      if (newDatBalancesWithoutFee[i] > idealBalance) {
+        different = newDatBalancesWithoutFee[i] - idealBalance;
+      } else {
+        different = idealBalance - newDatBalancesWithoutFee[i];
+      }
+      const tradingFeeAmount = (specialFee * different) / feeDenominator;
+      newDatBalancesWithTradingFee.push(
+        newDatBalancesWithoutFee[i] - tradingFeeAmount
+      );
+    }
+    for (let i = 0; i < length; ++i) {
+      invariant(
+        newDatBalancesWithTradingFee[i] > 0n,
+        `calculateWithdrawImbalance error: not enough asset index ${i}`
+      );
+    }
+
+    const d2 = getDMem(newDatBalancesWithTradingFee, multiples, amp);
+    let lpAmount = ((d0 - d2) * totalLiquidity) / d0;
+
+    invariant(
+      lpAmount > 0n,
+      `calculateWithdrawImbalance error: required lpAmount ${lpAmount} must be positive`
+    );
+
+    lpAmount += 1n;
+    return lpAmount;
+  }
+
+  /**
+   * @returns amount asset amount you want receive
+   */
+  export function calculateZapOut({
+    amountLpIn,
+    outIndex,
+    amp,
+    multiples,
+    datumBalances,
+    totalLiquidity,
+    fee,
+    adminFee,
+    feeDenominator,
+  }: StableswapCalculateZapOutOptions): bigint {
+    const tempDatumBalances = [...datumBalances];
+
+    const length = multiples.length;
+    invariant(
+      amountLpIn > 0,
+      `calculateZapOut error: amountLpIn ${amountLpIn} must be positive.`
+    );
+
+    invariant(
+      0 <= outIndex && outIndex < length,
+      `calculateZapOut error: outIndex ${outIndex} is not valid, must be within 0-${
+        length - 1
+      }`
+    );
+
+    const mulBalances = zipWith(tempDatumBalances, multiples, (a, b) => a * b);
+    const mulOut = multiples[outIndex];
+    const d0 = getD(mulBalances, amp);
+    const d1 = d0 - (amountLpIn * d0) / totalLiquidity;
+    const mulBalancesReduced = mulBalances;
+    // newY is new MulBal[outIndex]
+    const newYWithoutFee = getYD(outIndex, mulBalances, amp, d1);
+    const specialFee = (fee * BigInt(length)) / (4n * (BigInt(length) - 1n));
+
+    const amountOutWithoutFee =
+      (mulBalances[outIndex] - newYWithoutFee) / mulOut;
+    for (let i = 0; i < length; ++i) {
+      const diff =
+        i === outIndex
+          ? (mulBalances[i] * d1) / d0 - newYWithoutFee
+          : mulBalances[i] - (mulBalances[i] * d1) / d0;
+      mulBalancesReduced[i] -= (diff * specialFee) / feeDenominator;
+    }
+    const newY = getYD(outIndex, mulBalancesReduced, amp, d1);
+    const amountOut = (mulBalancesReduced[outIndex] - newY - 1n) / mulOut;
+    tempDatumBalances[outIndex] -=
+      amountOut +
+      ((amountOutWithoutFee - amountOut) * adminFee) / feeDenominator;
+    return amountOut;
   }
 }

@@ -28,7 +28,11 @@ import {
   NetworkId,
   OrderV2,
   PoolV1,
+  StableOrder,
+  StableswapCalculation,
+  StableswapConstant,
 } from "../src";
+import { Stableswap } from "../src/stableswap";
 import { Slippage } from "../src/utils/slippage.internal";
 
 const MIN: Asset = {
@@ -70,7 +74,6 @@ async function main(): Promise<void> {
     .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
     .complete();
   const txId = await signedTx.submit();
-  // eslint-disable-next-line no-console
   console.info(`Transaction submitted successfully: ${txId}`);
 }
 
@@ -842,6 +845,298 @@ async function _cancelV2TxExample(
         outputIndex: 0,
       },
     ],
+  });
+}
+
+async function _swapStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+
+  const swapAmount = 1_000n;
+
+  // This pool has 2 assets in its config. They are [tDJED, tiUSD].
+  // Index-0 Asset is tDJED. Index-1 Asset is tiUSD.
+  // This order swaps 1_000n tDJED to ... tiUSD.
+  const amountOut = StableswapCalculation.calculateSwapAmount({
+    inIndex: 0,
+    outIndex: 1,
+    amountIn: swapAmount,
+    amp: pool.amp,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    fee: config.fee,
+    adminFee: config.adminFee,
+    feeDenominator: config.feeDenominator,
+  });
+
+  return new Stableswap(lucid).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.SWAP,
+        assetInAmount: swapAmount,
+        assetInIndex: 0n,
+        assetOutIndex: 1n,
+        minimumAssetOut: amountOut,
+      },
+    ],
+  });
+}
+
+async function _depositStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+
+  // This pool has 2 assets in its config. They are [tDJED, tiUSD].
+  // This order deposits 100_000n tDJED and 1_000n tiUSD into the pool.
+  const amountIns = [100_000n, 1_000n];
+
+  const lpAmount = StableswapCalculation.calculateDeposit({
+    amountIns: amountIns,
+    totalLiquidity: pool.totalLiquidity,
+    amp: pool.amp,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    fee: config.fee,
+    adminFee: config.adminFee,
+    feeDenominator: config.feeDenominator,
+  });
+
+  return new Stableswap(lucid).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.DEPOSIT,
+        assetsAmount: [
+          [Asset.fromString(pool.assets[0]), 100_000n],
+          [Asset.fromString(pool.assets[1]), 1_000n],
+        ],
+        minimumLPReceived: lpAmount,
+        totalLiquidity: pool.totalLiquidity,
+      },
+    ],
+  });
+}
+
+async function _withdrawStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+
+  const lpAmount = 10_000n;
+
+  const amountOuts = StableswapCalculation.calculateWithdraw({
+    withdrawalLPAmount: lpAmount,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    totalLiquidity: pool.totalLiquidity,
+  });
+
+  return new Stableswap(lucid).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.WITHDRAW,
+        lpAmount: lpAmount,
+        minimumAmounts: amountOuts,
+      },
+    ],
+  });
+}
+
+async function _withdrawImbalanceStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+
+  const withdrawAmounts = [1234n, 5678n];
+
+  // This pool has 2 assets in its config. They are [tDJED, tiUSD].
+  // This order withdraws exactly 1234n tDJED and 5678n tiUSD from the pool.
+  const lpAmount = StableswapCalculation.calculateWithdrawImbalance({
+    withdrawAmounts: withdrawAmounts,
+    totalLiquidity: pool.totalLiquidity,
+    amp: pool.amp,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    fee: config.fee,
+    adminFee: config.adminFee,
+    feeDenominator: config.feeDenominator,
+  });
+
+  return new Stableswap(lucid).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.WITHDRAW_IMBALANCE,
+        lpAmount: lpAmount,
+        withdrawAmounts: withdrawAmounts,
+      },
+    ],
+  });
+}
+
+async function _zapOutStableExample(
+  lucid: Lucid,
+  blockfrostAdapter: BlockfrostAdapter,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const config = StableswapConstant.getConfigByLpAsset(
+    lpAsset,
+    NetworkId.TESTNET
+  );
+
+  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+
+  invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+
+  // This pool has 2 assets in its config. They are [tDJED, tiUSD].
+  // This order withdraws xxx tiUSD by 12345 Lp Assets from the pool.
+  const lpAmount = 12345n;
+  const outIndex = 0;
+  const amountOut = StableswapCalculation.calculateZapOut({
+    amountLpIn: lpAmount,
+    outIndex: outIndex,
+    totalLiquidity: pool.totalLiquidity,
+    amp: pool.amp,
+    multiples: config.multiples,
+    datumBalances: pool.datum.balances,
+    fee: config.fee,
+    adminFee: config.adminFee,
+    feeDenominator: config.feeDenominator,
+  });
+
+  return new Stableswap(lucid).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.ZAP_OUT,
+        lpAmount: lpAmount,
+        assetOutIndex: BigInt(outIndex),
+        minimumAssetOut: amountOut,
+      },
+    ],
+  });
+}
+
+async function _bulkOrderStableExample(
+  lucid: Lucid,
+  address: Address,
+  availableUtxos: UTxO[]
+): Promise<TxComplete> {
+  const lpAsset = Asset.fromString(
+    "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+  );
+  const lpAmount = 12345n;
+  const outIndex = 0;
+
+  return new Stableswap(lucid).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: availableUtxos,
+    options: [
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.ZAP_OUT,
+        lpAmount: lpAmount,
+        assetOutIndex: BigInt(outIndex),
+        minimumAssetOut: 1n,
+      },
+      {
+        lpAsset: lpAsset,
+        type: StableOrder.StepType.SWAP,
+        assetInAmount: 1000n,
+        assetInIndex: 0n,
+        assetOutIndex: 1n,
+        minimumAssetOut: 1n,
+      },
+    ],
+  });
+}
+
+async function _cancelStableExample(lucid: Lucid): Promise<TxComplete> {
+  const orderUtxos = await lucid.utxosByOutRef([
+    {
+      txHash:
+        "c3ad8e0aa159a22a14088474908e5c23ba6772a6aa82f8250e7e8eaa1016b2d8",
+      outputIndex: 0,
+    },
+    {
+      txHash:
+        "72e57a1fd90bf0b9291a6fa8e04793099d51df7844813689dde67ce3eea03c1f",
+      outputIndex: 0,
+    },
+  ]);
+  invariant(orderUtxos.length === 2, "Can not find order to cancel");
+  return new Stableswap(lucid).buildCancelOrdersTx({
+    orderUtxos: orderUtxos,
   });
 }
 

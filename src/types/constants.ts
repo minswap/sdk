@@ -1,5 +1,7 @@
+import invariant from "@minswap/tiny-invariant";
 import { Address, OutRef, Script } from "lucid-cardano";
 
+import { Asset } from "..";
 import { NetworkEnvironment, NetworkId } from "./network";
 
 export namespace DexV1Constant {
@@ -345,6 +347,41 @@ export namespace StableswapConstant {
       },
     },
   };
+
+  export function getConfigByLpAsset(
+    lpAsset: Asset,
+    networkId: NetworkId
+  ): StableswapConstant.Config {
+    const config = StableswapConstant.CONFIG[networkId].find(
+      (config) => config.lpAsset === Asset.toString(lpAsset)
+    );
+    invariant(config, `Invalid Stableswap LP Asset ${Asset.toString(lpAsset)}`);
+    return config;
+  }
+
+  export function getConfigFromStableswapOrderAddress(
+    address: Address,
+    networkId: NetworkId
+  ): StableswapConstant.Config {
+    const config = StableswapConstant.CONFIG[networkId].find((config) => {
+      return address === config.orderAddress;
+    });
+    invariant(config, `Invalid Stableswap Order Address: ${address}`);
+    return config;
+  }
+
+  export function getStableswapReferencesScript(
+    nftAsset: Asset,
+    networkId: NetworkId
+  ): StableswapConstant.DeployedScripts {
+    const refScript =
+      StableswapConstant.DEPLOYED_SCRIPTS[networkId][Asset.toString(nftAsset)];
+    invariant(
+      refScript,
+      `Invalid Stableswap Nft Asset ${Asset.toString(nftAsset)}`
+    );
+    return refScript;
+  }
 }
 
 export namespace DexV2Constant {
