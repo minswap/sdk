@@ -1,11 +1,11 @@
+import invariant from "@minswap/tiny-invariant";
 import { Address, Data, getAddressDetails } from "lucid-cardano";
 
 import { FIXED_BATCHER_FEE } from "../src/batcher-fee-reduction/configs.internal";
-import { FIXED_DEPOSIT_ADA } from "../src/types/constants";
 import { Asset } from "../src/types/asset";
+import { FIXED_DEPOSIT_ADA } from "../src/types/constants";
 import { NetworkId } from "../src/types/network";
-import { OrderV1, StableOrder, OrderV2 } from "../src/types/order";
-import invariant from "@minswap/tiny-invariant";
+import { OrderV1, OrderV2, StableOrder } from "../src/types/order";
 
 let testSender: Address;
 let testSenderPkh: string;
