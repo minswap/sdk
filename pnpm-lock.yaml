@@ -55,6 +55,9 @@ importers:
       '@eslint/js':
         specifier: ^9.9.1
         version: 9.10.0
+      '@jest/globals':
+        specifier: ^29.7.0
+        version: 29.7.0
       '@types/big.js':
         specifier: ^6.2.2
         version: 6.2.2
