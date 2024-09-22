@@ -13,22 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: 18.x
-          cache: "pnpm"
+          cache: "npm"
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm install --frozen-lockfile
       - name: Run build
-        run: pnpm run build
+        run: npm run build
       - name: Run test
-        run: pnpm run test
+        run: npm run test
         env:
           BLOCKFROST_PROJECT_ID_MAINNET: ${{ secrets.BLOCKFROST_PROJECT_ID_MAINNET }}
           BLOCKFROST_PROJECT_ID_TESTNET: ${{ secrets.BLOCKFROST_PROJECT_ID_TESTNET }}
       - name: Check format & lint
-        run: pnpm run check-format
+        run: npm run check-format

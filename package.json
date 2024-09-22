@@ -21,9 +21,8 @@
     "check-format": "prettier --check **/*.ts && eslint src",
     "exec": "ts-node --esm --experimental-specifier-resolution=node",
     "example": "ts-node --transpile-only --esm --experimental-specifier-resolution=node examples/example.ts",
-    "prisma:dbpull": "prisma db pull --schema=src/syncer/postgres/prisma/schema.prisma",
-    "prisma:generate": "prisma generate --schema=src/syncer/postgres/prisma/schema.prisma",
-    "postinstall": "prisma generate --schema=src/syncer/postgres/prisma/schema.prisma",
+    "prisma:dbpull": "prisma db pull",
+    "prisma:generate": "prisma generate",
     "syncer:start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/syncer/main.ts"
   },
   "keywords": [
@@ -49,7 +48,6 @@
     "@cardano-ogmios/client": "^6.5.0",
     "@cardano-ogmios/schema": "^6.7.0",
     "@minswap/tiny-invariant": "^1.2.0",
-    "@prisma/client": "^5.19.1",
     "big.js": "^6.2.1",
     "bignumber.js": "^9.1.2",
     "exponential-backoff": "^3.1.1",
@@ -62,6 +60,7 @@
     "@eslint/compat": "^1.1.1",
     "@eslint/js": "^9.9.1",
     "@jest/globals": "^29.7.0",
+    "@prisma/client": "^5.19.1",
     "@types/big.js": "^6.2.2",
     "@types/eslint__js": "^8.42.3",
     "@types/jest": "^29.5.12",
@@ -88,5 +87,7 @@
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.21.2"
   },
-  "packageManager": "pnpm@9.5.0"
+  "prisma": {
+    "schema": "src/syncer/postgres/prisma/schema.prisma"
+  }
 }
