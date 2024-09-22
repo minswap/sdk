@@ -4,7 +4,7 @@ RUN apt-get update -y && \
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 COPY src/syncer/postgres/prisma ./src/syncer/postgres/prisma
 RUN corepack enable && corepack install
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
