@@ -23,6 +23,7 @@
     "example": "ts-node --transpile-only --esm --experimental-specifier-resolution=node examples/example.ts",
     "prisma:dbpull": "prisma db pull",
     "prisma:generate": "prisma generate",
+    "postinstall": "prisma generate",
     "syncer:start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/syncer/main.ts"
   },
   "keywords": [
