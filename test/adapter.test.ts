@@ -1,5 +1,4 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { jest } from "@jest/globals";
 
 import {
   ADA,
@@ -30,7 +29,6 @@ let adapterTestnet: BlockfrostAdapter;
 let adapterMainnet: BlockfrostAdapter;
 
 beforeAll(() => {
-  jest.setTimeout(30_000);
   adapterTestnet = new BlockfrostAdapter(
     NetworkId.TESTNET,
     new BlockFrostAPI({
