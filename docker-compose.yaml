@@ -10,7 +10,7 @@ services:
       REDIS_URL: redis://default:minswap@redis:6379
       POSTGRES_URL: postgresql://postgres:minswap@postgres:5432/syncer?schema=public&connection_limit=5
       SYNC_START_POINT:
-    command: npm run syncer:start
+    command: pnpm run syncer:start
 
   redis:
     image: redis:7

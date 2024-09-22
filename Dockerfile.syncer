@@ -1,10 +1,11 @@
-FROM node:18
+FROM node:20
 RUN apt-get update -y && \
   apt-get install -y ca-certificates tzdata
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml ./
 COPY src/syncer/postgres/prisma ./src/syncer/postgres/prisma
-RUN npm ci
+RUN corepack enable && corepack install
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY . .

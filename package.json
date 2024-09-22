@@ -88,6 +88,7 @@
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.21.2"
   },
+  "packageManager": "pnpm@9.5.0",
   "prisma": {
     "schema": "src/syncer/postgres/prisma/schema.prisma"
   }
