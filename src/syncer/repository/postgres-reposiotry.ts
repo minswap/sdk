@@ -111,6 +111,19 @@ export class PostgresRepositoryReader {
     `)
   }
 
+  async getHistoricalPoolV2ByLpAsset(lpAsset: string, offset: number, limit: number, orderBy: "asc" | "desc"): Promise<Prisma.PoolV2[]> {
+    return await this.prismaClientInTx.poolV2.findMany({
+      where: {
+        lp_asset: lpAsset
+      },
+      skip: offset * limit,
+      take: limit,
+      orderBy: {
+        id: orderBy
+      }
+    })
+  }
+
   async getHistoricalPoolsV2(offset: number, limit: number, orderBy: "asc" | "desc"): Promise<Prisma.PoolV2[]> {
     return await this.prismaClientInTx.poolV2.findMany({
       skip: offset * limit,

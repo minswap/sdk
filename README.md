@@ -93,9 +93,9 @@ for (let i = 1; ; i++) {
       "29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c64d494e"
   );
   if (minAdaPool) {
-    const [a, b] = await adapter.getV1PoolPrice({ pool: minAdaPool });
+    const [price0, price1] = await adapter.getV1PoolPrice({ pool: minAdaPool });
     console.log(
-      `ADA/MIN price: ${a.toString()}; MIN/ADA price: ${b.toString()}`
+      `ADA/MIN price: ${price0.toString()}; MIN/ADA price: ${price1.toString()}`
     );
     // we can later use this ID to call getPoolById
     console.log(`ADA/MIN pool ID: ${minAdaPool.id}`);
@@ -121,6 +121,7 @@ if (minAdaPool) {
 
 ### Example 2: Get historical prices of MIN/ADA pool
 
+#### MIN/ADA pool v1:
 ```ts
 const MIN_ADA_POOL_ID =
   "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
@@ -131,12 +132,30 @@ for (const historyPoint of history) {
   if (!pool) {
     throw new Error("pool not found");
   }
-  const [price0, price1] = await adapter.getV1PoolPrice({
-    pool,
-    decimalsA: 6,
-    decimalsB: 6,
-  });
+  const [price0, price1] = await adapter.getV1PoolPrice({ pool: pool });
   console.log(`${historyPoint.time}: ${price0} ADA/MIN, ${price1} MIN/ADA`);
+}
+```
+
+#### MIN/ADA pool v2:
+```ts
+for (let i = 1; ; i++) {
+  const pools = await adapter.getV2PoolHistory({
+    assetA: Asset.fromString("lovelace"),
+    assetB: Asset.fromString("29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c64d494e"),
+    page: i,
+  });
+  if (pools.length === 0) {
+    // last page
+    break;
+  }
+
+  for (const pool of pools) {
+    const [price0, price1] = await adapter.getV2PoolPrice({ pool: pool });
+    console.log(
+      `ADA/MIN price: ${a.toString()}; MIN/ADA price: ${price1.toString()}`
+    );
+  }
 }
 ```
 

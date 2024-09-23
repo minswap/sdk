@@ -47,8 +47,13 @@ export type GetPoolsParams = Omit<PaginationOptions, "page"> & {
   page: number;
 };
 
-export type GetPoolHistoryParams = PaginationOptions & {
+export type GetV1PoolHistoryParams = PaginationOptions & {
   id: string;
+};
+
+export type GetV2PoolHistoryParams = PaginationOptions & {
+  assetA: Asset;
+  assetB: Asset;
 };
 
 export type GetPoolPriceParams = {
@@ -89,7 +94,7 @@ interface Adapter {
    */
   getV1Pools(params: GetPoolsParams): Promise<PoolV1.State[]>;
 
-  getV1PoolHistory(params: GetPoolHistoryParams): Promise<TxHistory[]>;
+  getV1PoolHistory(params: GetV1PoolHistoryParams): Promise<TxHistory[]>;
 
   /**
    * Get pool price.
@@ -110,6 +115,8 @@ interface Adapter {
   getV2PoolByPair(assetA: Asset, assetB: Asset): Promise<PoolV2.State | null>;
 
   getV2PoolByLp(lpAsset: Asset): Promise<PoolV2.State | null>;
+
+  getV2PoolHistory(params: GetV2PoolHistoryParams): Promise<PoolV2.State[]>;
 
   /**
    * Get pool price.
@@ -245,7 +252,7 @@ export class BlockfrostAdapter implements Adapter {
     page = 1,
     count = 100,
     order = "desc",
-  }: GetPoolHistoryParams): Promise<TxHistory[]> {
+  }: GetV1PoolHistoryParams): Promise<TxHistory[]> {
     const nft = `${DexV1Constant.POOL_NFT_POLICY_ID}${id}`;
     const nftTxs = await this.blockFrostApi.assetsTransactions(nft, {
       count,
@@ -382,6 +389,12 @@ export class BlockfrostAdapter implements Adapter {
       allPools.find((pool) => Asset.compare(pool.lpAsset, lpAsset) === 0) ??
       null
     );
+  }
+
+  public async getV2PoolHistory(
+    _params: GetV2PoolHistoryParams
+  ): Promise<PoolV2.State[]> {
+    throw Error("Not supported yet. Please use MinswapAdapter");
   }
 
   public async getV2PoolPrice({
@@ -635,7 +648,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
     page = 1,
     count = 100,
     order = "desc",
-  }: GetPoolHistoryParams): Promise<TxHistory[]> {
+  }: GetV1PoolHistoryParams): Promise<TxHistory[]> {
     const lpAsset = `${DexV1Constant.LP_POLICY_ID}${id}`;
     const prismaPools = await this.repository.getHistoricalPoolV1ByLpAsset(
       lpAsset,
@@ -728,6 +741,27 @@ export class MinswapAdapter extends BlockfrostAdapter {
       return null;
     }
     return this.prismaPoolV2ToPoolV2State(prismaPool);
+  }
+
+  override async getV2PoolHistory({
+    assetA,
+    assetB,
+    page = 1,
+    count = 100,
+    order = "desc",
+  }: GetV2PoolHistoryParams): Promise<PoolV2.State[]> {
+    const lpAsset = PoolV2.computeLPAssetName(assetA, assetB);
+    const prismaPools = await this.repository.getHistoricalPoolV2ByLpAsset(
+      lpAsset,
+      page - 1,
+      count,
+      order
+    );
+    if (prismaPools.length === 0) {
+      return [];
+    }
+
+    return prismaPools.map((pool) => this.prismaPoolV2ToPoolV2State(pool));
   }
 
   private prismaStablePoolToStablePoolState(
