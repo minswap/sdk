@@ -33,20 +33,6 @@ services:
     ports:
       - "5432:5432"
 
-  # ogmios:
-  #   image: cardanosolutions/ogmios:v6.5.0
-  #   restart: always
-  #   command: [ "--host", "0.0.0.0", "--node-socket", "/node.socket", "--node-config", "/configs/${OGMIOS_NETWORK}/config.json" ]
-  #   ports:
-  #     - 1337:1337
-  #   volumes:
-  #     - type: bind
-  #       source: $CARDANO_NODE_SOCKET_PATH
-  #       target: /node.socket
-  #     - type: bind
-  #       source: ./node-configs
-  #       target: /configs
-
   ogmios:
     image: cardanosolutions/cardano-node-ogmios:v6.5.0_9.0.0-${OGMIOS_NETWORK}
     restart: always
