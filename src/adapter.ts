@@ -252,7 +252,6 @@ export class BlockfrostAdapter implements Adapter {
       page,
       order,
     });
-    console.log(JSONBig.stringify(nftTxs));
     return nftTxs.map(
       (tx: (typeof nftTxs)[number]): TxHistory => ({
         txHash: tx.tx_hash,
