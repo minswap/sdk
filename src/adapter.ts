@@ -15,7 +15,7 @@ import {
   slotToBeginUnixTime,
 } from "lucid-cardano";
 
-import { PostgresRepositoryReader } from "./syncer/repository/postgres-reposiotry";
+import { PostgresRepositoryReader } from "./syncer/repository/postgres-repository";
 import { Asset } from "./types/asset";
 import {
   DexV1Constant,

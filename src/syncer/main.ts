@@ -4,7 +4,7 @@ import { Redis } from "ioredis";
 
 import { getSyncerConfig } from "./config";
 import { newOgmiosInteractionCtx, newPrismaClient, newRedis } from "./connector";
-import { PostgresRepositoryWriter } from "./repository/postgres-reposiotry";
+import { PostgresRepositoryWriter } from "./repository/postgres-repository";
 import { RedisRepositoryWriter } from "./repository/redis-repository";
 import { Syncer } from "./syncer";
 

@@ -7,7 +7,7 @@ import { PoolV1, PoolV2, StablePool } from "../types/pool";
 import { TxIn, Value } from "../types/tx.internal";
 import { getScriptHashFromAddress } from "../utils/address-utils.internal";
 import { SyncerConfig } from "./config";
-import { PostgresRepositoryWriter } from "./repository/postgres-reposiotry";
+import { PostgresRepositoryWriter } from "./repository/postgres-repository";
 import { RedisRepositoryWriter } from "./repository/redis-repository";
 
 const DEFAULT_INFLIGHT = 1000;
