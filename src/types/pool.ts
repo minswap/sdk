@@ -268,8 +268,14 @@ export namespace PoolV2 {
   export const DEFAULT_TRADING_FEE_DENOMINATOR = 10000n;
 
   export function computeLPAssetName(assetA: Asset, assetB: Asset): string {
-    const k1 = sha3(assetA.policyId + assetA.tokenName);
-    const k2 = sha3(assetB.policyId + assetB.tokenName);
+    const [normalizedA, normalizedB] = normalizeAssets(
+      Asset.toString(assetA),
+      Asset.toString(assetB)
+    )
+    const normalizedAssetA = Asset.fromString(normalizedA)
+    const normalizedAssetB = Asset.fromString(normalizedB)
+    const k1 = sha3(normalizedAssetA.policyId + normalizedAssetA.tokenName);
+    const k2 = sha3(normalizedAssetB.policyId + normalizedAssetB.tokenName);
     return sha3(k1 + k2);
   }
 

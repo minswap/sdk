@@ -1,5 +1,4 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { jest } from "@jest/globals";
 
 import {
   ADA,
@@ -26,24 +25,24 @@ const MIN_ADA_POOL_V1_ID_TESTNET =
 const MIN_ADA_POOL_V1_ID_MAINNET =
   "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
 
-const adapterTestnet = new BlockfrostAdapter({
-  networkId: NetworkId.TESTNET,
-  blockFrost: new BlockFrostAPI({
-    projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_TESTNET"),
-    network: "preprod",
-  }),
-});
-
-const adapterMainnet = new BlockfrostAdapter({
-  networkId: NetworkId.MAINNET,
-  blockFrost: new BlockFrostAPI({
-    projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
-    network: "mainnet",
-  }),
-});
+let adapterTestnet: BlockfrostAdapter;
+let adapterMainnet: BlockfrostAdapter;
 
 beforeAll(() => {
-  jest.setTimeout(30_000);
+  adapterTestnet = new BlockfrostAdapter(
+    NetworkId.TESTNET,
+    new BlockFrostAPI({
+      projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_TESTNET"),
+      network: "preprod",
+    })
+  );
+  adapterMainnet = new BlockfrostAdapter(
+    NetworkId.MAINNET,
+    new BlockFrostAPI({
+      projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
+      network: "mainnet",
+    })
+  );
 });
 
 test("getAssetDecimals", async () => {

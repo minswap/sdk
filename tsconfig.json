@@ -1,9 +1,16 @@
 {
+  "ts-node": {
+    "transpileOnly": true,
+    "experimentalSpecifierResolution": "node"
+  },
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ESNext",
     "module": "ES2022",
     "moduleResolution": "node",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "outDir": "build-tsc",
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -15,5 +22,9 @@
     "noImplicitThis": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "examples", "test"],
+  "include": [
+    "src",
+    "examples",
+    "test"
+  ],
 }

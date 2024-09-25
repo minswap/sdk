@@ -54,13 +54,13 @@ async function main(): Promise<void> {
     address
   );
 
-  const blockfrostAdapter = new BlockfrostAdapter({
-    networkId: NetworkId.TESTNET,
-    blockFrost: new BlockFrostAPI({
+  const blockfrostAdapter = new BlockfrostAdapter(
+    NetworkId.TESTNET,
+    new BlockFrostAPI({
       projectId: blockfrostProjectId,
       network: "preprod",
-    }),
-  });
+    })
+  );
 
   const utxos = await lucid.utxosAt(address);
 

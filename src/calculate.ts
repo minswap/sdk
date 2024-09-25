@@ -924,7 +924,7 @@ export namespace StableswapCalculation {
     const d0 = getDMem(tempDatumBalances, multiples, amp);
     const d1 = getDMem(newDatBalancesWithoutFee, multiples, amp);
 
-    const newDatBalancesWithTradingFee = [];
+    const newDatBalancesWithTradingFee: bigint[] = [];
     for (let i = 0; i < length; ++i) {
       const idealBalance = (d1 * tempDatumBalances[i]) / d0;
       let different = 0n;

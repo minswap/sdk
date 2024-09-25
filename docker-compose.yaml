@@ -1,0 +1,47 @@
+services:
+  syncer:
+    build:
+      dockerfile: Dockerfile.syncer
+    restart: always
+    environment:
+      ENVIRONMENT:
+      OGMIOS_HOST: ogmios
+      OGMIOS_PORT: 1337
+      REDIS_URL: redis://default:minswap@redis:6379
+      POSTGRES_URL: postgresql://postgres:minswap@postgres:5432/syncer?schema=public&connection_limit=5
+      SYNC_START_POINT:
+    command: pnpm run syncer:start
+
+  redis:
+    image: redis:7
+    restart: always
+    command: --requirepass minswap
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: syncer
+      POSTGRES_PASSWORD: minswap
+    volumes:
+      - ./src/syncer/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  ogmios:
+    image: cardanosolutions/cardano-node-ogmios:v6.5.0_9.0.0-${OGMIOS_NETWORK}
+    restart: always
+    ports:
+      - 1337:1337
+    volumes:
+      - ogmios-data:/db
+
+volumes:
+  redis-data: {}
+  ogmios-data: {}
+  postgres-data: {}

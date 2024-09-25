@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Block {
+  id          BigInt @id
+  slot        BigInt
+  header_hash String @db.VarChar
+
+  @@map("block")
+}
+
+model PoolV1 {
+  id               BigInt  @id @default(autoincrement())
+  lp_asset         String  @db.VarChar
+  asset_a          String  @db.VarChar
+  asset_b          String  @db.VarChar
+  reserve_a        Decimal @db.Decimal
+  reserve_b        Decimal @db.Decimal
+  total_liquidity  Decimal @db.Decimal
+  created_tx_id    String  @db.VarChar
+  created_tx_index Int
+  value            String  @db.VarChar
+  pool_address     String  @db.VarChar
+  raw_datum        String  @db.VarChar
+  slot             BigInt
+  block_id         BigInt
+
+  @@map("pool_v1")
+}
+
+model PoolV2 {
+  id               BigInt  @id @default(autoincrement())
+  lp_asset         String  @db.VarChar
+  asset_a          String  @db.VarChar
+  asset_b          String  @db.VarChar
+  datum_reserve_a  Decimal @db.Decimal
+  datum_reserve_b  Decimal @db.Decimal
+  value_reserve_a  Decimal @db.Decimal
+  value_reserve_b  Decimal @db.Decimal
+  total_liquidity  Decimal @db.Decimal
+  value            String  @db.VarChar
+  pool_address     String  @db.VarChar
+  raw_datum        String  @db.VarChar
+  created_tx_id    String  @db.VarChar
+  created_tx_index Int
+  slot             BigInt
+  block_id         BigInt
+
+  @@map("pool_v2")
+}
+
+model StablePool {
+  id               BigInt  @id @default(autoincrement())
+  lp_asset         String  @db.VarChar
+  total_liquidity  Decimal @db.Decimal
+  created_tx_id    String  @db.VarChar
+  created_tx_index Int
+  pool_address     String  @db.VarChar
+  value            String  @db.VarChar
+  raw_datum        String  @db.VarChar
+  slot             BigInt
+  block_id         BigInt
+
+  @@map("stable_pool")
+}
