@@ -4,7 +4,7 @@
 
 The Minswap Database Indexer listens to events from the Cardano Blockchain and stores relevant data related to Minswap Liquidity Pools in a PostgreSQL database. This allows for efficient querying and retrieval of historical liquidity pool data. The indexer uses **Ogmios** as a WebSocket to capture blockchain events in real-time.
 
-### 1. How Minswap Indexer Works
+### How Minswap Indexer Works
 
 - **Ogmios WebSocket Integration**: The Minswap Indexer uses **Ogmios** as a WebSocket to listen to blockchain events emitted by the Cardano Blockchain. These events are processed in real-time, ensuring the data is always up-to-date.
   
@@ -18,7 +18,7 @@ The Minswap Database Indexer listens to events from the Cardano Blockchain and s
 
 ---
 
-### 2. Retrieving Historical Data of Liquidity Pools
+### Retrieving Historical Data of Liquidity Pools
 
 To retrieve the historical data of liquidity pools from the Minswap Indexer, follow these steps:
 
@@ -120,6 +120,19 @@ To retrieve the historical data of liquidity pools from the Minswap Indexer, fol
         })
     ))
     ```
+
+### Minswap Indexer Extensibility
+Currently, the Minswap Indexer is designed specifically to listen to and process transactions related to Minswap's Liquidity Pools. However, if your business logic requires more complex data retrieval or processing beyond liquidity pool transactions, the Minswap Indexer can be extended to suit your needs.
+
+To achieve this, you can modify the [handleBlock](../src/syncer/syncer.ts#L100) function. This function is responsible for processing each block and extracting the relevant transactions. By extending this function, you can listen to and handle other types of transactions or blockchain events that are important to your application.
+
+**Extending the handleBlock Function**
+
+The handleBlock function is at the core of the indexer's event handling process. It currently focuses on transactions involving Minswap's Liquidity Pools, but you can modify it to:
+- Process additional types of smart contract interactions.
+- Extract and store data from non-liquidity pool transactions.
+- Retrieve custom blockchain events that align with your specific use case.
+
 
 ## Conclusion
 The Minswap Database Indexer is an essential tool for tracking and retrieving real-time liquidity pool data from the Cardano Blockchain. By using Ogmios to listen to blockchain events and storing the normalized data in a PostgreSQL database, the indexer ensures accurate and up-to-date information.
