@@ -15,6 +15,7 @@ import {
   slotToBeginUnixTime,
 } from "lucid-cardano";
 
+import { StableswapCalculation } from "./calculate";
 import { PostgresRepositoryReader } from "./syncer/repository/postgres-repository";
 import { Asset } from "./types/asset";
 import {
@@ -51,10 +52,16 @@ export type GetV1PoolHistoryParams = PaginationOptions & {
   id: string;
 };
 
-export type GetV2PoolHistoryParams = PaginationOptions & {
-  assetA: Asset;
-  assetB: Asset;
-};
+export type GetV2PoolHistoryParams = PaginationOptions &
+  (
+    | {
+        assetA: Asset;
+        assetB: Asset;
+      }
+    | {
+        lpAsset: Asset;
+      }
+  );
 
 export type GetPoolPriceParams = {
   pool: PoolV1.State;
@@ -66,6 +73,16 @@ export type GetV2PoolPriceParams = {
   pool: PoolV2.State;
   decimalsA?: number;
   decimalsB?: number;
+};
+
+export type GetStablePoolHistoryParams = PaginationOptions & {
+  lpAsset: Asset;
+};
+
+export type GetStablePoolPriceParams = {
+  pool: StablePool.State;
+  assetAIndex: number;
+  assetBIndex: number;
 };
 
 interface Adapter {
@@ -146,6 +163,22 @@ interface Adapter {
   getStablePoolByLpAsset(lpAsset: Asset): Promise<StablePool.State | null>;
 
   getStablePoolByNFT(nft: Asset): Promise<StablePool.State | null>;
+
+  getStablePoolHistory(
+    params: GetStablePoolHistoryParams
+  ): Promise<StablePool.State[]>;
+
+  /**
+   * Get stable pool price.
+   *
+   * A Stable Pool can contain more than two assets, so we need to specify which assets we want to retrieve the price against by using assetAIndex and assetBIndex.
+   * @param {Object} params - The parameters to calculate pool price.
+   * @param {string} params.pool - The pool we want to get price.
+   * @param {number} params.assetAIndex
+   * @param {number} params.assetBIndex
+   * @returns {[string, string]} - Returns price of @assetA agains @assetB
+   */
+  getStablePoolPrice(params: GetStablePoolPriceParams): Big;
 }
 
 export class BlockfrostAdapter implements Adapter {
@@ -566,6 +599,29 @@ export class BlockfrostAdapter implements Adapter {
     }
     return null;
   }
+
+  getStablePoolHistory(
+    _params: GetStablePoolHistoryParams
+  ): Promise<StablePool.State[]> {
+    throw Error("Not supported yet. Please use MinswapAdapter");
+  }
+
+  public getStablePoolPrice({
+    pool,
+    assetAIndex,
+    assetBIndex,
+  }: GetStablePoolPriceParams): Big {
+    const config = pool.config;
+    const [priceNum, priceDen] = StableswapCalculation.getPrice(
+      pool.datum.balances,
+      config.multiples,
+      pool.amp,
+      assetAIndex,
+      assetBIndex
+    );
+
+    return Big(priceNum.toString()).div(priceDen.toString());
+  }
 }
 
 export type MinswapAdapterConstructor = {
@@ -743,14 +799,16 @@ export class MinswapAdapter extends BlockfrostAdapter {
     return this.prismaPoolV2ToPoolV2State(prismaPool);
   }
 
-  override async getV2PoolHistory({
-    assetA,
-    assetB,
-    page = 1,
-    count = 100,
-    order = "desc",
-  }: GetV2PoolHistoryParams): Promise<PoolV2.State[]> {
-    const lpAsset = PoolV2.computeLPAssetName(assetA, assetB);
+  override async getV2PoolHistory(
+    options: GetV2PoolHistoryParams
+  ): Promise<PoolV2.State[]> {
+    const { page = 1, count = 100, order = "desc" } = options;
+    let lpAsset: string;
+    if ("lpAsset" in options) {
+      lpAsset = Asset.toString(options.lpAsset);
+    } else {
+      lpAsset = PoolV2.computeLPAssetName(options.assetA, options.assetB);
+    }
     const prismaPools = await this.repository.getHistoricalPoolV2ByLpAsset(
       lpAsset,
       page - 1,
@@ -837,5 +895,26 @@ export class MinswapAdapter extends BlockfrostAdapter {
       return null;
     }
     return this.prismaStablePoolToStablePoolState(prismaStablePool);
+  }
+
+  override async getStablePoolHistory({
+    lpAsset,
+    page = 1,
+    count = 100,
+    order = "desc",
+  }: GetStablePoolHistoryParams): Promise<StablePool.State[]> {
+    const prismaPools = await this.repository.getHistoricalStablePoolsByLpAsset(
+      Asset.toString(lpAsset),
+      page - 1,
+      count,
+      order
+    );
+    if (prismaPools.length === 0) {
+      return [];
+    }
+
+    return prismaPools.map((pool) =>
+      this.prismaStablePoolToStablePoolState(pool)
+    );
   }
 }
