@@ -178,6 +178,19 @@ export class PostgresRepositoryReader {
       },
     })
   }
+
+  async getHistoricalStablePoolsByLpAsset(lpAsset: string, offset: number, limit: number, orderBy: "asc" | "desc"): Promise<Prisma.StablePool[]> {
+    return await this.prismaClientInTx.stablePool.findMany({
+      where: {
+        lp_asset: lpAsset
+      },
+      skip: offset * limit,
+      take: limit,
+      orderBy: {
+        id: orderBy
+      }
+    })
+  }
 }
 
 export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryReader {

@@ -1011,4 +1011,74 @@ export namespace StableswapCalculation {
       ((amountOutWithoutFee - amountOut) * adminFee) / feeDenominator;
     return amountOut;
   }
+
+  export function getPrice(
+    balances: bigint[],
+    multiples: bigint[],
+    amp: bigint,
+    assetAIndex: number,
+    assetBIndex: number
+  ): [bigint, bigint] {
+    const mulBalances = zipWith(balances, multiples, (a, b) => a * b);
+    const length = BigInt(mulBalances.length);
+    const ann = amp * length;
+    const d = getD(mulBalances, amp);
+
+    // Dr = D / (N_COINS ** N_COINS)
+    // for i in range(N_COINS):
+    //     Dr = Dr * D / xp[i]
+
+    //drNumerator = D^(n+1)
+    //drDenominator = n^n*xp[0]*xp[1]*...*xp[n-1]
+    let drNumerator = d;
+    let drDenominator = 1n;
+    for (let i = 0n; i < length; ++i) {
+      drNumerator = drNumerator * d;
+      drDenominator = drDenominator * mulBalances[Number(i)] * length;
+    }
+
+    // (ANN * xp[assetAIndex] + Dr * xp[assetAIndex] / xp[assetBIndex]) / (ANN * xp[assetAIndex] + Dr)
+    // = (drDenominator * ANN * xp[assetAIndex] * xp[assetBIndex] + drNumerator*xp[assetAIndex])
+    //       / xp[assetBIndex] * (drDenominator * Ann * xp[assetAIndex] + drNumerator)
+    // this is price of asset[assetBIndex] / multiples[assetBIndex] base on asset[assetAIndex] / multiples[assetAIndex]
+    // => price = priceWithMultiple / multiples[assetAIndex] * multiples[assetBIndex]
+    return shortenFraction([
+      (drDenominator *
+        ann *
+        mulBalances[assetAIndex] *
+        mulBalances[assetBIndex] +
+        drNumerator * mulBalances[assetAIndex]) *
+        multiples[assetBIndex],
+      mulBalances[assetBIndex] *
+        (drDenominator * ann * mulBalances[assetAIndex] + drNumerator) *
+        multiples[assetAIndex],
+    ]);
+  }
+}
+
+function shortenFraction([numerator, denominator]: [bigint, bigint]): [
+  bigint,
+  bigint,
+] {
+  const gcd = gcdFunction(numerator, denominator);
+  if (gcd === 0n) {
+    return [1n, 1n];
+  } else {
+    return [numerator / gcd, denominator / gcd];
+  }
+}
+
+function gcdFunction(a: bigint, b: bigint): bigint {
+  if (a > b) {
+    if (b === 0n) {
+      return a;
+    }
+    return gcdFunction(a % b, b);
+  } else if (a < b) {
+    if (a === 0n) {
+      return b;
+    }
+    return gcdFunction(a, b % a);
+  }
+  return a;
 }
