@@ -19,7 +19,7 @@ This documentation provides details on how to interact with the **Stableswap** a
 
 Currently, everyone who swaps on the Minswap DEX pays a 2 $ADA fee to execute the DEX order. To increase the utility of the $MIN token within the platform, $MIN holders are entitled to a discount on this 2 $ADA Batcher Fee. More details about this can be found in the [Minswap Official Docs](https://docs.minswap.org/min-token/usdmin-tokenomics/trading-fee-discount).
 
-Technically, the Batcher Fee Discount is calculated based on the ADA-MIN LP Tokens and MIN tokens that users are holding. This calculation is handled by the [calculateBatcherFee](../src/batcher-fee-reduction/calculate.ts) function.
+Technically, the Batcher Fee Discount is calculated based on the ADA-MIN LP Tokens and MIN tokens that users are holding. This calculation is handled by the [BatcherFee.finalizeFee](../src/batcher-fee-reduction/calculate.ts#L11) function.
 
 If you are transacting through the `Stableswap` or `DexV2` classes, the transaction is automatically constructed with the Batcher Fee Discount if you are eligible for it.
 
