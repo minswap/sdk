@@ -11,11 +11,15 @@ export namespace DexV1Constant {
     [NetworkId.MAINNET]:
       "addr1zxn9efv2f6w82hagxqtn62ju4m293tqvw0uhmdl64ch8uw6j2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pq6s3z70",
   };
-  export const POOL_SCRIPT_HASH = "script1uychk9f04tqngfhx4qlqdlug5ntzen3uzc62kzj7cyesjk0d9me";
-  export const FACTORY_POLICY_ID = "13aa2accf2e1561723aa26871e071fdf32c867cff7e7d50ad470d62f";
+  export const POOL_SCRIPT_HASH =
+    "script1uychk9f04tqngfhx4qlqdlug5ntzen3uzc62kzj7cyesjk0d9me";
+  export const FACTORY_POLICY_ID =
+    "13aa2accf2e1561723aa26871e071fdf32c867cff7e7d50ad470d62f";
   export const FACTORY_ASSET_NAME = "4d494e53574150";
-  export const LP_POLICY_ID = "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86";
-  export const POOL_NFT_POLICY_ID = "0be55d262b29f564998ff81efe21bdc0022621c12f15af08d0f2ddb1";
+  export const LP_POLICY_ID =
+    "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d86";
+  export const POOL_NFT_POLICY_ID =
+    "0be55d262b29f564998ff81efe21bdc0022621c12f15af08d0f2ddb1";
   export const ORDER_SCRIPT: Script = {
     type: "PlutusV1",
     script:
@@ -183,168 +187,168 @@ export namespace StableswapConstant {
   > = {
     [NetworkId.TESTNET]: {
       "06fe1ba957728130154154d5e5b25a7b533ebe6c4516356c0aa69355646a65642d697573642d76312e342d6c70":
-      {
-        order: {
-          txHash:
-            "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
-          outputIndex: 0,
+        {
+          order: {
+            txHash:
+              "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
+            outputIndex: 3,
+          },
         },
-        pool: {
-          txHash:
-            "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
-          outputIndex: 1,
-        },
-        lp: {
-          txHash:
-            "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
-          outputIndex: 2,
-        },
-        poolBatching: {
-          txHash:
-            "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
-          outputIndex: 3,
-        },
-      },
       "06fe1ba957728130154154d5e5b25a7b533ebe6c4516356c0aa69355757364632d757364742d76312e342d6c70":
-      {
-        order: {
-          txHash:
-            "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
-          outputIndex: 0,
+        {
+          order: {
+            txHash:
+              "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
+            outputIndex: 3,
+          },
         },
-        pool: {
-          txHash:
-            "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
-          outputIndex: 1,
-        },
-        lp: {
-          txHash:
-            "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
-          outputIndex: 2,
-        },
-        poolBatching: {
-          txHash:
-            "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
-          outputIndex: 3,
-        },
-      },
       "06fe1ba957728130154154d5e5b25a7b533ebe6c4516356c0aa69355646a65642d697573642d6461692d76312e342d6c70":
-      {
-        order: {
-          txHash:
-            "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
-          outputIndex: 0,
+        {
+          order: {
+            txHash:
+              "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
+            outputIndex: 3,
+          },
         },
-        pool: {
-          txHash:
-            "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
-          outputIndex: 1,
-        },
-        lp: {
-          txHash:
-            "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
-          outputIndex: 2,
-        },
-        poolBatching: {
-          txHash:
-            "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
-          outputIndex: 3,
-        },
-      },
     },
     [NetworkId.MAINNET]: {
       "5d4b6afd3344adcf37ccef5558bb87f522874578c32f17160512e398444a45442d695553442d534c50":
-      {
-        order: {
-          txHash:
-            "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
-          outputIndex: 0,
+        {
+          order: {
+            txHash:
+              "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
+            outputIndex: 3,
+          },
         },
-        pool: {
-          txHash:
-            "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
-          outputIndex: 1,
-        },
-        lp: {
-          txHash:
-            "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
-          outputIndex: 2,
-        },
-        poolBatching: {
-          txHash:
-            "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
-          outputIndex: 3,
-        },
-      },
       d97fa91daaf63559a253970365fb219dc4364c028e5fe0606cdbfff9555344432d444a45442d534c50:
-      {
-        order: {
-          txHash:
-            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-          outputIndex: 0,
+        {
+          order: {
+            txHash:
+              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+            outputIndex: 3,
+          },
         },
-        pool: {
-          txHash:
-            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-          outputIndex: 1,
-        },
-        lp: {
-          txHash:
-            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-          outputIndex: 2,
-        },
-        poolBatching: {
-          txHash:
-            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-          outputIndex: 3,
-        },
-      },
       "96402c6f5e7a04f16b4d6f500ab039ff5eac5d0226d4f88bf5523ce85553444d2d695553442d534c50":
-      {
-        order: {
-          txHash:
-            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-          outputIndex: 0,
+        {
+          order: {
+            txHash:
+              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+            outputIndex: 3,
+          },
         },
-        pool: {
-          txHash:
-            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-          outputIndex: 1,
-        },
-        lp: {
-          txHash:
-            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-          outputIndex: 2,
-        },
-        poolBatching: {
-          txHash:
-            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-          outputIndex: 3,
-        },
-      },
       "07b0869ed7488657e24ac9b27b3f0fb4f76757f444197b2a38a15c3c444a45442d5553444d2d534c50":
-      {
-        order: {
-          txHash:
-            "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
-          outputIndex: 0,
+        {
+          order: {
+            txHash:
+              "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+            outputIndex: 3,
+          },
         },
-        pool: {
-          txHash:
-            "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
-          outputIndex: 1,
-        },
-        lp: {
-          txHash:
-            "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
-          outputIndex: 2,
-        },
-        poolBatching: {
-          txHash:
-            "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
-          outputIndex: 3,
-        },
-      },
     },
   };
 
@@ -550,6 +554,187 @@ export namespace DexV2Constant {
   };
 }
 
+export namespace LbeV2Constant {
+  export const FACTORY_AUTH_AN = "666163746f7279";
+  export const TREASURY_AUTH_AN = "7472656173757279";
+  export const MANAGER_AUTH_AN = "4d616e61676572";
+  export const SELLER_AUTH_AN = "73656c6c6572";
+  export const ORDER_AUTH_AN = "6f72646572";
+
+  export const ORDER_COMMISSION = 250_000n;
+  export const COLLECT_SELLER_COMMISSION = 250_000n;
+  export const SELLER_COMMISSION = 1_500_000n;
+  export const CREATE_POOL_COMMISSION = 10_000_000n;
+
+  export const TREASURY_MIN_ADA = 5_000_000n;
+  export const MANAGER_MIN_ADA = 2_500_000n;
+  export const SELLER_MIN_ADA = 2_500_000n;
+  export const ORDER_MIN_ADA = 2_500_000n;
+
+  export const MIN_POOL_ALLOCATION_POINT = 70n;
+  export const MAX_POOL_ALLOCATION_POINT = 100n;
+  export const MAX_PENALTY_RATE = 25n;
+
+  export const MINIMUM_SELLER_COLLECTED = 20n;
+  export const MINIMUM_ORDER_COLLECTED = 30n;
+  export const MINIMUM_ORDER_REDEEMED = 30n;
+
+  export const MAX_DISCOVERY_RANGE = "30d";
+  export const MAX_PENALTY_RANGE = "30d";
+
+  export type Config = {
+    factoryAsset: string;
+    factoryHash: string;
+    factoryHashBech32: string;
+
+    treasuryAsset: string;
+    treasuryHash: string;
+    treasuryHashBech32: string;
+
+    managerAsset: string;
+    managerHash: string;
+    managerHashBech32: string;
+
+    sellerAsset: string;
+    sellerHash: string;
+    sellerHashBech32: string;
+
+    orderAsset: string;
+    orderHash: string;
+    orderHashBech32: string;
+  };
+
+  export type DeployedScripts = {
+    factory: OutRef;
+    treasury: OutRef;
+    manager: OutRef;
+    seller: OutRef;
+    order: OutRef;
+  };
+
+  export const CONFIG: Record<NetworkId, Config> = {
+    [NetworkId.TESTNET]: {
+      factoryAsset:
+        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
+        FACTORY_AUTH_AN,
+      factoryHash: "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972",
+      factoryHashBech32: "TODO",
+
+      treasuryAsset:
+        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
+        TREASURY_AUTH_AN,
+      treasuryHash: "f0dbf7cdc1042f403cad57cff6f602b2e657f8f557b8cf8c23482954",
+      treasuryHashBech32: "TODO",
+
+      managerAsset:
+        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
+        MANAGER_AUTH_AN,
+      managerHash: "46246888d57347a8ad2705843e9131f03e55701571896ed571f90e3a",
+      managerHashBech32: "TODO",
+
+      sellerAsset:
+        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
+        SELLER_AUTH_AN,
+      sellerHash: "f6ba0fa37ce6aaaf8da7b0ee4192361fd443a8d3d70fb275986a2fce",
+      sellerHashBech32: "TODO",
+
+      orderAsset:
+        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
+        ORDER_AUTH_AN,
+      orderHash: "28ead81adf8154687e0d1d09d14375f6be0626107545a59d7d5e311a",
+      orderHashBech32: "TODO",
+    },
+    [NetworkId.MAINNET]: {
+      factoryAsset:
+        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
+        FACTORY_AUTH_AN,
+      factoryHash: "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead",
+      factoryHashBech32: "TODO",
+
+      treasuryAsset:
+        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
+        TREASURY_AUTH_AN,
+      treasuryHash: "1ce6abbd967cab867ad73855f8b154fcc57e41b15605b91590451650",
+      treasuryHashBech32: "TODO",
+
+      managerAsset:
+        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
+        MANAGER_AUTH_AN,
+      managerHash: "e951d381ef510ae02b7496c2ff039e640ab2e2a561423d0cbf34b032",
+      managerHashBech32: "TODO",
+
+      sellerAsset:
+        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
+        SELLER_AUTH_AN,
+      sellerHash: "ecf97d6f0ace26e69fa428610c7dbf5a686e1197f76511449d9a1b64",
+      sellerHashBech32: "TODO",
+
+      orderAsset:
+        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
+        ORDER_AUTH_AN,
+      orderHash: "5176775eed690d088bd29d9a6934b1e35ef1d897deb61d7b5dde11ca",
+      orderHashBech32: "TODO",
+    },
+  };
+
+  export const DEPLOYED_SCRIPTS: Record<NetworkId, DeployedScripts> = {
+    [NetworkId.TESTNET]: {
+      factory: {
+        txHash:
+          "834e0958594e51c525363bbdabd0cdbe773a358ac2e2c8321cc3f645b30335ae",
+        outputIndex: 0,
+      },
+      treasury: {
+        txHash:
+          "a5b0274543fbad4ca79798be047317a0b4b270ab6011dd7e08fc663ba6ee1f32",
+        outputIndex: 0,
+      },
+      manager: {
+        txHash:
+          "f0c8a033bf84faad54e70c9882057a422fa1ee257843fad0a07aa5eb7ee9ebaf",
+        outputIndex: 0,
+      },
+      seller: {
+        txHash:
+          "a15c06f2fa3e91359136b346eae43997311644320e18a0c5f2ea40c8127c9284",
+        outputIndex: 0,
+      },
+      order: {
+        txHash:
+          "a08042f93335157e6dd8e87feef448d5e9000f60ef14cbe19ae365c8de9bead8",
+        outputIndex: 0,
+      },
+    },
+    [NetworkId.MAINNET]: {
+      factory: {
+        txHash:
+          "6b9976bb251ad15a21480bd37ea45343cff6fdd713744c1948ce674a8c4f510f",
+        outputIndex: 0,
+      },
+      treasury: {
+        txHash:
+          "bf343adb586dab792665d23a1c1fa8727d2014e58630d007598296586782018d",
+        outputIndex: 0,
+      },
+      manager: {
+        txHash:
+          "e8fb105295f8871670676fe2162f6a301c8413f8273a23cd1fde7c5f960db0af",
+        outputIndex: 0,
+      },
+      seller: {
+        txHash:
+          "590ece2aa32fdc11c27a99ffe50392f8329e1645e9c3249cf0e3c3cd77cfa4e3",
+        outputIndex: 0,
+      },
+      order: {
+        txHash:
+          "314cfc020092185a666cfc9d8d747dd0760358bc1cf06385343b97041b3c90ed",
+        outputIndex: 0,
+      },
+    },
+  };
+}
+
 export enum MetadataMessage {
   DEPOSIT_ORDER = "SDK Minswap: Deposit Order",
   CANCEL_ORDER = "SDK Minswap: Cancel Order",
@@ -566,6 +751,7 @@ export enum MetadataMessage {
   DONATION_ORDER = "Minswap: Donation Order",
   MIXED_ORDERS = "SDK Minswap: Mixed Orders",
   CREATE_POOL = "SDK Minswap: Create Pool",
+  // LAUNCH
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;
@@ -574,4 +760,4 @@ export const SECURITY_PARAM: Record<NetworkEnvironment, number> = {
   [NetworkEnvironment.MAINNET]: 2160,
   [NetworkEnvironment.TESTNET_PREPROD]: 2160,
   [NetworkEnvironment.TESTNET_PREVIEW]: 2160,
-}
+};
