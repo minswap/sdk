@@ -579,8 +579,10 @@ export namespace LbeV2Constant {
   export const MINIMUM_ORDER_COLLECTED = 30n;
   export const MINIMUM_ORDER_REDEEMED = 30n;
 
-  export const MAX_DISCOVERY_RANGE = "30D in ms";
-  export const MAX_PENALTY_RANGE = "2D in ms";
+  export const MAX_DISCOVERY_RANGE = 2592000000n;
+  export const MAX_PENALTY_RANGE = 172800000n;
+
+  export const DEFAULT_SELLER_COUNT = 20n;
 
   export type Config = {
     factoryAsset: string;

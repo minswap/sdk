@@ -2,6 +2,7 @@ import { Address, Constr, Data } from "lucid-cardano";
 
 import { Asset, LbeV2Constant, NetworkId } from "..";
 import { AddressPlutusData } from "./address.internal";
+import { Bool, Dummy, Options } from "./common";
 export namespace LbeV2Types {
   export enum ReceiverDatumType {
     NO_DATUM = 0,
@@ -117,63 +118,6 @@ export namespace LbeV2Types {
     isCancelled: boolean;
     isManagerCollected: boolean;
   };
-
-  export namespace Options {
-    export function toPlutusData<T>(
-      data: T | undefined,
-      toPlutusDataFn: (data: T) => Data
-    ): Constr<Data> {
-      return data !== undefined
-        ? new Constr(0, [toPlutusDataFn(data)])
-        : new Constr(1, []);
-    }
-
-    export function fromPlutusData<T>(
-      data: Constr<Data>,
-      fromPlutusDataFn: (data: Constr<Data>) => T
-    ): T | undefined {
-      switch (data.index) {
-        case 0: {
-          return fromPlutusDataFn(data.fields[0] as Constr<Data>);
-        }
-        case 1: {
-          return undefined;
-        }
-        default: {
-          throw Error(`Index of Options must be 0 or 1, actual: ${data.index}`);
-        }
-      }
-    }
-  }
-
-  export namespace Dummy {
-    export function toPlutusData(x: Data): Data {
-      return x;
-    }
-    export function fromPlutusData<T>(x: Data): T {
-      return x as T;
-    }
-  }
-
-  export namespace Bool {
-    export function toPlutusData(data: boolean): Constr<Data> {
-      return data ? new Constr(1, []) : new Constr(0, []);
-    }
-
-    export function fromPlutusData(data: Constr<Data>): boolean {
-      switch (data.index) {
-        case 0: {
-          return false;
-        }
-        case 1: {
-          return true;
-        }
-        default: {
-          throw Error(`Index of Bool must be 0 or 1, actual: ${data.index}`);
-        }
-      }
-    }
-  }
 
   export namespace TreasuryDatum {
     export function toPlutusData(datum: TreasuryDatum): Constr<Data> {
@@ -304,6 +248,55 @@ export namespace LbeV2Types {
     }
   }
 
+  export enum TreasuryRedeemerType {
+    COLLECT_MANAGER = 0,
+    COLLECT_ORDERS = 1,
+    CREATE_AMM_POOL = 2,
+    REDEEM_ORDERS = 3,
+    CLOSE_EVENT = 4,
+    CANCEL_LBE = 5,
+    UPDATE_LBE = 6,
+  }
+
+  export enum CancelReason {
+    CREATED_POOL = 0,
+    BY_OWNER = 1,
+    NOT_REACH_MINIMUM = 2,
+  }
+
+  export type TreasuryRedeemer =
+    | {
+        type:
+          | TreasuryRedeemerType.COLLECT_MANAGER
+          | TreasuryRedeemerType.COLLECT_ORDERS
+          | TreasuryRedeemerType.CREATE_AMM_POOL
+          | TreasuryRedeemerType.REDEEM_ORDERS
+          | TreasuryRedeemerType.CLOSE_EVENT
+          | TreasuryRedeemerType.UPDATE_LBE;
+      }
+    | {
+        type: TreasuryRedeemerType.CANCEL_LBE;
+        reason: CancelReason;
+      };
+
+  export namespace TreasuryRedeemer {
+    export function toPlutusData(data: TreasuryRedeemer): Constr<Data> {
+      switch (data.type) {
+        case TreasuryRedeemerType.COLLECT_MANAGER:
+        case TreasuryRedeemerType.COLLECT_ORDERS:
+        case TreasuryRedeemerType.CREATE_AMM_POOL:
+        case TreasuryRedeemerType.REDEEM_ORDERS:
+        case TreasuryRedeemerType.CLOSE_EVENT:
+        case TreasuryRedeemerType.UPDATE_LBE: {
+          return new Constr(data.type, []);
+        }
+        case TreasuryRedeemerType.CANCEL_LBE: {
+          return new Constr(data.type, [new Constr(data.reason, [])]);
+        }
+      }
+    }
+  }
+
   export type LbeV2Parameters = {
     baseAsset: Asset;
     reserveBase: bigint;
@@ -388,6 +381,59 @@ export namespace LbeV2Types {
       }
     }
   }
+  export enum FactoryRedeemerType {
+    INITIALIZATION = 0,
+    CREATE_TREASURY = 1,
+    CLOSE_TREASURY = 2,
+    MINT_MANAGER = 3,
+    MINT_SELLER = 4,
+    BURN_SELLER = 5,
+    MINT_ORDER = 6,
+    MINT_REDEEM_ORDERS = 7,
+    MANAGE_ORDER = 8,
+  }
+
+  export type FactoryRedeemer =
+    | {
+        type:
+          | FactoryRedeemerType.INITIALIZATION
+          | FactoryRedeemerType.MINT_MANAGER
+          | FactoryRedeemerType.MINT_SELLER
+          | FactoryRedeemerType.BURN_SELLER
+          | FactoryRedeemerType.MINT_ORDER
+          | FactoryRedeemerType.MINT_REDEEM_ORDERS
+          | FactoryRedeemerType.MANAGE_ORDER;
+      }
+    | {
+        type:
+          | FactoryRedeemerType.CREATE_TREASURY
+          | FactoryRedeemerType.CLOSE_TREASURY;
+        baseAsset: Asset;
+        raiseAsset: Asset;
+      };
+
+  export namespace FactoryRedeemer {
+    export function toPlutusData(data: FactoryRedeemer): Constr<Data> {
+      switch (data.type) {
+        case FactoryRedeemerType.INITIALIZATION:
+        case FactoryRedeemerType.MINT_MANAGER:
+        case FactoryRedeemerType.MINT_SELLER:
+        case FactoryRedeemerType.BURN_SELLER:
+        case FactoryRedeemerType.MINT_ORDER:
+        case FactoryRedeemerType.MINT_REDEEM_ORDERS:
+        case FactoryRedeemerType.MANAGE_ORDER: {
+          return new Constr(data.type, []);
+        }
+        case FactoryRedeemerType.CREATE_TREASURY:
+        case FactoryRedeemerType.CLOSE_TREASURY: {
+          return new Constr(data.type, [
+            Asset.toPlutusData(data.baseAsset),
+            Asset.toPlutusData(data.raiseAsset),
+          ]);
+        }
+      }
+    }
+  }
 
   export type ManagerDatum = {
     factoryPolicyId: string;
@@ -427,6 +473,17 @@ export namespace LbeV2Types {
           throw Error(`Index of FactoryDatum must be 0, actual: ${data.index}`);
         }
       }
+    }
+  }
+
+  export enum ManagerRedeemer {
+    ADD_SELLERS = 0,
+    COLLECT_SELLERS = 1,
+    SPEND_MANAGER = 2,
+  }
+  export namespace ManagerRedeemer {
+    export function toPlutusData(data: ManagerRedeemer): Constr<Data> {
+      return new Constr(data, []);
     }
   }
 
@@ -477,6 +534,17 @@ export namespace LbeV2Types {
     }
   }
 
+  export enum SellerRedeemer {
+    USING_SELLER = 0,
+    COUNTING_SELLERS = 1,
+  }
+
+  export namespace SellerRedeemer {
+    export function toPlutusData(data: SellerRedeemer): Constr<Data> {
+      return new Constr(data, []);
+    }
+  }
+
   export type OrderDatum = {
     factoryPolicyId: string;
     baseAsset: Asset;
@@ -524,6 +592,18 @@ export namespace LbeV2Types {
           throw Error(`Index of OrderDatum must be 0, actual: ${data.index}`);
         }
       }
+    }
+  }
+
+  export enum OrderRedeemer {
+    UPDATE_ORDER = 0,
+    COLLECT_ORDER = 1,
+    REDEEM_ORDER = 2,
+  }
+
+  export namespace OrderRedeemer {
+    export function toPlutusData(data: OrderRedeemer): Constr<Data> {
+      return new Constr(data, []);
     }
   }
 }
