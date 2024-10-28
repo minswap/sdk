@@ -1,8 +1,9 @@
 import invariant from "@minswap/tiny-invariant";
-import { Address, OutRef, Script } from "lucid-cardano";
+import { Address, Assets, OutRef, Script } from "lucid-cardano";
 
 import { Asset } from "..";
 import { NetworkEnvironment, NetworkId } from "./network";
+import { LbeV2Types } from "./lbe-v2";
 
 export namespace DexV1Constant {
   export const ORDER_BASE_ADDRESS: Record<number, Address> = {
@@ -588,22 +589,27 @@ export namespace LbeV2Constant {
     factoryAsset: string;
     factoryHash: string;
     factoryHashBech32: string;
+    factoryAddress: string;
 
     treasuryAsset: string;
     treasuryHash: string;
     treasuryHashBech32: string;
+    treasuryAddress: string;
 
     managerAsset: string;
     managerHash: string;
     managerHashBech32: string;
+    managerAddress: string;
 
     sellerAsset: string;
     sellerHash: string;
     sellerHashBech32: string;
+    sellerAddress: string;
 
     orderAsset: string;
     orderHash: string;
     orderHashBech32: string;
+    orderAddress: string;
   };
 
   export type DeployedScripts = {
@@ -613,69 +619,62 @@ export namespace LbeV2Constant {
     seller: OutRef;
     order: OutRef;
   };
-
+  const TESTNET_FACTORY_HASH =
+    "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972";
+  const MAINNET_FACTORY_HASH =
+    "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead";
   export const CONFIG: Record<NetworkId, Config> = {
     [NetworkId.TESTNET]: {
-      factoryAsset:
-        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
-        FACTORY_AUTH_AN,
-      factoryHash: "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972",
+      factoryAsset: TESTNET_FACTORY_HASH + FACTORY_AUTH_AN,
+      factoryHash: TESTNET_FACTORY_HASH,
       factoryHashBech32: "TODO",
+      factoryAddress: "TODO",
 
-      treasuryAsset:
-        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
-        TREASURY_AUTH_AN,
+      treasuryAsset: TESTNET_FACTORY_HASH + TREASURY_AUTH_AN,
       treasuryHash: "f0dbf7cdc1042f403cad57cff6f602b2e657f8f557b8cf8c23482954",
       treasuryHashBech32: "TODO",
+      treasuryAddress: "TODO",
 
-      managerAsset:
-        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
-        MANAGER_AUTH_AN,
+      managerAsset: TESTNET_FACTORY_HASH + MANAGER_AUTH_AN,
       managerHash: "46246888d57347a8ad2705843e9131f03e55701571896ed571f90e3a",
       managerHashBech32: "TODO",
+      managerAddress: "TODO",
 
-      sellerAsset:
-        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
-        SELLER_AUTH_AN,
+      sellerAsset: TESTNET_FACTORY_HASH + SELLER_AUTH_AN,
       sellerHash: "f6ba0fa37ce6aaaf8da7b0ee4192361fd443a8d3d70fb275986a2fce",
       sellerHashBech32: "TODO",
+      sellerAddress: "TODO",
 
-      orderAsset:
-        "7f2f769a9260eb698232022af03fba12ef0a29f94fc93c4fd2624972" +
-        ORDER_AUTH_AN,
+      orderAsset: TESTNET_FACTORY_HASH + ORDER_AUTH_AN,
       orderHash: "28ead81adf8154687e0d1d09d14375f6be0626107545a59d7d5e311a",
       orderHashBech32: "TODO",
+      orderAddress: "TODO",
     },
     [NetworkId.MAINNET]: {
-      factoryAsset:
-        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
-        FACTORY_AUTH_AN,
-      factoryHash: "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead",
+      factoryAsset: MAINNET_FACTORY_HASH + FACTORY_AUTH_AN,
+      factoryHash: MAINNET_FACTORY_HASH,
       factoryHashBech32: "TODO",
+      factoryAddress: "TODO",
 
-      treasuryAsset:
-        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
-        TREASURY_AUTH_AN,
+      treasuryAsset: MAINNET_FACTORY_HASH + TREASURY_AUTH_AN,
       treasuryHash: "1ce6abbd967cab867ad73855f8b154fcc57e41b15605b91590451650",
       treasuryHashBech32: "TODO",
+      treasuryAddress: "TODO",
 
-      managerAsset:
-        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
-        MANAGER_AUTH_AN,
+      managerAsset: MAINNET_FACTORY_HASH + MANAGER_AUTH_AN,
       managerHash: "e951d381ef510ae02b7496c2ff039e640ab2e2a561423d0cbf34b032",
       managerHashBech32: "TODO",
+      managerAddress: "TODO",
 
-      sellerAsset:
-        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
-        SELLER_AUTH_AN,
+      sellerAsset: MAINNET_FACTORY_HASH + SELLER_AUTH_AN,
       sellerHash: "ecf97d6f0ace26e69fa428610c7dbf5a686e1197f76511449d9a1b64",
       sellerHashBech32: "TODO",
+      sellerAddress: "TODO",
 
-      orderAsset:
-        "dea947ac55fb4c2c38bb11341f2b82b2d62e1a120330f82dc1e56ead" +
-        ORDER_AUTH_AN,
+      orderAsset: MAINNET_FACTORY_HASH + ORDER_AUTH_AN,
       orderHash: "5176775eed690d088bd29d9a6934b1e35ef1d897deb61d7b5dde11ca",
       orderHashBech32: "TODO",
+      orderAddress: "TODO",
     },
   };
 
@@ -754,6 +753,11 @@ export enum MetadataMessage {
   MIXED_ORDERS = "SDK Minswap: Mixed Orders",
   CREATE_POOL = "SDK Minswap: Create Pool",
   // LAUNCH
+  CREATE_EVENT = "SDK Minswap: Create Event",
+  CANCEL_EVENT_BY_OWNER = "SDK Minswap: Cancel Event By Onwer",
+  CANCEL_EVENT_BY_WORKER = "SDK Minswap: Cancel Event By Worker",
+  LBE_V2_DEPOSIT_ORDER_EVENT = "SDK Minswap: Deposit Lbe V2 Order",
+  LBE_V2_WITHDRAW_ORDER_EVENT = "SDK Minswap: Withdraw Lbe V2 Order",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;
