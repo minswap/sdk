@@ -552,6 +552,14 @@ export class LbeV2 {
           ),
         "treasury, order must share the same lbe id"
       );
+
+      const ownerPaymentCredential = this.lucid.utils.getAddressDetails(
+        orderDatum.owner
+      ).paymentCredential;
+      invariant(
+        ownerPaymentCredential && ownerPaymentCredential.type === "Key",
+        "Order owner must be pubkey hash"
+      );
       currentAmount += orderDatum.amount;
     }
     invariant(treasuryDatum.isCancelled === false, "lbe has cancelled");
@@ -582,6 +590,29 @@ export class LbeV2 {
     }
   }
 
+  calculatePenaltyAmount(options: {
+    time: bigint;
+    totalInputAmount: bigint;
+    totalOutputAmount: bigint;
+    penaltyConfig?: LbeV2Types.PenaltyConfig;
+  }): bigint {
+    const { penaltyConfig, time, totalInputAmount, totalOutputAmount } =
+      options;
+    if (penaltyConfig !== undefined) {
+      const { penaltyStartTime, percent } = penaltyConfig;
+      if (time < penaltyStartTime) {
+        return 0n;
+      }
+      if (totalInputAmount > totalOutputAmount) {
+        const withdrawAmount = totalInputAmount - totalOutputAmount;
+        // calculate totalInputAmount
+        return (withdrawAmount * percent) / 100n;
+      }
+      return 0n;
+    }
+    return 0n;
+  }
+
   async depositOrWithdrawOrder(
     options: LbeV2DepositOrWithdrawOptions
   ): Promise<TxComplete> {
@@ -594,6 +625,7 @@ export class LbeV2 {
       owner,
       action,
     } = options;
+    const config = LbeV2Constant.CONFIG[this.networkId];
 
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
 
@@ -620,7 +652,32 @@ export class LbeV2 {
       );
     });
 
+    let currentAmount = 0n;
+    let totalInputPenalty = 0n;
+    for (const orderDatum of orderDatums) {
+      currentAmount += orderDatum.amount;
+      totalInputPenalty += orderDatum.penaltyAmount;
+    }
+    let newAmount: bigint;
+    if (action.type === "deposit") {
+      newAmount = currentAmount + action.additionalAmount;
+    } else {
+      newAmount = currentAmount - action.withdrawalAmount;
+    }
+
+    const validTo = Math.min(
+      Number(treasuryDatum.endTime),
+      currentTime + THREE_HOUR_IN_MS
+    );
+    const txPenaltyAmount = this.calculatePenaltyAmount({
+      penaltyConfig: treasuryDatum.penaltyConfig,
+      time: BigInt(validTo),
+      totalInputAmount: currentAmount,
+      totalOutputAmount: newAmount,
+    });
+
     const lucidTx = this.lucid.newTx();
+
     // READ FROM
     const sellerRefs = await this.lucid.utxosByOutRef([
       LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].seller,
@@ -641,7 +698,6 @@ export class LbeV2 {
       );
       lucidTx.readFrom(orderRefs);
     }
-    // mint amount => read from factory
 
     // COLLECT FROM
     lucidTx.collectFrom(
@@ -661,14 +717,89 @@ export class LbeV2 {
       )
     );
 
+    // ADD SIGNER
+    for (const orderDatum of orderDatums) {
+      lucidTx.addSigner(orderDatum.owner);
+    }
+
     // MINT
-
-    // VALID TIME
-
-    // CAL
+    let orderTokenMintAmount = 0n;
+    if (newAmount !== 0n || totalInputPenalty + txPenaltyAmount !== 0n) {
+      orderTokenMintAmount += 1n;
+    }
+    if (orderUtxos.length > 0) {
+      orderTokenMintAmount -= BigInt(orderUtxos.length);
+    }
+    if (orderTokenMintAmount !== 0n) {
+      const factoryRefs = await this.lucid.utxosByOutRef([
+        LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].factory,
+      ]);
+      invariant(
+        factoryRefs.length === 1,
+        "cannot find deployed script for LbeV2 Factory"
+      );
+      lucidTx
+        .readFrom(factoryRefs)
+        .mintAssets({ [config.orderAsset]: orderTokenMintAmount });
+    }
 
     // PAY TO
+    const newSellerDatum = {
+      ...sellerDatum,
+      amount: sellerDatum.amount + newAmount - currentAmount,
+      penaltyAmount: sellerDatum.penaltyAmount + txPenaltyAmount,
+    };
+    lucidTx.payToContract(
+      config.sellerAddress,
+      Data.to(LbeV2Types.SellerDatum.toPlutusData(newSellerDatum)),
+      sellerUtxo.assets
+    );
+
+    const newPenaltyAmount = totalInputPenalty + txPenaltyAmount;
+    if (newAmount + newPenaltyAmount > 0n) {
+      const newOrderDatum: LbeV2Types.OrderDatum = {
+        factoryPolicyId: config.factoryHash,
+        baseAsset: treasuryDatum.baseAsset,
+        raiseAsset: treasuryDatum.raiseAsset,
+        owner: owner,
+        amount: newAmount,
+        isCollected: false,
+        penaltyAmount: newPenaltyAmount,
+      };
+      const orderAssets: Assets = {
+        lovelace:
+          LbeV2Constant.ORDER_MIN_ADA + LbeV2Constant.ORDER_COMMISSION * 2n,
+        [config.orderAsset]: 1n,
+      };
+      const raiseAsset = Asset.toString(treasuryDatum.raiseAsset);
+      if (raiseAsset in orderAssets) {
+        orderAssets[raiseAsset] += newAmount + newPenaltyAmount;
+      } else {
+        orderAssets[raiseAsset] = newAmount + newPenaltyAmount;
+      }
+      lucidTx.payToContract(
+        config.orderAddress,
+        Data.to(LbeV2Types.OrderDatum.toPlutusData(newOrderDatum)),
+        orderAssets
+      );
+    }
+
+    // VALID TIME
+    lucidTx.validFrom(currentTime).validTo(validTo);
+
+    // METADATA
+    if (action.type === "deposit") {
+      lucidTx.attachMetadata(674, {
+        msg: [MetadataMessage.LBE_V2_DEPOSIT_ORDER_EVENT],
+      });
+    } else {
+      lucidTx.attachMetadata(674, {
+        msg: [MetadataMessage.LBE_V2_WITHDRAW_ORDER_EVENT],
+      });
+    }
 
     return lucidTx.complete();
   }
+
+  
 }
