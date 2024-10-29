@@ -1,32 +1,38 @@
 import invariant from "@minswap/tiny-invariant";
-import {
-  Address,
-  Assets,
-  Constr,
-  Data,
-  Lucid,
-  TxComplete,
-  UTxO,
-} from "lucid-cardano";
+import JSONBig from "json-bigint";
+import { Address, Assets, Data, Lucid, TxComplete, UTxO } from "lucid-cardano";
 
 import {
-  FIXED_DEPOSIT_ADA,
   LbeV2Constant,
   MAX_POOL_V2_TRADING_FEE_NUMERATOR,
   MetadataMessage,
   MIN_POOL_V2_TRADING_FEE_NUMERATOR,
   PoolV2,
-  StableOrder,
-  StableswapConstant,
 } from ".";
-import { calculateBatcherFee } from "./batcher-fee-reduction/calculate";
 import { Asset } from "./types/asset";
 import { RedeemerWrapper } from "./types/common";
-import { FactoryV2 } from "./types/factory";
 import { LbeV2Types } from "./types/lbe-v2";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
-import { buildUtxoToStoreDatum } from "./utils/tx.internal";
+
+export type LbeV2SocialLinks = {
+  twitter?: string;
+  telegram?: string;
+  discord?: string;
+  website?: string;
+};
+
+export type LbeV2Tokenomic = {
+  tag: string;
+  percentage: string;
+};
+
+export type LbeV2ProjectDetails = {
+  eventName: string;
+  description?: string;
+  socialLinks?: LbeV2SocialLinks;
+  tokenomics?: LbeV2Tokenomic[];
+};
 
 export type LbeV2CreateEventOptions = {
   factoryUtxo: UTxO;
@@ -34,7 +40,8 @@ export type LbeV2CreateEventOptions = {
   currentSlot: number;
   sellerOwner: Address;
   sellerCount?: number;
-  projectDetails?: string[];
+  // TODO: dont do like this
+  projectDetails?: LbeV2ProjectDetails;
 };
 
 export type LbeV2CancelEventOptions = {
@@ -98,7 +105,8 @@ export class LbeV2 {
 
   // MARK: CREATE EVENT
   private validateCreateEvent(options: LbeV2CreateEventOptions): void {
-    const { lbeV2Parameters, currentSlot, factoryUtxo } = options;
+    const { lbeV2Parameters, currentSlot, factoryUtxo, projectDetails } =
+      options;
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
     const { baseAsset, raiseAsset } = lbeV2Parameters;
     const datum = factoryUtxo.datum;
@@ -115,6 +123,9 @@ export class LbeV2 {
       "LBE ID name must be between factory head and tail"
     );
     this.validateLbeV2Parameters(lbeV2Parameters, currentTime);
+    if (projectDetails !== undefined) {
+      this.validateProjectDetails(projectDetails);
+    }
   }
 
   validateLbeV2Parameters(
@@ -191,6 +202,27 @@ export class LbeV2 {
     invariant(
       poolBaseFee >= poolBaseFeeMin && poolBaseFee <= poolBaseFeeMax,
       `Pool Base Fee must in range ${poolBaseFeeMin} - ${poolBaseFeeMax}`
+    );
+  }
+
+  validateProjectDetails(details: LbeV2ProjectDetails): void {
+    const { eventName, description, tokenomics } = details;
+
+    invariant(eventName.length <= 50, "Event Name is too long");
+    invariant(description?.length ?? 0 < 1000, "Event Description is too long");
+    let totalPercentage = 0;
+    for (const d of tokenomics ?? []) {
+      invariant(d.tag.length <= 50, "tokenomic tag is too long");
+      const percentage = Number(d.percentage);
+      invariant(
+        !isNaN(percentage) && percentage > 0 && percentage <= 100,
+        "invalid percentage"
+      );
+      totalPercentage += percentage;
+    }
+    invariant(
+      totalPercentage === 100 || tokenomics === undefined,
+      "total percentage is not 100%"
     );
   }
 
@@ -356,9 +388,12 @@ export class LbeV2 {
     lucidTx.addSigner(owner);
 
     // METADATA / EXTRA METADATA
+    const extraData: string[] | null =
+      JSONBig.stringify(projectDetails).match(/.{1,64}/g);
+    invariant(extraData, "cannot parse LbeV2 Project Details");
     lucidTx.attachMetadata(674, {
       msg: [MetadataMessage.CREATE_EVENT],
-      extraData: projectDetails ?? [],
+      extraData: extraData ?? [],
     });
     return lucidTx.complete();
   }

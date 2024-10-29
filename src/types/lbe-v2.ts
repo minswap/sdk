@@ -2,7 +2,7 @@ import { Address, Constr, Data } from "lucid-cardano";
 
 import { Asset, LbeV2Constant, NetworkId } from "..";
 import { AddressPlutusData } from "./address.internal";
-import { Bool, Dummy, Options } from "./common";
+import { Bool, Options } from "./common";
 export namespace LbeV2Types {
   export enum ReceiverDatumType {
     NO_DATUM = 0,
@@ -167,9 +167,9 @@ export namespace LbeV2Types {
 
         ReceiverDatum.toPlutusData(receiverDatum),
         poolAllocation,
-        Options.toPlutusData(minimumOrderRaise, Dummy.toPlutusData),
-        Options.toPlutusData(minimumRaise, Dummy.toPlutusData),
-        Options.toPlutusData(maximumRaise, Dummy.toPlutusData),
+        Options.toPlutusData(minimumOrderRaise, (x) => x),
+        Options.toPlutusData(minimumRaise, (x) => x),
+        Options.toPlutusData(maximumRaise, (x) => x),
 
         reserveBase,
         Options.toPlutusData(penaltyConfig, PenaltyConfig.toPlutusData),
@@ -219,21 +219,21 @@ export namespace LbeV2Types {
         poolAllocation: fields[11] as bigint,
         minimumOrderRaise: Options.fromPlutusData<bigint>(
           fields[12] as Constr<Data>,
-          Dummy.fromPlutusData
+          (data) => data as bigint
         ),
         minimumRaise: Options.fromPlutusData<bigint>(
           fields[13] as Constr<Data>,
-          Dummy.fromPlutusData
+          (data) => data as bigint
         ),
         maximumRaise: Options.fromPlutusData<bigint>(
           fields[14] as Constr<Data>,
-          Dummy.fromPlutusData
+          (data) => data as bigint
         ),
 
         reserveBase: fields[15] as bigint,
         penaltyConfig: Options.fromPlutusData(
           fields[16] as Constr<Data>,
-          PenaltyConfig.fromPlutusData
+          (data) => PenaltyConfig.fromPlutusData(data as Constr<Data>)
         ),
         poolBaseFee: fields[17] as bigint,
         revocable: Bool.fromPlutusData(fields[18] as Constr<Data>),

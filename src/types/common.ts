@@ -12,11 +12,11 @@ export namespace Options {
 
   export function fromPlutusData<T>(
     data: Constr<Data>,
-    fromPlutusDataFn: (data: Constr<Data>) => T
+    fromPlutusDataFn: (data: Data) => T
   ): T | undefined {
     switch (data.index) {
       case 0: {
-        return fromPlutusDataFn(data.fields[0] as Constr<Data>);
+        return fromPlutusDataFn(data.fields[0]);
       }
       case 1: {
         return undefined;
@@ -25,15 +25,6 @@ export namespace Options {
         throw Error(`Index of Options must be 0 or 1, actual: ${data.index}`);
       }
     }
-  }
-}
-
-export namespace Dummy {
-  export function toPlutusData(x: Data): Data {
-    return x;
-  }
-  export function fromPlutusData<T>(x: Data): T {
-    return x as T;
   }
 }
 
