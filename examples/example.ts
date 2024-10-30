@@ -28,6 +28,7 @@ import {
   NetworkId,
   OrderV2,
   PoolV1,
+  PoolV2,
   StableOrder,
   StableswapCalculation,
   StableswapConstant,
@@ -44,11 +45,11 @@ const MIN: Asset = {
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+  const blockfrostProjectId = "hihi";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
-    "addr_test1vrd9v47japxwp8540vsrh4grz4u9urfpfawwy7sf6r0vxqgm7wdxh";
+    "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
   const lucid = await getBackendLucidInstance(
     network,
     blockfrostProjectId,
@@ -64,17 +65,15 @@ async function main(): Promise<void> {
     })
   );
 
-  const utxos = await lucid.utxosAt(address);
+  // const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _stopV2TxExample(
+  const txComplete = await _lbeV2CloseEventExample(
     lucid,
-    blockfrostAdapter,
     address,
-    utxos
+    blockfrostAdapter
   );
-  const signedTx = await txComplete
-    .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
-    .complete();
+  const signedTx = await txComplete.signWithPrivateKey("hihi").complete();
+
   const txId = await signedTx.submit();
   console.info(`Transaction submitted successfully: ${txId}`);
 }
@@ -1151,7 +1150,7 @@ const ONE_HOUR_IN_MS = 1000 * 60 * 60;
 const _ONE_DAY_IN_MS = 1000 * 60 * 60 * 24;
 
 // Example Tx: e1f42baa7b685acf083d5a3ffe4eefd1f53f4682226f0f39de56310de108239b
-async function _buildCreateLbeV2EventExample(
+async function _createLbeV2EventExample(
   lucid: Lucid,
   address: Address,
   blockfrostAdapter: BlockfrostAdapter
@@ -1190,7 +1189,7 @@ async function _buildCreateLbeV2EventExample(
   const factoryUtxos = await lucid.utxosByOutRef([
     { outputIndex: factory.txIn.index, txHash: factory.txIn.txHash },
   ]);
-  invariant(factoryUtxos.length !== 0, "Can not find factory");
+  invariant(factoryUtxos.length !== 0, "Can not find factory utxo");
   const projectDetails = {
     eventName: "TEST SDK",
     description: "test lbe v2 in public sdk",
@@ -1211,14 +1210,61 @@ async function _buildCreateLbeV2EventExample(
       },
     ],
   };
-
+  const currentSlot = await blockfrostAdapter.currentSlot();
   return new LbeV2(lucid).createEvent({
     factoryUtxo: factoryUtxos[0],
     lbeV2Parameters: lbeV2Parameters,
-    currentSlot: lucid.currentSlot(),
+    currentSlot: currentSlot,
     sellerOwner: address,
     sellerCount: 10,
     projectDetails: projectDetails,
+  });
+}
+
+async function _lbeV2CloseEventExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const headAndTailFactory =
+    await blockfrostAdapter.getLbeV2HeadAndTailFactory(lbeId);
+  invariant(
+    headAndTailFactory,
+    `Can not find head and tail factory by lbeId ${lbeId}`
+  );
+  const { head: headFactory, tail: tailFactory } = headAndTailFactory;
+
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length !== 0, "Can not find treasury Utxo");
+
+  const headFactoryUtxos = await lucid.utxosByOutRef([
+    { txHash: headFactory.txIn.txHash, outputIndex: headFactory.txIn.index },
+  ]);
+
+  invariant(headFactoryUtxos.length !== 0, "Can not find head factory Utxo");
+
+  const tailFactoryUtxos = await lucid.utxosByOutRef([
+    { txHash: tailFactory.txIn.txHash, outputIndex: tailFactory.txIn.index },
+  ]);
+  invariant(tailFactoryUtxos.length !== 0, "Can not find tail factory Utxo");
+  const currentSlot = await blockfrostAdapter.currentSlot();
+
+  return new LbeV2(lucid).closeEventTx({
+    treasuryUtxo: treasuryUtxos[0],
+    headFactoryUtxo: headFactoryUtxos[0],
+    tailFactoryUtxo: tailFactoryUtxos[0],
+    currentSlot: currentSlot,
+    owner: address,
   });
 }
 

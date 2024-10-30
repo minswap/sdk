@@ -92,6 +92,8 @@ interface Adapter {
 
   getDatumByDatumHash(datumHash: string): Promise<string>;
 
+  currentSlot(): Promise<number>;
+
   /**
    * Get pool state in a transaction.
    * @param {Object} params - The parameters.
@@ -192,6 +194,11 @@ interface Adapter {
     raiseAsset: Asset
   ): Promise<LbeV2Types.FactoryState | null>;
 
+  getLbeV2HeadAndTailFactory(lbeId: string): Promise<{
+    head: LbeV2Types.FactoryState;
+    tail: LbeV2Types.FactoryState;
+  } | null>;
+
   getAllLbeV2Treasuries(): Promise<{
     treasuries: LbeV2Types.TreasuryState[];
     errors: unknown[];
@@ -252,6 +259,11 @@ export class BlockfrostAdapter implements Adapter {
   public async getDatumByDatumHash(datumHash: string): Promise<string> {
     const scriptsDatum = await this.blockFrostApi.scriptsDatumCbor(datumHash);
     return scriptsDatum.cbor;
+  }
+
+  public async currentSlot(): Promise<number> {
+    const latestBlock = await this.blockFrostApi.blocksLatest();
+    return latestBlock.slot ?? 0;
   }
 
   public async getV1PoolInTx({
@@ -722,6 +734,27 @@ export class BlockfrostAdapter implements Adapter {
     }
 
     return null;
+  }
+
+  public async getLbeV2HeadAndTailFactory(lbeId: string): Promise<{
+    head: LbeV2Types.FactoryState;
+    tail: LbeV2Types.FactoryState;
+  } | null> {
+    const { factories: allFactories } = await this.getAllLbeV2Factories();
+    let head: LbeV2Types.FactoryState | undefined = undefined;
+    let tail: LbeV2Types.FactoryState | undefined = undefined;
+    for (const factory of allFactories) {
+      if (factory.head === lbeId) {
+        tail = factory;
+      }
+      if (factory.tail === lbeId) {
+        head = factory;
+      }
+    }
+    if (head === undefined || tail === undefined) {
+      return null;
+    }
+    return { head, tail };
   }
 
   public async getAllLbeV2Treasuries(): Promise<{
