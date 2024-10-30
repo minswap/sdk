@@ -181,6 +181,48 @@ interface Adapter {
    * @returns {[string, string]} - Returns price of @assetA agains @assetB
    */
   getStablePoolPrice(params: GetStablePoolPriceParams): Big;
+
+  getAllLbeV2Factories(): Promise<{
+    factories: LbeV2Types.FactoryState[];
+    errors: unknown[];
+  }>;
+
+  getLbeV2Factory(
+    baseAsset: Asset,
+    raiseAsset: Asset
+  ): Promise<LbeV2Types.FactoryState | null>;
+
+  getAllLbeV2Treasuries(): Promise<{
+    treasuries: LbeV2Types.TreasuryState[];
+    errors: unknown[];
+  }>;
+
+  getLbeV2TreasuryByLbeId(
+    lbeId: string
+  ): Promise<LbeV2Types.TreasuryState | null>;
+
+  getAllLbeV2Managers(): Promise<{
+    managers: LbeV2Types.ManagerState[];
+    errors: unknown[];
+  }>;
+
+  getLbeV2ManagerByLbeId(
+    lbeId: string
+  ): Promise<LbeV2Types.ManagerState | null>;
+
+  getAllLbeV2Sellers(): Promise<{
+    sellers: LbeV2Types.SellerState[];
+    errors: unknown[];
+  }>;
+
+  getLbeV2SellerByLbeId(lbeId: string): Promise<LbeV2Types.SellerState | null>;
+
+  getAllLbeV2Orders(): Promise<{
+    orders: LbeV2Types.OrderState[];
+    errors: unknown[];
+  }>;
+
+  getLbeV2OrdersByLbeId(lbeId: string): Promise<LbeV2Types.OrderState[]>;
 }
 
 export class BlockfrostAdapter implements Adapter {
@@ -642,7 +684,7 @@ export class BlockfrostAdapter implements Adapter {
       try {
         if (!utxo.inline_datum) {
           throw new Error(
-            `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`
+            `Cannot find datum of LBE V2 Factory, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -680,6 +722,207 @@ export class BlockfrostAdapter implements Adapter {
     }
 
     return null;
+  }
+
+  public async getAllLbeV2Treasuries(): Promise<{
+    treasuries: LbeV2Types.TreasuryState[];
+    errors: unknown[];
+  }> {
+    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
+      v2Config.treasuryHashBech32,
+      v2Config.treasuryAsset
+    );
+
+    const treasuries: LbeV2Types.TreasuryState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxos) {
+      try {
+        if (!utxo.inline_datum) {
+          throw new Error(
+            `Cannot find datum of LBE V2 Treasury, tx: ${utxo.tx_hash}`
+          );
+        }
+
+        const treasury = new LbeV2Types.TreasuryState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.output_index },
+          utxo.amount,
+          utxo.inline_datum
+        );
+        treasuries.push(treasury);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      treasuries: treasuries,
+      errors: errors,
+    };
+  }
+
+  public async getLbeV2TreasuryByLbeId(
+    lbeId: string
+  ): Promise<LbeV2Types.TreasuryState | null> {
+    const { treasuries: allTreasuries } = await this.getAllLbeV2Treasuries();
+    for (const treasury of allTreasuries) {
+      if (treasury.lbeId === lbeId) {
+        return treasury;
+      }
+    }
+    return null;
+  }
+
+  public async getAllLbeV2Managers(): Promise<{
+    managers: LbeV2Types.ManagerState[];
+    errors: unknown[];
+  }> {
+    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
+      v2Config.managerHashBech32,
+      v2Config.managerAsset
+    );
+
+    const managers: LbeV2Types.ManagerState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxos) {
+      try {
+        if (!utxo.inline_datum) {
+          throw new Error(
+            `Cannot find datum of Lbe V2 Manager, tx: ${utxo.tx_hash}`
+          );
+        }
+
+        const manager = new LbeV2Types.ManagerState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.output_index },
+          utxo.amount,
+          utxo.inline_datum
+        );
+        managers.push(manager);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      managers: managers,
+      errors: errors,
+    };
+  }
+
+  public async getLbeV2ManagerByLbeId(
+    lbeId: string
+  ): Promise<LbeV2Types.ManagerState | null> {
+    const { managers } = await this.getAllLbeV2Managers();
+    for (const manager of managers) {
+      if (manager.lbeId === lbeId) {
+        return manager;
+      }
+    }
+    return null;
+  }
+
+  public async getAllLbeV2Sellers(): Promise<{
+    sellers: LbeV2Types.SellerState[];
+    errors: unknown[];
+  }> {
+    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
+      v2Config.sellerHashBech32,
+      v2Config.sellerAsset
+    );
+
+    const sellers: LbeV2Types.SellerState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxos) {
+      try {
+        if (!utxo.inline_datum) {
+          throw new Error(
+            `Cannot find datum of Lbe V2 Seller, tx: ${utxo.tx_hash}`
+          );
+        }
+
+        const seller = new LbeV2Types.SellerState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.output_index },
+          utxo.amount,
+          utxo.inline_datum
+        );
+        sellers.push(seller);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      sellers: sellers,
+      errors: errors,
+    };
+  }
+
+  public async getLbeV2SellerByLbeId(
+    lbeId: string
+  ): Promise<LbeV2Types.SellerState | null> {
+    const { sellers } = await this.getAllLbeV2Sellers();
+    for (const seller of sellers) {
+      if (seller.lbeId === lbeId) {
+        return seller;
+      }
+    }
+    return null;
+  }
+
+  public async getAllLbeV2Orders(): Promise<{
+    orders: LbeV2Types.OrderState[];
+    errors: unknown[];
+  }> {
+    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
+      v2Config.orderHashBech32,
+      v2Config.orderAsset
+    );
+
+    const orders: LbeV2Types.OrderState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxos) {
+      try {
+        if (!utxo.inline_datum) {
+          throw new Error(
+            `Cannot find datum of Lbe V2 Order, tx: ${utxo.tx_hash}`
+          );
+        }
+
+        const order = new LbeV2Types.OrderState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.output_index },
+          utxo.amount,
+          utxo.inline_datum
+        );
+        orders.push(order);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      orders: orders,
+      errors: errors,
+    };
+  }
+
+  public async getLbeV2OrdersByLbeId(
+    lbeId: string
+  ): Promise<LbeV2Types.OrderState[]> {
+    const { orders: allOrders } = await this.getAllLbeV2Orders();
+    const orders: LbeV2Types.OrderState[] = [];
+    for (const order of allOrders) {
+      if (order.lbeId === lbeId) {
+        orders.push(order);
+      }
+    }
+    return orders;
   }
 }
 

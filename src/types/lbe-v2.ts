@@ -1,6 +1,6 @@
 import { Address, Constr, Data } from "lucid-cardano";
 
-import { Asset, LbeV2Constant, NetworkId } from "..";
+import { Asset, LbeV2Constant, NetworkId, PoolV2 } from "..";
 import { AddressPlutusData } from "./address.internal";
 import { Bool, Options } from "./common";
 import { TxIn, Value } from "./tx.internal";
@@ -298,6 +298,46 @@ export namespace LbeV2Types {
     }
   }
 
+  export class TreasuryState {
+    public readonly address: string;
+    public readonly txIn: TxIn;
+    public readonly value: Value;
+    public readonly datumCbor: string;
+    public readonly datum: TreasuryDatum;
+
+    constructor(
+      networkId: NetworkId,
+      address: string,
+      txIn: TxIn,
+      value: Value,
+      datum: string
+    ) {
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumCbor = datum;
+      this.datum = TreasuryDatum.fromPlutusData(networkId, Data.from(datum));
+
+      const config = LbeV2Constant.CONFIG[networkId];
+      if (
+        !value.find(
+          (v) => v.unit === config.treasuryAsset && v.quantity === "1"
+        )
+      ) {
+        throw new Error(
+          "Cannot find the Treasury Authentication Asset in the value"
+        );
+      }
+    }
+
+    get lbeId(): string {
+      return PoolV2.computeLPAssetName(
+        this.datum.baseAsset,
+        this.datum.raiseAsset
+      );
+    }
+  }
+
   export type LbeV2Parameters = {
     baseAsset: Asset;
     reserveBase: bigint;
@@ -528,6 +568,44 @@ export namespace LbeV2Types {
     }
   }
 
+  export class ManagerState {
+    public readonly address: string;
+    public readonly txIn: TxIn;
+    public readonly value: Value;
+    public readonly datumCbor: string;
+    public readonly datum: ManagerDatum;
+
+    constructor(
+      networkId: NetworkId,
+      address: string,
+      txIn: TxIn,
+      value: Value,
+      datum: string
+    ) {
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumCbor = datum;
+      this.datum = ManagerDatum.fromPlutusData(Data.from(datum));
+
+      const config = LbeV2Constant.CONFIG[networkId];
+      if (
+        !value.find((v) => v.unit === config.managerAsset && v.quantity === "1")
+      ) {
+        throw new Error(
+          "Cannot find the Manager Authentication Asset in the value"
+        );
+      }
+    }
+
+    get lbeId(): string {
+      return PoolV2.computeLPAssetName(
+        this.datum.baseAsset,
+        this.datum.raiseAsset
+      );
+    }
+  }
+
   export type SellerDatum = {
     factoryPolicyId: string;
     owner: Address;
@@ -583,6 +661,44 @@ export namespace LbeV2Types {
   export namespace SellerRedeemer {
     export function toPlutusData(data: SellerRedeemer): Constr<Data> {
       return new Constr(data, []);
+    }
+  }
+
+  export class SellerState {
+    public readonly address: string;
+    public readonly txIn: TxIn;
+    public readonly value: Value;
+    public readonly datumCbor: string;
+    public readonly datum: SellerDatum;
+
+    constructor(
+      networkId: NetworkId,
+      address: string,
+      txIn: TxIn,
+      value: Value,
+      datum: string
+    ) {
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumCbor = datum;
+      this.datum = SellerDatum.fromPlutusData(Data.from(datum), networkId);
+
+      const config = LbeV2Constant.CONFIG[networkId];
+      if (
+        !value.find((v) => v.unit === config.sellerAsset && v.quantity === "1")
+      ) {
+        throw new Error(
+          "Cannot find the Seller Authentication Asset in the value"
+        );
+      }
+    }
+
+    get lbeId(): string {
+      return PoolV2.computeLPAssetName(
+        this.datum.baseAsset,
+        this.datum.raiseAsset
+      );
     }
   }
 
@@ -645,6 +761,43 @@ export namespace LbeV2Types {
   export namespace OrderRedeemer {
     export function toPlutusData(data: OrderRedeemer): Constr<Data> {
       return new Constr(data, []);
+    }
+  }
+  export class OrderState {
+    public readonly address: string;
+    public readonly txIn: TxIn;
+    public readonly value: Value;
+    public readonly datumCbor: string;
+    public readonly datum: OrderDatum;
+
+    constructor(
+      networkId: NetworkId,
+      address: string,
+      txIn: TxIn,
+      value: Value,
+      datum: string
+    ) {
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumCbor = datum;
+      this.datum = OrderDatum.fromPlutusData(Data.from(datum), networkId);
+
+      const config = LbeV2Constant.CONFIG[networkId];
+      if (
+        !value.find((v) => v.unit === config.managerAsset && v.quantity === "1")
+      ) {
+        throw new Error(
+          "Cannot find the Order Authentication Asset in the value"
+        );
+      }
+    }
+
+    get lbeId(): string {
+      return PoolV2.computeLPAssetName(
+        this.datum.baseAsset,
+        this.datum.raiseAsset
+      );
     }
   }
 }

@@ -400,8 +400,14 @@ export class LbeV2 {
   // MARK: CANCEL EVENT
   validateCancelEvent(options: LbeV2CancelEventOptions): void {
     const { treasuryUtxo, cancelData, currentSlot } = options;
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
     const datum = treasuryUtxo.datum;
+    invariant(
+      config.treasuryAsset in treasuryUtxo.assets,
+      "Treasury utxo assets must have treasury asset"
+    );
     invariant(datum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
@@ -558,12 +564,17 @@ export class LbeV2 {
       action,
     } = options;
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawTreasuryDatum = treasuryUtxo.datum;
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
       Data.from(rawTreasuryDatum)
+    );
+    invariant(
+      config.treasuryAsset in treasuryUtxo.assets,
+      "Treasury utxo assets must have treasury asset"
     );
 
     const rawSellerDatum = sellerUtxo.datum;
@@ -572,10 +583,18 @@ export class LbeV2 {
       Data.from(rawSellerDatum),
       this.networkId
     );
+    invariant(
+      config.sellerAsset in sellerUtxo.assets,
+      "Seller utxo assets must have seller asset"
+    );
 
     const orderDatums = orderUtxos.map((utxo) => {
       const rawOrderDatum = utxo.datum;
       invariant(rawOrderDatum, "Factory utxo must have inline datum");
+      invariant(
+        config.orderAsset in utxo.assets,
+        "Order utxo assets must have order asset"
+      );
       return LbeV2Types.OrderDatum.fromPlutusData(
         Data.from(rawOrderDatum),
         this.networkId
@@ -858,11 +877,17 @@ export class LbeV2 {
   // MARK: CLOSE EVENT
   validateCloseEvent(options: CloseEventOptions): void {
     const { treasuryUtxo, headFactoryUtxo, tailFactoryUtxo, owner } = options;
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
     const rawTreasuryDatum = treasuryUtxo.datum;
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
       Data.from(rawTreasuryDatum)
+    );
+    invariant(
+      config.treasuryAsset in treasuryUtxo.assets,
+      "Treasury utxo assets must have treasury asset"
     );
     const lbeId = PoolV2.computeLPAssetName(
       treasuryDatum.baseAsset,
@@ -874,11 +899,19 @@ export class LbeV2 {
     const headFactoryDatum = LbeV2Types.FactoryDatum.fromPlutusData(
       Data.from(rawHeadFactoryDatum)
     );
+    invariant(
+      config.factoryAsset in headFactoryUtxo.assets,
+      "Factory utxo assets must have factory asset"
+    );
 
     const rawTailFactoryDatum = tailFactoryUtxo.datum;
     invariant(rawTailFactoryDatum, "Treasury utxo must have inline datum");
     const tailFactoryDatum = LbeV2Types.FactoryDatum.fromPlutusData(
       Data.from(rawTailFactoryDatum)
+    );
+    invariant(
+      config.factoryAsset in tailFactoryUtxo.assets,
+      "Factory utxo assets must have factory asset"
     );
 
     invariant(headFactoryDatum.tail === lbeId, "Head Factory is invalid");
@@ -1012,6 +1045,7 @@ export class LbeV2 {
   validateAddSeller(options: AddSellersOptions): void {
     const { addSellerCount, treasuryUtxo, managerUtxo, currentSlot } = options;
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawTreasuryDatum = treasuryUtxo.datum;
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
@@ -1019,11 +1053,19 @@ export class LbeV2 {
       this.networkId,
       Data.from(rawTreasuryDatum)
     );
+    invariant(
+      config.treasuryAsset in treasuryUtxo.assets,
+      "Treasury utxo assets must have treasury asset"
+    );
 
     const rawManagerDatum = managerUtxo.datum;
     invariant(rawManagerDatum, "Treasury utxo must have inline datum");
     const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
       Data.from(rawManagerDatum)
+    );
+    invariant(
+      config.managerAsset in managerUtxo.assets,
+      "Manager utxo assets must have manager asset"
     );
 
     invariant(addSellerCount > 0, "Must add at least one seller");
