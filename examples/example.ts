@@ -32,7 +32,9 @@ import {
   StableswapCalculation,
   StableswapConstant,
 } from "../src";
+import { LbeV2 } from "../src/lbe-v2";
 import { Stableswap } from "../src/stableswap";
+import { LbeV2Types } from "../src/types/lbe-v2";
 import { Slippage } from "../src/utils/slippage.internal";
 
 const MIN: Asset = {
@@ -102,6 +104,7 @@ async function getPoolById(
   };
 }
 
+// MARK: DEX V1
 async function _depositTxExample(
   network: Network,
   lucid: Lucid,
@@ -362,6 +365,7 @@ async function _cancelTxExample(
   });
 }
 
+// MARK: DEX V2
 async function _createPoolV2(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter
@@ -848,6 +852,7 @@ async function _cancelV2TxExample(
   });
 }
 
+// MARK: STABLESWAP
 async function _swapStableExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
@@ -1137,6 +1142,83 @@ async function _cancelStableExample(lucid: Lucid): Promise<TxComplete> {
   invariant(orderUtxos.length === 2, "Can not find order to cancel");
   return new Stableswap(lucid).buildCancelOrdersTx({
     orderUtxos: orderUtxos,
+  });
+}
+
+// MARK: LBE V2
+const ONE_MINUTE_IN_MS = 1000 * 60;
+const ONE_HOUR_IN_MS = 1000 * 60 * 60;
+const _ONE_DAY_IN_MS = 1000 * 60 * 60 * 24;
+
+// Example Tx: e1f42baa7b685acf083d5a3ffe4eefd1f53f4682226f0f39de56310de108239b
+async function _buildCreateLbeV2EventExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
+  );
+  const curSlot = lucid.currentSlot();
+  const curDate = lucid.utils.slotToUnixTime(curSlot);
+  const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
+    baseAsset: baseAsset,
+    reserveBase: 100_000n,
+    raiseAsset: ADA,
+    startTime: BigInt(curDate + ONE_HOUR_IN_MS),
+    endTime: BigInt(curDate + 2 * ONE_HOUR_IN_MS),
+    owner: address,
+    receiver: address,
+    poolAllocation: 100n,
+    minimumOrderRaise: undefined,
+    minimumRaise: 10_000_000n,
+    maximumRaise: 100_000_000n,
+    penaltyConfig: {
+      penaltyStartTime: BigInt(
+        curDate + ONE_HOUR_IN_MS + 20 * ONE_MINUTE_IN_MS
+      ),
+      percent: 20n,
+    },
+    revocable: true,
+    poolBaseFee: 30n,
+  };
+  const factory = await blockfrostAdapter.getLbeV2Factory(
+    lbeV2Parameters.baseAsset,
+    lbeV2Parameters.raiseAsset
+  );
+  invariant(factory !== null, "Can not find factory");
+  const factoryUtxos = await lucid.utxosByOutRef([
+    { outputIndex: factory.txIn.index, txHash: factory.txIn.txHash },
+  ]);
+  invariant(factoryUtxos.length !== 0, "Can not find factory");
+  const projectDetails = {
+    eventName: "TEST SDK",
+    description: "test lbe v2 in public sdk",
+    socialLinks: {
+      twitter: "https://x.com/MinswapDEX",
+      telegram: "https://t.me/MinswapMafia",
+      discord: "https://discord.gg/minswap",
+      website: "https://minswap.org/",
+    },
+    tokenomics: [
+      {
+        tag: "admin",
+        percentage: "70",
+      },
+      {
+        tag: "LBE",
+        percentage: "30",
+      },
+    ],
+  };
+
+  return new LbeV2(lucid).createEvent({
+    factoryUtxo: factoryUtxos[0],
+    lbeV2Parameters: lbeV2Parameters,
+    currentSlot: lucid.currentSlot(),
+    sellerOwner: address,
+    sellerCount: 10,
+    projectDetails: projectDetails,
   });
 }
 

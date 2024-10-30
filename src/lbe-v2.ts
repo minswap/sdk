@@ -40,7 +40,6 @@ export type LbeV2CreateEventOptions = {
   currentSlot: number;
   sellerOwner: Address;
   sellerCount?: number;
-  // TODO: dont do like this
   projectDetails?: LbeV2ProjectDetails;
 };
 
@@ -226,7 +225,7 @@ export class LbeV2 {
     );
   }
 
-  async createTreasury(options: LbeV2CreateEventOptions): Promise<TxComplete> {
+  async createEvent(options: LbeV2CreateEventOptions): Promise<TxComplete> {
     this.validateCreateEvent(options);
     const { lbeV2Parameters, factoryUtxo, projectDetails, currentSlot } =
       options;

@@ -21,9 +21,11 @@ import { Asset } from "./types/asset";
 import {
   DexV1Constant,
   DexV2Constant,
+  LbeV2Constant,
   StableswapConstant,
 } from "./types/constants";
 import { FactoryV2 } from "./types/factory";
+import { LbeV2Types } from "./types/lbe-v2";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { PoolV1, PoolV2, StablePool } from "./types/pool";
 import {
@@ -621,6 +623,63 @@ export class BlockfrostAdapter implements Adapter {
     );
 
     return Big(priceNum.toString()).div(priceDen.toString());
+  }
+
+  // MARK: LBE V2
+  public async getAllLbeV2Factories(): Promise<{
+    factories: LbeV2Types.FactoryState[];
+    errors: unknown[];
+  }> {
+    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
+      v2Config.factoryHashBech32,
+      v2Config.factoryAsset
+    );
+
+    const factories: LbeV2Types.FactoryState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxos) {
+      try {
+        if (!utxo.inline_datum) {
+          throw new Error(
+            `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`
+          );
+        }
+
+        const factory = new LbeV2Types.FactoryState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.output_index },
+          utxo.amount,
+          utxo.inline_datum
+        );
+        factories.push(factory);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      factories: factories,
+      errors: errors,
+    };
+  }
+
+  public async getLbeV2Factory(
+    baseAsset: Asset,
+    raiseAsset: Asset
+  ): Promise<LbeV2Types.FactoryState | null> {
+    const factoryIdent = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+    const { factories: allFactories } = await this.getAllLbeV2Factories();
+    for (const factory of allFactories) {
+      if (
+        StringUtils.compare(factory.head, factoryIdent) < 0 &&
+        StringUtils.compare(factoryIdent, factory.tail) < 0
+      ) {
+        return factory;
+      }
+    }
+
+    return null;
   }
 }
 

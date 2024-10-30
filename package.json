@@ -22,8 +22,8 @@
     "lint": "eslint src",
     "format": "prettier --write **/*.ts && eslint src --fix",
     "check-format": "prettier --check **/*.ts && eslint src",
-    "exec": "ts-node --esm --experimental-specifier-resolution=node",
-    "example": "ts-node --transpile-only --esm --experimental-specifier-resolution=node examples/example.ts",
+    "exec": "tsx",
+    "example": "tsx examples/example.ts",
     "prisma:dbpull": "prisma db pull",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
@@ -86,7 +86,8 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
-    "typescript-eslint": "^8.4.0"
+    "typescript-eslint": "^8.4.0",
+    "tsx": "^4.19.2"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.21.2"

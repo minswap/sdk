@@ -626,28 +626,38 @@ export namespace LbeV2Constant {
     [NetworkId.TESTNET]: {
       factoryAsset: TESTNET_FACTORY_HASH + FACTORY_AUTH_AN,
       factoryHash: TESTNET_FACTORY_HASH,
-      factoryHashBech32: "TODO",
-      factoryAddress: "TODO",
+      factoryHashBech32:
+        "script10uhhdx5jvr4knq3jqg40q0a6zths520eflyncn7jvfyhyqahrl3",
+      factoryAddress:
+        "addr_test1wplj7a56jfswk6vzxgpz4uplhgfw7z3fl98uj0z06f3yjusz7ufvk",
 
       treasuryAsset: TESTNET_FACTORY_HASH + TREASURY_AUTH_AN,
       treasuryHash: "f0dbf7cdc1042f403cad57cff6f602b2e657f8f557b8cf8c23482954",
-      treasuryHashBech32: "TODO",
-      treasuryAddress: "TODO",
+      treasuryHashBech32:
+        "script17rdl0nwpqsh5q09d2l8ldaszktn9078427uvlrprfq54gr7nrx6",
+      treasuryAddress:
+        "addr_test1wrcdha7dcyzz7spu44tulahkq2ewv4lc74tm3nuvydyzj4qx8r0da",
 
       managerAsset: TESTNET_FACTORY_HASH + MANAGER_AUTH_AN,
       managerHash: "46246888d57347a8ad2705843e9131f03e55701571896ed571f90e3a",
-      managerHashBech32: "TODO",
-      managerAddress: "TODO",
+      managerHashBech32:
+        "script1gcjx3zx4wdr63tf8qkzrayf37ql92uq4wxyka4t3ly8r5kjsrlk",
+      managerAddress:
+        "addr_test1wprzg6yg64e5029dyuzcg053x8cru4tsz4ccjmk4w8usuwsp4y75x",
 
       sellerAsset: TESTNET_FACTORY_HASH + SELLER_AUTH_AN,
       sellerHash: "f6ba0fa37ce6aaaf8da7b0ee4192361fd443a8d3d70fb275986a2fce",
-      sellerHashBech32: "TODO",
-      sellerAddress: "TODO",
+      sellerHashBech32:
+        "script176aqlgmuu642lrd8krhyry3krl2y82xn6u8myavcdghuukmdwrq",
+      sellerAddress:
+        "addr_test1wrmt5rar0nn24tud57cwusvjxc0agsag60tslvn4np4zlnszyuccc",
 
       orderAsset: TESTNET_FACTORY_HASH + ORDER_AUTH_AN,
       orderHash: "28ead81adf8154687e0d1d09d14375f6be0626107545a59d7d5e311a",
-      orderHashBech32: "TODO",
-      orderAddress: "TODO",
+      orderHashBech32:
+        "script19r4dsxkls92xslsdr5yazsm476lqvfssw4z6t8tatcc350sd37w",
+      orderAddress:
+        "addr_test1zq5w4kq6m7q4g6r7p5wsn52rwhmtup3xzp65tfva040rzx5rajt8r8wqtygrfduwgukk73m5gcnplmztc5tl5ngy0upqqym3e9",
     },
     [NetworkId.MAINNET]: {
       factoryAsset: MAINNET_FACTORY_HASH + FACTORY_AUTH_AN,

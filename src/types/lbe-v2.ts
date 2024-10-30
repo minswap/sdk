@@ -3,6 +3,7 @@ import { Address, Constr, Data } from "lucid-cardano";
 import { Asset, LbeV2Constant, NetworkId } from "..";
 import { AddressPlutusData } from "./address.internal";
 import { Bool, Options } from "./common";
+import { TxIn, Value } from "./tx.internal";
 export namespace LbeV2Types {
   export enum ReceiverDatumType {
     NO_DATUM = 0,
@@ -327,7 +328,7 @@ export namespace LbeV2Types {
         orderHash: config.orderHash,
         baseAsset: lbeV2Parameters.baseAsset,
 
-        raiseAsset: lbeV2Parameters.baseAsset,
+        raiseAsset: lbeV2Parameters.raiseAsset,
         startTime: lbeV2Parameters.startTime,
         endTime: lbeV2Parameters.endTime,
         owner: lbeV2Parameters.owner,
@@ -381,6 +382,7 @@ export namespace LbeV2Types {
       }
     }
   }
+
   export enum FactoryRedeemerType {
     INITIALIZATION = 0,
     CREATE_TREASURY = 1,
@@ -432,6 +434,45 @@ export namespace LbeV2Types {
           ]);
         }
       }
+    }
+  }
+
+  export class FactoryState {
+    public readonly address: string;
+    public readonly txIn: TxIn;
+    public readonly value: Value;
+    public readonly datumCbor: string;
+    public readonly datum: FactoryDatum;
+
+    constructor(
+      networkId: NetworkId,
+      address: string,
+      txIn: TxIn,
+      value: Value,
+      datum: string
+    ) {
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumCbor = datum;
+      this.datum = FactoryDatum.fromPlutusData(Data.from(datum));
+
+      const config = LbeV2Constant.CONFIG[networkId];
+      if (
+        !value.find((v) => v.unit === config.factoryAsset && v.quantity === "1")
+      ) {
+        throw new Error(
+          "Cannot find the Factory Authentication Asset in the value"
+        );
+      }
+    }
+
+    get head(): string {
+      return this.datum.head;
+    }
+
+    get tail(): string {
+      return this.datum.tail;
     }
   }
 
