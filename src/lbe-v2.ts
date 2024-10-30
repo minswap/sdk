@@ -63,7 +63,6 @@ export type LbeV2ManageOrderAction =
     };
 
 export type LbeV2DepositOrWithdrawOptions = {
-  networkEnv: NetworkEnvironment;
   currentSlot: number;
   existingOrderUtxos: UTxO[];
   treasuryUtxo: UTxO;
@@ -748,6 +747,7 @@ export class LbeV2 {
       totalInputAmount: currentAmount,
       totalOutputAmount: newAmount,
     });
+    const newPenaltyAmount = totalInputPenalty + txPenaltyAmount;
 
     const lucidTx = this.lucid.newTx();
 
@@ -797,7 +797,7 @@ export class LbeV2 {
 
     // MINT
     let orderTokenMintAmount = 0n;
-    if (newAmount !== 0n || totalInputPenalty + txPenaltyAmount !== 0n) {
+    if (newAmount !== 0n || newPenaltyAmount !== 0n) {
       orderTokenMintAmount += 1n;
     }
     if (orderUtxos.length > 0) {
@@ -811,9 +811,14 @@ export class LbeV2 {
         factoryRefs.length === 1,
         "cannot find deployed script for LbeV2 Factory"
       );
-      lucidTx
-        .readFrom(factoryRefs)
-        .mintAssets({ [config.orderAsset]: orderTokenMintAmount });
+      lucidTx.readFrom(factoryRefs).mintAssets(
+        { [config.orderAsset]: orderTokenMintAmount },
+        Data.to(
+          LbeV2Types.FactoryRedeemer.toPlutusData({
+            type: LbeV2Types.FactoryRedeemerType.MINT_ORDER,
+          })
+        )
+      );
     }
 
     // PAY TO
@@ -825,10 +830,13 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.sellerAddress,
       { inline: Data.to(LbeV2Types.SellerDatum.toPlutusData(newSellerDatum)) },
-      sellerUtxo.assets
+      {
+        ...sellerUtxo.assets,
+        lovelace:
+          sellerUtxo.assets["lovelace"] + LbeV2Constant.SELLER_COMMISSION,
+      }
     );
 
-    const newPenaltyAmount = totalInputPenalty + txPenaltyAmount;
     if (newAmount + newPenaltyAmount > 0n) {
       const newOrderDatum: LbeV2Types.OrderDatum = {
         factoryPolicyId: config.factoryHash,

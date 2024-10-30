@@ -785,7 +785,7 @@ export namespace LbeV2Types {
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
-        !value.find((v) => v.unit === config.managerAsset && v.quantity === "1")
+        !value.find((v) => v.unit === config.orderAsset && v.quantity === "1")
       ) {
         throw new Error(
           "Cannot find the Order Authentication Asset in the value"
@@ -798,6 +798,10 @@ export namespace LbeV2Types {
         this.datum.baseAsset,
         this.datum.raiseAsset
       );
+    }
+
+    get owner(): Address {
+      return this.datum.owner;
     }
   }
 }

@@ -9,6 +9,7 @@ import * as Prisma from "@prisma/client";
 import Big from "big.js";
 import JSONBig from "json-bigint";
 import {
+  Address,
   C,
   fromHex,
   SLOT_CONFIG_NETWORK,
@@ -230,6 +231,11 @@ interface Adapter {
   }>;
 
   getLbeV2OrdersByLbeId(lbeId: string): Promise<LbeV2Types.OrderState[]>;
+
+  getLbeV2OrdersByLbeIdAndOwner(
+    lbeId: string,
+    owner: Address
+  ): Promise<LbeV2Types.OrderState[]>;
 }
 
 export class BlockfrostAdapter implements Adapter {
@@ -684,10 +690,10 @@ export class BlockfrostAdapter implements Adapter {
     factories: LbeV2Types.FactoryState[];
     errors: unknown[];
   }> {
-    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
-      v2Config.factoryHashBech32,
-      v2Config.factoryAsset
+      config.factoryHashBech32,
+      config.factoryAsset
     );
 
     const factories: LbeV2Types.FactoryState[] = [];
@@ -761,10 +767,10 @@ export class BlockfrostAdapter implements Adapter {
     treasuries: LbeV2Types.TreasuryState[];
     errors: unknown[];
   }> {
-    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
-      v2Config.treasuryHashBech32,
-      v2Config.treasuryAsset
+      config.treasuryHashBech32,
+      config.treasuryAsset
     );
 
     const treasuries: LbeV2Types.TreasuryState[] = [];
@@ -811,10 +817,10 @@ export class BlockfrostAdapter implements Adapter {
     managers: LbeV2Types.ManagerState[];
     errors: unknown[];
   }> {
-    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
-      v2Config.managerHashBech32,
-      v2Config.managerAsset
+      config.managerHashBech32,
+      config.managerAsset
     );
 
     const managers: LbeV2Types.ManagerState[] = [];
@@ -861,10 +867,10 @@ export class BlockfrostAdapter implements Adapter {
     sellers: LbeV2Types.SellerState[];
     errors: unknown[];
   }> {
-    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
-      v2Config.sellerHashBech32,
-      v2Config.sellerAsset
+      config.sellerHashBech32,
+      config.sellerAsset
     );
 
     const sellers: LbeV2Types.SellerState[] = [];
@@ -911,12 +917,11 @@ export class BlockfrostAdapter implements Adapter {
     orders: LbeV2Types.OrderState[];
     errors: unknown[];
   }> {
-    const v2Config = LbeV2Constant.CONFIG[this.networkId];
+    const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
-      v2Config.orderHashBech32,
-      v2Config.orderAsset
+      config.orderHashBech32,
+      config.orderAsset
     );
-
     const orders: LbeV2Types.OrderState[] = [];
     const errors: unknown[] = [];
     for (const utxo of utxos) {
@@ -952,6 +957,20 @@ export class BlockfrostAdapter implements Adapter {
     const orders: LbeV2Types.OrderState[] = [];
     for (const order of allOrders) {
       if (order.lbeId === lbeId) {
+        orders.push(order);
+      }
+    }
+    return orders;
+  }
+
+  public async getLbeV2OrdersByLbeIdAndOwner(
+    lbeId: string,
+    owner: Address
+  ): Promise<LbeV2Types.OrderState[]> {
+    const { orders: allOrders } = await this.getAllLbeV2Orders();
+    const orders: LbeV2Types.OrderState[] = [];
+    for (const order of allOrders) {
+      if (order.lbeId === lbeId && order.owner === owner) {
         orders.push(order);
       }
     }
