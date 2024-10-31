@@ -427,7 +427,7 @@ export class LbeV2 {
       isCancelled,
     } = treasuryDatum;
     const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
-    invariant(isCancelled, "Event already cancelled");
+    invariant(isCancelled === false, "Event already cancelled");
     switch (cancelData.reason) {
       case LbeV2Types.CancelReason.BY_OWNER: {
         invariant(

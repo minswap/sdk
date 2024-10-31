@@ -67,7 +67,7 @@ async function main(): Promise<void> {
 
   // const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _lbeV2WithdrawOrderExample(
+  const txComplete = await _cancelLbeV2EventByOwnerExample(
     lucid,
     address,
     blockfrostAdapter
@@ -1221,6 +1221,32 @@ async function _createLbeV2EventExample(
   });
 }
 
+// Example Tx: b1819fbee0bb1eace80f97a75089a8b87047ea2f18959092949306e5301b048d
+async function _cancelLbeV2EventByOwnerExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d865190718981e4e7fab3eb80963f14148714d7a7847652d4017d0fb744db075027"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
+
+  return new LbeV2(lucid).cancelEvent({
+    treasuryUtxo: treasuryUtxos[0],
+    cancelData: { reason: LbeV2Types.CancelReason.BY_OWNER, owner: address },
+    currentSlot: await blockfrostAdapter.currentSlot(),
+  });
+}
+
 // Example Tx: 7af5ea80b6a4a587e2c6cfce383367829f0cb68c90b65656c8198a72afc3f419
 async function _lbeV2DepositOrderExample(
   lucid: Lucid,
@@ -1333,6 +1359,7 @@ async function _lbeV2WithdrawOrderExample(
   });
 }
 
+// FAIL ???
 async function _lbeV2CloseEventExample(
   lucid: Lucid,
   address: Address,
