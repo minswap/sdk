@@ -67,7 +67,7 @@ async function main(): Promise<void> {
 
   // const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _cancelLbeV2EventByOwnerExample(
+  const txComplete = await _lbeV2AddMoreSellersExample(
     lucid,
     address,
     blockfrostAdapter
@@ -1218,6 +1218,41 @@ async function _createLbeV2EventExample(
     sellerOwner: address,
     sellerCount: 10,
     projectDetails: projectDetails,
+  });
+}
+
+// Example Tx: b3c7049ff4402bdb2f3fe6522c720fad499d5f3dae512299dfb3a5e011a66496
+async function _lbeV2AddMoreSellersExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
+
+  const manager = await blockfrostAdapter.getLbeV2ManagerByLbeId(lbeId);
+  invariant(manager !== null, `Can not find manager by lbeId ${lbeId}`);
+  const managerUtxos = await lucid.utxosByOutRef([
+    { txHash: manager.txIn.txHash, outputIndex: manager.txIn.index },
+  ]);
+  invariant(managerUtxos.length === 1, "Can not find manager Utxo");
+
+  return new LbeV2(lucid).addSellers({
+    treasuryUtxo: treasuryUtxos[0],
+    managerUtxo: managerUtxos[0],
+    addSellerCount: 2,
+    sellerOwner: address,
+    currentSlot: await blockfrostAdapter.currentSlot(),
   });
 }
 

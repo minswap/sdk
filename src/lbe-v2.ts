@@ -87,6 +87,13 @@ export type AddSellersOptions = {
   currentSlot: number;
 };
 
+export type CountingSellersOptions = {
+  treasuryUtxo: UTxO;
+  managerUtxo: UTxO;
+  sellerUtxos: UTxO[];
+  currentSlot: number;
+};
+
 const THREE_HOUR_IN_MS = 3 * 60 * 60 * 1000;
 
 export class LbeV2 {
@@ -102,7 +109,7 @@ export class LbeV2 {
   }
 
   // MARK: CREATE EVENT
-  private validateCreateEvent(options: LbeV2CreateEventOptions): void {
+  validateCreateEvent(options: LbeV2CreateEventOptions): void {
     const { lbeV2Parameters, currentSlot, factoryUtxo, projectDetails } =
       options;
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
@@ -1100,6 +1107,171 @@ export class LbeV2 {
   }
 
   async addSellers(options: AddSellersOptions): Promise<TxComplete> {
+    this.validateAddSeller(options);
+    const {
+      treasuryUtxo,
+      managerUtxo,
+      addSellerCount,
+      sellerOwner,
+      currentSlot,
+    } = options;
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const rawTreasuryDatum = treasuryUtxo.datum;
+    invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawTreasuryDatum)
+    );
+
+    const rawManagerDatum = managerUtxo.datum;
+    invariant(rawManagerDatum, "Treasury utxo must have inline datum");
+    const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
+      Data.from(rawManagerDatum)
+    );
+
+    const lucidTx = this.lucid.newTx();
+
+    // READ FROM
+    const factoryRefs = await this.lucid.utxosByOutRef([
+      LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].factory,
+    ]);
+    invariant(
+      factoryRefs.length === 1,
+      "cannot find deployed script for LbeV2 Factory"
+    );
+    lucidTx.readFrom(factoryRefs);
+
+    const managerRefs = await this.lucid.utxosByOutRef([
+      LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].manager,
+    ]);
+    invariant(
+      managerRefs.length === 1,
+      "cannot find deployed script for LbeV2 Manager"
+    );
+    lucidTx.readFrom(managerRefs);
+
+    lucidTx.readFrom([treasuryUtxo]);
+
+    // COLLECT FROM
+    lucidTx.collectFrom(
+      [managerUtxo],
+      Data.to(
+        LbeV2Types.ManagerRedeemer.toPlutusData(
+          LbeV2Types.ManagerRedeemer.ADD_SELLERS
+        )
+      )
+    );
+
+    // MINT
+    lucidTx.mintAssets(
+      { [config.sellerAsset]: BigInt(addSellerCount) },
+      Data.to(
+        LbeV2Types.FactoryRedeemer.toPlutusData({
+          type: LbeV2Types.FactoryRedeemerType.MINT_SELLER,
+        })
+      )
+    );
+
+    // PAY TO
+    const newManagerDatum: LbeV2Types.ManagerDatum = {
+      ...managerDatum,
+      sellerCount: managerDatum.sellerCount + BigInt(addSellerCount),
+    };
+    lucidTx.payToContract(
+      config.managerAddress,
+      {
+        inline: Data.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
+      },
+      { ...managerUtxo.assets }
+    );
+    for (let i = 0; i < addSellerCount; ++i) {
+      lucidTx.payToContract(
+        config.sellerAddress,
+        {
+          inline: Data.to(
+            LbeV2Types.SellerDatum.toPlutusData({
+              factoryPolicyId: config.factoryHash,
+              owner: sellerOwner,
+              baseAsset: treasuryDatum.baseAsset,
+              raiseAsset: treasuryDatum.raiseAsset,
+              amount: 0n,
+              penaltyAmount: 0n,
+            })
+          ),
+        },
+        {
+          [config.sellerAsset]: 1n,
+          lovelace: LbeV2Constant.SELLER_MIN_ADA,
+        }
+      );
+    }
+
+    // VALID TIME RANGE
+    lucidTx
+      .validFrom(currentTime)
+      .validTo(
+        Math.min(
+          currentTime + THREE_HOUR_IN_MS,
+          Number(treasuryDatum.endTime) - 1000
+        )
+      );
+
+    // METADATA
+    lucidTx.attachMetadata(674, {
+      msg: [MetadataMessage.ADD_SELLERS],
+    });
+
+    return lucidTx.complete();
+  }
+
+  // MARK: COUNTING SELLER
+  validateCountingSeller(options: CountingSellersOptions): void {
+    const { treasuryUtxo, managerUtxo, sellerUtxos, currentSlot } = options;
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const rawTreasuryDatum = treasuryUtxo.datum;
+    invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawTreasuryDatum)
+    );
+    invariant(
+      config.treasuryAsset in treasuryUtxo.assets,
+      "Treasury utxo assets must have treasury asset"
+    );
+
+    const rawManagerDatum = managerUtxo.datum;
+    invariant(rawManagerDatum, "Treasury utxo must have inline datum");
+    const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
+      Data.from(rawManagerDatum)
+    );
+    invariant(
+      config.managerAsset in managerUtxo.assets,
+      "Manager utxo assets must have manager asset"
+    );
+
+    invariant(addSellerCount > 0, "Must add at least one seller");
+    invariant(
+      PoolV2.computeLPAssetName(
+        treasuryDatum.baseAsset,
+        treasuryDatum.raiseAsset
+      ) ===
+        PoolV2.computeLPAssetName(
+          managerDatum.baseAsset,
+          managerDatum.raiseAsset
+        ),
+      "treasury, manager must have same Lbe ID"
+    );
+    invariant(
+      currentTime > treasuryDatum.endTime,
+      "Must counting seller in encounter phase"
+    );
+  }
+
+  async countingSellers(options: CountingSellersOptions): Promise<TxComplete> {
     this.validateAddSeller(options);
     const {
       treasuryUtxo,
