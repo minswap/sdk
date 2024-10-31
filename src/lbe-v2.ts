@@ -640,7 +640,7 @@ export class LbeV2 {
       newAmount = currentAmount + action.additionalAmount;
     } else {
       invariant(
-        currentAmount <= action.withdrawalAmount,
+        currentAmount >= action.withdrawalAmount,
         `Exceed the maximum withdrawal, withdrawal: ${action.withdrawalAmount}, available: ${currentAmount}`
       );
       newAmount = currentAmount - action.withdrawalAmount;
@@ -797,7 +797,7 @@ export class LbeV2 {
 
     // MINT
     let orderTokenMintAmount = 0n;
-    if (newAmount !== 0n || newPenaltyAmount !== 0n) {
+    if (newAmount + newPenaltyAmount > 0n) {
       orderTokenMintAmount += 1n;
     }
     if (orderUtxos.length > 0) {
@@ -827,14 +827,18 @@ export class LbeV2 {
       amount: sellerDatum.amount + newAmount - currentAmount,
       penaltyAmount: sellerDatum.penaltyAmount + txPenaltyAmount,
     };
+
+    const newSellerAssets: Assets = {
+      ...sellerUtxo.assets,
+    };
+    if (orderUtxos.length === 0 && newAmount > 0n) {
+      newSellerAssets.lovelace =
+        newSellerAssets.lovelace + LbeV2Constant.SELLER_COMMISSION;
+    }
     lucidTx.payToContract(
       config.sellerAddress,
       { inline: Data.to(LbeV2Types.SellerDatum.toPlutusData(newSellerDatum)) },
-      {
-        ...sellerUtxo.assets,
-        lovelace:
-          sellerUtxo.assets["lovelace"] + LbeV2Constant.SELLER_COMMISSION,
-      }
+      newSellerAssets
     );
 
     if (newAmount + newPenaltyAmount > 0n) {
@@ -858,6 +862,7 @@ export class LbeV2 {
       } else {
         orderAssets[raiseAsset] = newAmount + newPenaltyAmount;
       }
+      console.log(orderAssets);
       lucidTx.payToContract(
         config.orderAddress,
         { inline: Data.to(LbeV2Types.OrderDatum.toPlutusData(newOrderDatum)) },

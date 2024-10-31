@@ -67,7 +67,7 @@ async function main(): Promise<void> {
 
   // const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _lbeV2CloseEventExample(
+  const txComplete = await _lbeV2WithdrawOrderExample(
     lucid,
     address,
     blockfrostAdapter
@@ -1218,6 +1218,118 @@ async function _createLbeV2EventExample(
     sellerOwner: address,
     sellerCount: 10,
     projectDetails: projectDetails,
+  });
+}
+
+// Example Tx: 7af5ea80b6a4a587e2c6cfce383367829f0cb68c90b65656c8198a72afc3f419
+async function _lbeV2DepositOrderExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
+
+  const seller = await blockfrostAdapter.getLbeV2SellerByLbeId(lbeId);
+  invariant(seller !== null, `Can not find seller by lbeId ${lbeId}`);
+  const sellerUtxos = await lucid.utxosByOutRef([
+    { txHash: seller.txIn.txHash, outputIndex: seller.txIn.index },
+  ]);
+  invariant(sellerUtxos.length === 1, "Can not find seller Utxo");
+
+  const orders = await blockfrostAdapter.getLbeV2OrdersByLbeIdAndOwner(
+    lbeId,
+    address
+  );
+  const orderUtxos =
+    orders.length > 0
+      ? await lucid.utxosByOutRef(
+          orders.map((o) => ({
+            txHash: o.txIn.txHash,
+            outputIndex: o.txIn.index,
+          }))
+        )
+      : [];
+
+  invariant(
+    orderUtxos.length === orders.length,
+    "Can not find enough order Utxos"
+  );
+
+  const currentSlot = await blockfrostAdapter.currentSlot();
+  return new LbeV2(lucid).depositOrWithdrawOrder({
+    currentSlot: currentSlot,
+    existingOrderUtxos: orderUtxos,
+    treasuryUtxo: treasuryUtxos[0],
+    sellerUtxo: sellerUtxos[0],
+    owner: address,
+    action: { type: "deposit", additionalAmount: 1_000_000n },
+  });
+}
+
+// Example Tx: 3388b9ce7f2175576b12ac48eacfb78da24b2319ab0595b5cc6bf9531e781eef
+async function _lbeV2WithdrawOrderExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
+
+  const seller = await blockfrostAdapter.getLbeV2SellerByLbeId(lbeId);
+  invariant(seller !== null, `Can not find seller by lbeId ${lbeId}`);
+  const sellerUtxos = await lucid.utxosByOutRef([
+    { txHash: seller.txIn.txHash, outputIndex: seller.txIn.index },
+  ]);
+  invariant(sellerUtxos.length === 1, "Can not find seller Utxo");
+
+  const orders = await blockfrostAdapter.getLbeV2OrdersByLbeIdAndOwner(
+    lbeId,
+    address
+  );
+  const orderUtxos =
+    orders.length > 0
+      ? await lucid.utxosByOutRef(
+          orders.map((o) => ({
+            txHash: o.txIn.txHash,
+            outputIndex: o.txIn.index,
+          }))
+        )
+      : [];
+
+  invariant(
+    orderUtxos.length === orders.length,
+    "Can not find enough order Utxos"
+  );
+
+  const currentSlot = await blockfrostAdapter.currentSlot();
+  return new LbeV2(lucid).depositOrWithdrawOrder({
+    currentSlot: currentSlot,
+    existingOrderUtxos: orderUtxos,
+    treasuryUtxo: treasuryUtxos[0],
+    sellerUtxo: sellerUtxos[0],
+    owner: address,
+    action: { type: "withdraw", withdrawalAmount: 1_000_000n },
   });
 }
 
