@@ -596,7 +596,7 @@ export class LbeV2 {
 
     const orderDatums = orderUtxos.map((utxo) => {
       const rawOrderDatum = utxo.datum;
-      invariant(rawOrderDatum, "Factory utxo must have inline datum");
+      invariant(rawOrderDatum, "Order utxo must have inline datum");
       invariant(
         config.orderAsset in utxo.assets,
         "Order utxo assets must have order asset"
@@ -1079,7 +1079,7 @@ export class LbeV2 {
     );
 
     const rawManagerDatum = managerUtxo.datum;
-    invariant(rawManagerDatum, "Treasury utxo must have inline datum");
+    invariant(rawManagerDatum, "Manager utxo must have inline datum");
     const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
       Data.from(rawManagerDatum)
     );
@@ -1244,7 +1244,7 @@ export class LbeV2 {
     );
 
     const rawManagerDatum = managerUtxo.datum;
-    invariant(rawManagerDatum, "Treasury utxo must have inline datum");
+    invariant(rawManagerDatum, "Manager utxo must have inline datum");
     const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
       Data.from(rawManagerDatum)
     );
@@ -1252,8 +1252,6 @@ export class LbeV2 {
       config.managerAsset in managerUtxo.assets,
       "Manager utxo assets must have manager asset"
     );
-
-    invariant(addSellerCount > 0, "Must add at least one seller");
     invariant(
       PoolV2.computeLPAssetName(
         treasuryDatum.baseAsset,
@@ -1263,11 +1261,42 @@ export class LbeV2 {
           managerDatum.baseAsset,
           managerDatum.raiseAsset
         ),
-      "treasury, manager must have same Lbe ID"
+      "treasury, manager must share the same lbe id"
+    );
+
+    const sellerDatums = sellerUtxos.map((utxo) => {
+      const rawSellerDatum = utxo.datum;
+      invariant(rawSellerDatum, "Seller utxo must have inline datum");
+      invariant(
+        config.sellerAsset in utxo.assets,
+        "Seller utxo assets must have seller asset"
+      );
+      const sellerDatum = LbeV2Types.SellerDatum.fromPlutusData(
+        Data.from(rawSellerDatum),
+        this.networkId
+      );
+      invariant(
+        PoolV2.computeLPAssetName(
+          treasuryDatum.baseAsset,
+          treasuryDatum.raiseAsset
+        ) ===
+          PoolV2.computeLPAssetName(
+            sellerDatum.baseAsset,
+            sellerDatum.raiseAsset
+          ),
+        "treasury, seller must share the same lbe id"
+      );
+      return sellerDatum;
+    });
+
+    invariant(
+      sellerUtxos.length >= LbeV2Constant.MINIMUM_SELLER_COLLECTED ||
+        BigInt(sellerUtxos.length) === managerDatum.sellerCount,
+      "not collect enough sellers"
     );
     invariant(
-      currentTime > treasuryDatum.endTime,
-      "Must counting seller in encounter phase"
+      currentTime > treasuryDatum.endTime || treasuryDatum.isCancelled === true,
+      "lbe is not cancel or discovery phase is not ended"
     );
   }
 
