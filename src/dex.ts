@@ -10,8 +10,8 @@ import {
   UTxO,
 } from "lucid-cardano";
 
-import { calculateBatcherFee } from "./batcher-fee-reduction/calculate";
-import { DexVersion } from "./batcher-fee-reduction/types.internal";
+import { BatcherFee } from "./batcher-fee-reduction/calculate";
+import { DexVersion } from "./batcher-fee-reduction/configs.internal";
 import { Asset } from "./types/asset";
 import {
   DexV1Constant,
@@ -155,8 +155,9 @@ export class Dex {
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const { batcherFee, reductionAssets } = calculateBatcherFee({
+    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
       utxos: availableUtxos,
+      currentDate: new Date(),
       orderAssets,
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
@@ -231,11 +232,12 @@ export class Dex {
       "amount in and out must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(assetIn)]: maximumAmountIn };
-    const { batcherFee, reductionAssets } = calculateBatcherFee({
+    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
       utxos: availableUtxos,
       orderAssets,
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
+      currentDate: new Date(),
     });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
@@ -300,11 +302,12 @@ export class Dex {
       "minimum asset received must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(lpAsset)]: lpAmount };
-    const { batcherFee, reductionAssets } = calculateBatcherFee({
+    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
       utxos: availableUtxos,
       orderAssets,
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
+      currentDate: new Date(),
     });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
@@ -348,11 +351,12 @@ export class Dex {
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const { batcherFee, reductionAssets } = calculateBatcherFee({
+    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
       utxos: availableUtxos,
       orderAssets,
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
+      currentDate: new Date(),
     });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
@@ -401,11 +405,12 @@ export class Dex {
       [Asset.toString(assetA)]: amountA,
       [Asset.toString(assetB)]: amountB,
     };
-    const { batcherFee, reductionAssets } = calculateBatcherFee({
+    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
       utxos: availableUtxos,
       orderAssets,
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
+      currentDate: new Date(),
     });
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
