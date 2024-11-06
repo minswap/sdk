@@ -768,7 +768,8 @@ export enum MetadataMessage {
   LBE_V2_DEPOSIT_ORDER_EVENT = "SDK Minswap: Deposit Lbe V2 Order",
   LBE_V2_WITHDRAW_ORDER_EVENT = "SDK Minswap: Withdraw Lbe V2 Order",
   CLOSE_EVENT = "SDK Minswap: Close Event",
-  ADD_SELLERS = "SDK Minswap: Add more sellers",
+  LBE_V2_ADD_SELLERS = "SDK Minswap: Lbe V2 add more sellers",
+  LBE_V2_COUNTING_SELLERS = "SDK Minswap: Lbe V2 counting sellers",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;
