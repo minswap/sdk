@@ -589,6 +589,7 @@ export namespace LbeV2Constant {
     factoryHash: string;
     factoryHashBech32: string;
     factoryAddress: string;
+    factoryRewardAddress: string;
 
     treasuryAsset: string;
     treasuryHash: string;
@@ -630,6 +631,8 @@ export namespace LbeV2Constant {
         "script10uhhdx5jvr4knq3jqg40q0a6zths520eflyncn7jvfyhyqahrl3",
       factoryAddress:
         "addr_test1wplj7a56jfswk6vzxgpz4uplhgfw7z3fl98uj0z06f3yjusz7ufvk",
+      factoryRewardAddress:
+        "stake_test17plj7a56jfswk6vzxgpz4uplhgfw7z3fl98uj0z06f3yjuszkz3mu",
 
       treasuryAsset: TESTNET_FACTORY_HASH + TREASURY_AUTH_AN,
       treasuryHash: "f0dbf7cdc1042f403cad57cff6f602b2e657f8f557b8cf8c23482954",
@@ -664,6 +667,7 @@ export namespace LbeV2Constant {
       factoryHash: MAINNET_FACTORY_HASH,
       factoryHashBech32: "TODO",
       factoryAddress: "TODO",
+      factoryRewardAddress: "TODO",
 
       treasuryAsset: MAINNET_FACTORY_HASH + TREASURY_AUTH_AN,
       treasuryHash: "1ce6abbd967cab867ad73855f8b154fcc57e41b15605b91590451650",
@@ -771,6 +775,7 @@ export enum MetadataMessage {
   LBE_V2_ADD_SELLERS = "SDK Minswap: Lbe V2 add more sellers",
   LBE_V2_COUNTING_SELLERS = "SDK Minswap: Lbe V2 counting sellers",
   LBE_V2_COLLECT_MANAGER = "SDK Minswap: Lbe V2 collect manager",
+  LBE_V2_COLLECT_ORDER = "SDK Minswap: Lbe V2 collect order",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;
