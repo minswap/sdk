@@ -22,8 +22,8 @@ import {
   OrderV2,
   PoolV2,
 } from ".";
-import { calculateBatcherFee } from "./batcher-fee-reduction/calculate";
-import { DexVersion } from "./batcher-fee-reduction/types.internal";
+import { BatcherFee } from "./batcher-fee-reduction/calculate";
+import { DexVersion } from "./batcher-fee-reduction/configs.internal";
 import { FactoryV2 } from "./types/factory";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
@@ -771,8 +771,9 @@ export class DexV2 {
       }
     }
     // calculate batcher fee
-    const { batcherFee, reductionAssets } = calculateBatcherFee({
+    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
       utxos: availableUtxos,
+      currentDate: new Date(),
       orderAssets: totalOrderAssets,
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
