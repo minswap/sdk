@@ -94,6 +94,12 @@ export type CountingSellersOptions = {
   currentSlot: number;
 };
 
+export type CollectManagerOptions = {
+  treasuryUtxo: UTxO;
+  managerUtxo: UTxO;
+  currentSlot: number;
+};
+
 const THREE_HOUR_IN_MS = 3 * 60 * 60 * 1000;
 
 export class LbeV2 {
@@ -1380,7 +1386,7 @@ export class LbeV2 {
     ]);
     invariant(
       sellerRefs.length === 1,
-      "cannot find deployed script for LbeV2 Manager"
+      "cannot find deployed script for LbeV2 Seller"
     );
     lucidTx.readFrom(sellerRefs);
 
@@ -1444,6 +1450,142 @@ export class LbeV2 {
           LbeV2Constant.COLLECT_SELLER_COMMISSION,
       });
     }
+
+    // VALID TIME RANGE
+    lucidTx.validFrom(currentTime).validTo(currentTime + THREE_HOUR_IN_MS);
+
+    // METADATA
+    lucidTx.attachMetadata(674, {
+      msg: [MetadataMessage.LBE_V2_COUNTING_SELLERS],
+    });
+
+    return lucidTx.complete();
+  }
+
+  // MARK: COLLECT MANAGER
+  validateCollectManager(options: CollectManagerOptions): void {
+    const { treasuryUtxo, managerUtxo, currentSlot } = options;
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const rawTreasuryDatum = treasuryUtxo.datum;
+    invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawTreasuryDatum)
+    );
+    invariant(
+      config.treasuryAsset in treasuryUtxo.assets,
+      "Treasury utxo assets must have treasury asset"
+    );
+
+    const rawManagerDatum = managerUtxo.datum;
+    invariant(rawManagerDatum, "Manager utxo must have inline datum");
+    const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
+      Data.from(rawManagerDatum)
+    );
+    invariant(
+      config.managerAsset in managerUtxo.assets,
+      "Manager utxo assets must have manager asset"
+    );
+    invariant(
+      PoolV2.computeLPAssetName(
+        treasuryDatum.baseAsset,
+        treasuryDatum.raiseAsset
+      ) ===
+        PoolV2.computeLPAssetName(
+          managerDatum.baseAsset,
+          managerDatum.raiseAsset
+        ),
+      "treasury, manager must share the same lbe id"
+    );
+
+    invariant(
+      currentTime > treasuryDatum.endTime || treasuryDatum.isCancelled === true,
+      "lbe is not cancel or discovery phase is not ended"
+    );
+    invariant(
+      managerDatum.sellerCount === 0n,
+      "Must collect all seller before collecting manager"
+    );
+    invariant(
+      treasuryDatum.isManagerCollected === false,
+      "LBE collected manager yet"
+    );
+  }
+
+  async collectManager(options: CollectManagerOptions): Promise<TxComplete> {
+    this.validateCollectManager(options);
+    const { treasuryUtxo, managerUtxo, currentSlot } = options;
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const rawManagerDatum = managerUtxo.datum;
+    invariant(rawManagerDatum, "Treasury utxo must have inline datum");
+    const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
+      Data.from(rawManagerDatum)
+    );
+
+    const lucidTx = this.lucid.newTx();
+
+    // READ FROM
+    const factoryRefs = await this.lucid.utxosByOutRef([
+      LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].factory,
+    ]);
+    invariant(
+      factoryRefs.length === 1,
+      "cannot find deployed script for LbeV2 Factory"
+    );
+    lucidTx.readFrom(factoryRefs);
+
+    const managerRefs = await this.lucid.utxosByOutRef([
+      LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].manager,
+    ]);
+    invariant(
+      managerRefs.length === 1,
+      "cannot find deployed script for LbeV2 Manager"
+    );
+    lucidTx.readFrom(managerRefs);
+
+    const treasuryRefs = await this.lucid.utxosByOutRef([
+      LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].treasury,
+    ]);
+    invariant(
+      treasuryRefs.length === 1,
+      "cannot find deployed script for LbeV2 Treasury"
+    );
+    lucidTx.readFrom(treasuryRefs);
+
+    // COLLECT FROM
+    lucidTx.collectFrom(
+      [managerUtxo],
+      Data.to(
+        LbeV2Types.ManagerRedeemer.toPlutusData(
+          LbeV2Types.ManagerRedeemer.COLLECT_SELLERS
+        )
+      )
+    );
+    lucidTx.collectFrom(
+      [treasuryUtxo],
+      Data.to(
+        LbeV2Types.TreasuryRedeemer.toPlutusData({
+          type: LbeV2Types.TreasuryRedeemerType.COLLECT_MANAGER,
+        })
+      )
+    );
+
+    // MINT
+    lucidTx.mintAssets(
+      { [config.managerAsset]: -1n },
+      Data.to(
+        LbeV2Types.FactoryRedeemer.toPlutusData({
+          type: LbeV2Types.FactoryRedeemerType.MINT_MANAGER,
+        })
+      )
+    );
+
+    // PAY TO
+    // TODO
 
     // VALID TIME RANGE
     lucidTx.validFrom(currentTime).validTo(currentTime + THREE_HOUR_IN_MS);
