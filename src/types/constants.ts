@@ -776,6 +776,7 @@ export enum MetadataMessage {
   LBE_V2_COUNTING_SELLERS = "SDK Minswap: Lbe V2 counting sellers",
   LBE_V2_COLLECT_MANAGER = "SDK Minswap: Lbe V2 collect manager",
   LBE_V2_COLLECT_ORDER = "SDK Minswap: Lbe V2 collect order",
+  LBE_V2_REDEEM_LP = "SDK Minswap: Lbe V2 redeem lp",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;
