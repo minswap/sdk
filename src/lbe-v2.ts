@@ -127,6 +127,12 @@ export type RedeemOrdersOptions = {
   currentSlot: number;
 };
 
+export type RefundOrdersOptions = {
+  treasuryUtxo: UTxO;
+  orderUtxos: UTxO[];
+  currentSlot: number;
+};
+
 export type CalculationRedeemAmountParams = {
   userAmount: bigint;
   totalPenalty: bigint;
@@ -1830,7 +1836,36 @@ export class LbeV2 {
   }
 
   // MARK: REDEEM ORDERS
-  validateRedeemOrders(options: CollectOrdersOptions): void {
+
+  calculateRedeemAmount(params: CalculationRedeemAmountParams): {
+    liquidityAmount: bigint;
+    returnedRaiseAmount: bigint;
+  } {
+    const { userAmount, totalPenalty, reserveRaise, totalLiquidity, maxRaise } =
+      params;
+
+    if (userAmount <= 0n) {
+      throw new Error("User amount must be higher than 0n");
+    }
+    if (totalLiquidity <= 0n) {
+      throw new Error("totalLiquidity must be higher than 0n");
+    }
+    if (reserveRaise <= 0n) {
+      throw new Error("reserveRaise must be higher than 0n");
+    }
+
+    const totalReturnedRaiseAsset =
+      maxRaise && maxRaise < totalPenalty + reserveRaise
+        ? totalPenalty + reserveRaise - maxRaise
+        : 0n;
+    return {
+      liquidityAmount: (totalLiquidity * userAmount) / reserveRaise,
+      returnedRaiseAmount:
+        (totalReturnedRaiseAsset * userAmount) / reserveRaise,
+    };
+  }
+
+  validateRedeemOrders(options: RedeemOrdersOptions): void {
     const { treasuryUtxo, orderUtxos } = options;
     const config = LbeV2Constant.CONFIG[this.networkId];
 
@@ -1878,35 +1913,7 @@ export class LbeV2 {
     );
   }
 
-  calculateRedeemAmount(params: CalculationRedeemAmountParams): {
-    liquidityAmount: bigint;
-    returnedRaiseAmount: bigint;
-  } {
-    const { userAmount, totalPenalty, reserveRaise, totalLiquidity, maxRaise } =
-      params;
-
-    if (userAmount <= 0n) {
-      throw new Error("User amount must be higher than 0n");
-    }
-    if (totalLiquidity <= 0n) {
-      throw new Error("totalLiquidity must be higher than 0n");
-    }
-    if (reserveRaise <= 0n) {
-      throw new Error("reserveRaise must be higher than 0n");
-    }
-
-    const totalReturnedRaiseAsset =
-      maxRaise && maxRaise < totalPenalty + reserveRaise
-        ? totalPenalty + reserveRaise - maxRaise
-        : 0n;
-    return {
-      liquidityAmount: (totalLiquidity * userAmount) / reserveRaise,
-      returnedRaiseAmount:
-        (totalReturnedRaiseAsset * userAmount) / reserveRaise,
-    };
-  }
-
-  async redeemOrders(options: CollectOrdersOptions): Promise<TxComplete> {
+  async redeemOrders(options: RedeemOrdersOptions): Promise<TxComplete> {
     this.validateRedeemOrders(options);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
@@ -1964,8 +1971,10 @@ export class LbeV2 {
 
       const orderOutAssets: Assets = {
         lovelace: LbeV2Constant.ORDER_MIN_ADA,
-        [lpAssetUnit]: lpAmount,
       };
+      if (lpAmount > 0n) {
+        orderOutAssets[lpAssetUnit] = lpAmount;
+      }
       if (bonusRaise > 0n) {
         if (raiseAssetUnit in orderOutAssets) {
           orderOutAssets[raiseAssetUnit] =
@@ -2067,6 +2076,201 @@ export class LbeV2 {
     // METADATA
     lucidTx.attachMetadata(674, {
       msg: [MetadataMessage.LBE_V2_REDEEM_LP],
+    });
+
+    return lucidTx.complete();
+  }
+
+  // MARK: REFUND ORDERS
+  validateRefundOrders(options: RefundOrdersOptions): void {
+    const { treasuryUtxo, orderUtxos } = options;
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const rawTreasuryDatum = treasuryUtxo.datum;
+    invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawTreasuryDatum)
+    );
+    invariant(
+      config.treasuryAsset in treasuryUtxo.assets,
+      "Treasury utxo assets must have treasury asset"
+    );
+    let refundAmount = 0n;
+    for (const orderUtxo of orderUtxos) {
+      const rawOrderDatum = orderUtxo.datum;
+      invariant(rawOrderDatum, "Order utxo must have inline datum");
+      const orderDatum = LbeV2Types.OrderDatum.fromPlutusData(
+        Data.from(rawOrderDatum),
+        this.networkId
+      );
+      invariant(
+        config.orderAsset in orderUtxo.assets,
+        "Order utxo assets must have order asset"
+      );
+      invariant(
+        PoolV2.computeLPAssetName(
+          treasuryDatum.baseAsset,
+          treasuryDatum.raiseAsset
+        ) ===
+          PoolV2.computeLPAssetName(
+            orderDatum.baseAsset,
+            orderDatum.raiseAsset
+          ),
+        "treasury, order must share the same lbe id"
+      );
+      refundAmount += orderDatum.amount + orderDatum.penaltyAmount;
+    }
+
+    invariant(treasuryDatum.isCancelled === true, "LBE is not cancelled");
+    invariant(
+      treasuryDatum.isManagerCollected === true,
+      "LBE didn't collect manager"
+    );
+    invariant(
+      orderUtxos.length >= LbeV2Constant.MINIMUM_ORDER_REDEEMED ||
+        refundAmount === treasuryDatum.collectedFund,
+      `validateCollectOrders: not collect enough orders LBE having base asset ${treasuryDatum.baseAsset.toString()} and raise asset ${treasuryDatum.raiseAsset.toString()}`
+    );
+  }
+
+  async refundOrders(options: RefundOrdersOptions): Promise<TxComplete> {
+    this.validateRefundOrders(options);
+    const { treasuryUtxo, orderUtxos, currentSlot } = options;
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const rawTreasuryDatum = treasuryUtxo.datum;
+    invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawTreasuryDatum)
+    );
+
+    const sortedOrderUtxos = [...orderUtxos].sort(compareUtxo);
+    const orderDatums = sortedOrderUtxos.map((utxo) => {
+      const rawOrderDatum = utxo.datum;
+      invariant(rawOrderDatum, "Order utxo must have inline datum");
+      return LbeV2Types.OrderDatum.fromPlutusData(
+        Data.from(rawOrderDatum),
+        this.networkId
+      );
+    });
+
+    const raiseAssetUnit = Asset.toString(treasuryDatum.raiseAsset);
+
+    const orderOutputs: { address: Address; assets: Assets }[] = [];
+    let refundAmount = 0n;
+    let totalOrderAmount = 0n;
+    let totalOrderPenalty = 0n;
+    for (const orderDatum of orderDatums) {
+      const orderRefundAmount = orderDatum.amount + orderDatum.penaltyAmount;
+      refundAmount += orderRefundAmount;
+      totalOrderAmount += orderDatum.amount;
+      totalOrderPenalty += orderDatum.penaltyAmount;
+      const orderOutAssets: Assets = {
+        lovelace: LbeV2Constant.ORDER_MIN_ADA,
+      };
+      if (orderRefundAmount > 0n) {
+        if (raiseAssetUnit in orderOutAssets) {
+          orderOutAssets[raiseAssetUnit] =
+            orderOutAssets[raiseAssetUnit] + orderRefundAmount;
+        } else {
+          orderOutAssets[raiseAssetUnit] = orderRefundAmount;
+        }
+      }
+      orderOutputs.push({
+        address: orderDatum.owner,
+        assets: {},
+      });
+    }
+
+    const lucidTx = this.lucid.newTx();
+
+    // READ FROM
+    const deployed = LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId];
+    const orderRefs = await this.lucid.utxosByOutRef([deployed.order]);
+    invariant(
+      orderRefs.length === 1,
+      "cannot find deployed script for LbeV2 Order"
+    );
+    lucidTx.readFrom(orderRefs);
+
+    const treasuryRefs = await this.lucid.utxosByOutRef([deployed.treasury]);
+    invariant(
+      treasuryRefs.length === 1,
+      "cannot find deployed script for LbeV2 Treasury"
+    );
+    lucidTx.readFrom(treasuryRefs);
+
+    const factoryRefs = await this.lucid.utxosByOutRef([deployed.factory]);
+    invariant(
+      factoryRefs.length === 1,
+      "cannot find deployed script for LbeV2 Factory"
+    );
+    lucidTx.readFrom(factoryRefs);
+
+    // COLLECT FROM
+    lucidTx.collectFrom(
+      orderUtxos,
+      Data.to(
+        LbeV2Types.OrderRedeemer.toPlutusData(
+          LbeV2Types.OrderRedeemer.REDEEM_ORDER
+        )
+      )
+    );
+    lucidTx.collectFrom(
+      [treasuryUtxo],
+      Data.to(
+        LbeV2Types.TreasuryRedeemer.toPlutusData({
+          type: LbeV2Types.TreasuryRedeemerType.REDEEM_ORDERS,
+        })
+      )
+    );
+
+    // PAY TO
+    const newTreasuryAssets: Assets = { ...treasuryUtxo.assets };
+    if (raiseAssetUnit in newTreasuryAssets) {
+      newTreasuryAssets[raiseAssetUnit] =
+        newTreasuryAssets[raiseAssetUnit] - refundAmount;
+    } else {
+      newTreasuryAssets[raiseAssetUnit] = -refundAmount;
+    }
+    lucidTx.payToContract(
+      config.treasuryAddress,
+      {
+        inline: Data.to(
+          LbeV2Types.TreasuryDatum.toPlutusData({
+            ...treasuryDatum,
+            collectedFund: treasuryDatum.collectedFund - refundAmount,
+            reserveRaise: treasuryDatum.collectedFund - totalOrderAmount,
+            totalPenalty: treasuryDatum.totalPenalty - totalOrderPenalty,
+          })
+        ),
+      },
+      newTreasuryAssets
+    );
+    for (const { assets, address } of orderOutputs) {
+      lucidTx.payToAddress(address, assets);
+    }
+
+    // WITHDRAW
+    lucidTx.withdraw(
+      config.factoryRewardAddress,
+      0n,
+      Data.to(
+        LbeV2Types.FactoryRedeemer.toPlutusData({
+          type: LbeV2Types.FactoryRedeemerType.MANAGE_ORDER,
+        })
+      )
+    );
+
+    // VALID TIME RANGE
+    lucidTx.validFrom(currentTime).validTo(currentTime + THREE_HOUR_IN_MS);
+
+    // METADATA
+    lucidTx.attachMetadata(674, {
+      msg: [MetadataMessage.LBE_V2_REFUND],
     });
 
     return lucidTx.complete();
