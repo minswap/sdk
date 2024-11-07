@@ -3,6 +3,7 @@ import JSONBig from "json-bigint";
 import { Address, Assets, Data, Lucid, TxComplete, UTxO } from "lucid-cardano";
 
 import {
+  DexV2Calculation,
   DexV2Constant,
   LbeV2Constant,
   MAX_POOL_V2_TRADING_FEE_NUMERATOR,
@@ -12,6 +13,7 @@ import {
 } from ".";
 import { Asset } from "./types/asset";
 import { RedeemerWrapper } from "./types/common";
+import { FactoryV2 } from "./types/factory";
 import { LbeV2Types } from "./types/lbe-v2";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
@@ -130,6 +132,12 @@ export type RedeemOrdersOptions = {
 export type RefundOrdersOptions = {
   treasuryUtxo: UTxO;
   orderUtxos: UTxO[];
+  currentSlot: number;
+};
+
+export type CreateAmmPoolTxOptions = {
+  treasuryUtxo: UTxO;
+  ammFactoryUtxo: UTxO;
   currentSlot: number;
 };
 
@@ -2272,6 +2280,67 @@ export class LbeV2 {
     lucidTx.attachMetadata(674, {
       msg: [MetadataMessage.LBE_V2_REFUND],
     });
+
+    return lucidTx.complete();
+  }
+
+  // MARK: CREATE AMM POOL
+  validateCreateAmmPool(options: CreateAmmPoolTxOptions): void {
+    const { treasuryUtxo, ammFactoryUtxo } = options;
+    const rawTreasuryDatum = treasuryUtxo.datum;
+    invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawTreasuryDatum)
+    );
+
+    const rawAmmFactoryDatum = ammFactoryUtxo.datum;
+    invariant(rawAmmFactoryDatum, "Amm Factory utxo must have inline datum");
+    const ammFactory = FactoryV2.Datum.fromPlutusData(
+      Data.from(rawAmmFactoryDatum)
+    );
+
+    const {
+      baseAsset,
+      raiseAsset,
+      isManagerCollected,
+      collectedFund,
+      reserveBase,
+      reserveRaise,
+      totalPenalty,
+      isCancelled,
+      minimumRaise,
+      totalLiquidity,
+    } = treasuryDatum;
+
+    const lpAssetName = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+
+    invariant(
+      lpAssetName > ammFactory.head && lpAssetName < ammFactory.tail,
+      "Invalid factory"
+    );
+    invariant(
+      isManagerCollected && collectedFund === reserveRaise + totalPenalty,
+      "must collect all before create pool"
+    );
+    invariant(!isCancelled, "LBE must not be cancelled");
+    invariant(collectedFund >= (minimumRaise ?? 1n), "Lbe do not raise enough");
+
+    const initialLiquidity = DexV2Calculation.calculateInitialLiquidity({
+      amountA: reserveBase,
+      amountB: reserveRaise + totalPenalty,
+    });
+    invariant(
+      initialLiquidity > PoolV2.MINIMUM_LIQUIDITY,
+      "Can not create pool because initialLiquidity is too low"
+    );
+    invariant(totalLiquidity === 0n, "Lbe creating is already success");
+  }
+
+  async createAmmPool(options: CreateAmmPoolTxOptions): Promise<TxComplete> {
+    this.validateCreateAmmPool(options);
+
+    const lucidTx = this.lucid.newTx();
 
     return lucidTx.complete();
   }
