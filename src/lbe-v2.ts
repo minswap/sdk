@@ -1,6 +1,15 @@
 import invariant from "@minswap/tiny-invariant";
 import JSONBig from "json-bigint";
-import { Address, Assets, Data, Lucid, TxComplete, UTxO } from "lucid-cardano";
+import {
+  Address,
+  Assets,
+  Constr,
+  Data,
+  Lucid,
+  Tx,
+  TxComplete,
+  UTxO,
+} from "lucid-cardano";
 
 import {
   DexV2Calculation,
@@ -2339,9 +2348,268 @@ export class LbeV2 {
 
   async createAmmPool(options: CreateAmmPoolTxOptions): Promise<TxComplete> {
     this.validateCreateAmmPool(options);
+    const { treasuryUtxo, ammFactoryUtxo, currentSlot } = options;
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const rawTreasuryDatum = treasuryUtxo.datum;
+    invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawTreasuryDatum)
+    );
+
+    const {
+      baseAsset,
+      raiseAsset,
+      maximumRaise,
+      collectedFund,
+      receiver,
+      reserveBase,
+      poolBaseFee,
+      poolAllocation,
+    } = treasuryDatum;
+
+    let totalReserveRaise: bigint;
+    if (maximumRaise && maximumRaise < collectedFund) {
+      totalReserveRaise = maximumRaise;
+    } else {
+      totalReserveRaise = collectedFund;
+    }
+    const [assetA, assetB] =
+      Asset.compare(baseAsset, raiseAsset) < 0
+        ? [baseAsset, raiseAsset]
+        : [raiseAsset, baseAsset];
+    const lpAssetName = PoolV2.computeLPAssetName(assetA, assetB);
+    const lpAsset: Asset = {
+      tokenName: lpAssetName,
+      policyId: DexV2Constant.CONFIG[this.networkId].lpPolicyId,
+    };
+    let reserveA: bigint;
+    let reserveB: bigint;
+    if (Asset.compare(assetA, baseAsset) === 0) {
+      reserveA = reserveBase;
+      reserveB = totalReserveRaise;
+    } else {
+      reserveA = totalReserveRaise;
+      reserveB = reserveBase;
+    }
+    const poolReserveA = (reserveA * poolAllocation) / 100n;
+    const poolReserveB = (reserveB * poolAllocation) / 100n;
+    const totalLiquidity = DexV2Calculation.calculateInitialLiquidity({
+      amountA: poolReserveA,
+      amountB: poolReserveB,
+    });
+    const totalLbeLPs = totalLiquidity - PoolV2.MINIMUM_LIQUIDITY;
+    const receiverLP = (totalLbeLPs * (poolAllocation - 50n)) / poolAllocation;
+    const treasuryOutDatum: LbeV2Types.TreasuryDatum = {
+      ...treasuryDatum,
+      totalLiquidity: totalLbeLPs - receiverLP,
+    };
 
     const lucidTx = this.lucid.newTx();
 
+    // READ FROM
+    const treasuryRefs = await this.lucid.utxosByOutRef([
+      LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].treasury,
+    ]);
+    invariant(
+      treasuryRefs.length === 1,
+      "cannot find deployed script for LbeV2 Treasury"
+    );
+
+    lucidTx.readFrom(treasuryRefs);
+
+    // SPENT
+    lucidTx.collectFrom(
+      [treasuryUtxo],
+      Data.to(
+        LbeV2Types.TreasuryRedeemer.toPlutusData({
+          type: LbeV2Types.TreasuryRedeemerType.CREATE_AMM_POOL,
+        })
+      )
+    );
+
+    // PAY TO
+    const receiveAssets: Assets = {};
+    if (reserveA - poolReserveA !== 0n) {
+      receiveAssets[Asset.toString(assetA)] = reserveA - poolReserveA;
+    }
+    if (reserveB - poolReserveB !== 0n) {
+      receiveAssets[Asset.toString(assetB)] = reserveB - poolReserveB;
+    }
+    if (receiverLP) {
+      receiveAssets[Asset.toString(lpAsset)] = receiverLP;
+    }
+    lucidTx.payToAddress(receiver, receiveAssets);
+
+    const newTreasuryAssets: Assets = {
+      ...treasuryUtxo.assets,
+    };
+    delete newTreasuryAssets[Asset.toString(baseAsset)];
+    if (totalReserveRaise === collectedFund) {
+      delete newTreasuryAssets[Asset.toString(raiseAsset)];
+    } else {
+      newTreasuryAssets[Asset.toString(raiseAsset)] -= totalReserveRaise;
+    }
+    if (totalLbeLPs - receiverLP !== 0n) {
+      newTreasuryAssets[Asset.toString(lpAsset)] = totalLbeLPs - receiverLP;
+    }
+    newTreasuryAssets["lovelace"] -= LbeV2Constant.CREATE_POOL_COMMISSION;
+    lucidTx.payToContract(
+      config.treasuryAddress,
+      {
+        inline: Data.to(
+          LbeV2Types.TreasuryDatum.toPlutusData(treasuryOutDatum)
+        ),
+      },
+      newTreasuryAssets
+    );
+
+    // CREATE POOL
+    const poolBatchingStakeCredential = this.lucid.utils.getAddressDetails(
+      DexV2Constant.CONFIG[this.networkId].poolBatchingAddress
+    )?.stakeCredential;
+    invariant(
+      poolBatchingStakeCredential,
+      `cannot parse Liquidity Pool batching address`
+    );
+    const poolDatum: PoolV2.Datum = {
+      poolBatchingStakeCredential: poolBatchingStakeCredential,
+      assetA: assetA,
+      assetB: assetB,
+      totalLiquidity: totalLiquidity,
+      reserveA: poolReserveA,
+      reserveB: poolReserveB,
+      baseFee: {
+        feeANumerator: poolBaseFee,
+        feeBNumerator: poolBaseFee,
+      },
+      feeSharingNumerator: undefined,
+      allowDynamicFee: false,
+    };
+    await this.buildCreateAMMPool(lucidTx, poolDatum, ammFactoryUtxo, lpAsset);
+
+    // VALID TIME RANGE
+    lucidTx.validFrom(currentTime).validTo(currentTime + THREE_HOUR_IN_MS);
+
+    // METADATA
+    lucidTx.attachMetadata(674, {
+      msg: [MetadataMessage.LBE_V2_CREATE_AMM_POOL],
+    });
+
     return lucidTx.complete();
+  }
+
+  private async buildCreateAMMPool(
+    lucidTx: Tx,
+    poolDatum: PoolV2.Datum,
+    factoryUtxo: UTxO,
+    lpAsset: Asset
+  ): Promise<void> {
+    const dexV2Config = DexV2Constant.CONFIG[this.networkId];
+    const { assetA, assetB, reserveA, reserveB, totalLiquidity } = poolDatum;
+    const lpAssetName = lpAsset.tokenName;
+    const poolAssets: Assets = {
+      lovelace: PoolV2.DEFAULT_POOL_ADA,
+      [Asset.toString(lpAsset)]:
+        PoolV2.MAX_LIQUIDITY - (totalLiquidity - PoolV2.MINIMUM_LIQUIDITY),
+      [dexV2Config.poolAuthenAsset]: 1n,
+    };
+    if (poolAssets[Asset.toString(assetA)]) {
+      poolAssets[Asset.toString(assetA)] += reserveA;
+    } else {
+      poolAssets[Asset.toString(assetA)] = reserveA;
+    }
+    if (poolAssets[Asset.toString(assetB)]) {
+      poolAssets[Asset.toString(assetB)] += reserveB;
+    } else {
+      poolAssets[Asset.toString(assetB)] = reserveB;
+    }
+
+    const rawFactoryDatum = factoryUtxo.datum;
+    invariant(rawFactoryDatum, "Treasury utxo must have inline datum");
+    const factoryDatum = FactoryV2.Datum.fromPlutusData(
+      Data.from(rawFactoryDatum)
+    );
+
+    const newFactoryDatum1: FactoryV2.Datum = {
+      head: factoryDatum.head,
+      tail: lpAssetName,
+    };
+    const newFactoryDatum2: FactoryV2.Datum = {
+      head: lpAssetName,
+      tail: factoryDatum.tail,
+    };
+
+    // READ FROM
+    const ammFactoryRefs = await this.lucid.utxosByOutRef([
+      DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].factory,
+    ]);
+    invariant(
+      ammFactoryRefs.length === 1,
+      "cannot find deployed script for Factory Validator"
+    );
+    const ammFactoryRef = ammFactoryRefs[0];
+
+    const ammAuthenRefs = await this.lucid.utxosByOutRef([
+      DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].authen,
+    ]);
+    invariant(
+      ammAuthenRefs.length === 1,
+      "cannot find deployed script for Authen Minting Policy"
+    );
+    const ammAuthenRef = ammAuthenRefs[0];
+
+    // COLLECT FROM
+    lucidTx.collectFrom(
+      [factoryUtxo],
+      Data.to(
+        FactoryV2.Redeemer.toPlutusData({
+          assetA: assetA,
+          assetB: assetB,
+        })
+      )
+    );
+
+    // PAY TO
+    lucidTx
+      .payToContract(
+        dexV2Config.poolCreationAddress,
+        {
+          inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
+        },
+        poolAssets
+      )
+      .payToContract(
+        dexV2Config.factoryAddress,
+        {
+          inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
+        },
+        {
+          [dexV2Config.factoryAsset]: 1n,
+        }
+      )
+      .payToContract(
+        dexV2Config.factoryAddress,
+        {
+          inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
+        },
+        {
+          [dexV2Config.factoryAsset]: 1n,
+        }
+      );
+
+    // MINT
+    lucidTx.mintAssets(
+      {
+        [Asset.toString(lpAsset)]: PoolV2.MAX_LIQUIDITY,
+        [dexV2Config.factoryAsset]: 1n,
+        [dexV2Config.poolAuthenAsset]: 1n,
+      },
+      Data.to(new Constr(1, []))
+    );
+
+    lucidTx.readFrom([ammFactoryRef, ammAuthenRef]);
   }
 }
