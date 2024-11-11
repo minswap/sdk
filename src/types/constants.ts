@@ -575,9 +575,9 @@ export namespace LbeV2Constant {
   export const MAX_POOL_ALLOCATION_POINT = 100n;
   export const MAX_PENALTY_RATE = 25n;
 
-  export const MINIMUM_SELLER_COLLECTED = 20n;
-  export const MINIMUM_ORDER_COLLECTED = 30n;
-  export const MINIMUM_ORDER_REDEEMED = 30n;
+  export const MINIMUM_SELLER_COLLECTED = 20;
+  export const MINIMUM_ORDER_COLLECTED = 30;
+  export const MINIMUM_ORDER_REDEEMED = 30;
 
   export const MAX_DISCOVERY_RANGE = 2592000000n;
   export const MAX_PENALTY_RANGE = 172800000n;
