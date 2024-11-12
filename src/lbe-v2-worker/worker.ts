@@ -245,7 +245,7 @@ export class LbeV2Worker {
 
       const txId = await signedTx.submit();
       console.info(
-        `Create AMM Pool transaction submitted successfully: ${txId}`
+        `Cancel event by not reach min raise transaction submitted successfully: ${txId}`
       );
       return;
     }
@@ -255,12 +255,38 @@ export class LbeV2Worker {
       treasuryDatum.raiseAsset
     );
     if (ammFactory === null) {
-      // TODO: Find pool and cancel by created pool
+      const poolV2 = await this.blockfrostAdapter.getV2PoolByPair(
+        treasuryDatum.baseAsset,
+        treasuryDatum.raiseAsset
+      );
+      invariant(poolV2 !== null, "Can not find pool");
+
+      const ammPoolUtxos = await this.lucid.utxosByOutRef([
+        { txHash: poolV2.txIn.txHash, outputIndex: poolV2.txIn.index },
+      ]);
+      invariant(ammPoolUtxos.length === 1, "Can not find amm pool Utxo");
+
+      const txComplete = await new LbeV2(this.lucid).cancelEvent({
+        treasuryUtxo: treasuryUtxo,
+        cancelData: {
+          reason: LbeV2Types.CancelReason.CREATED_POOL,
+          ammPoolUtxo: ammPoolUtxos[0],
+        },
+        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      });
+      const signedTx = await txComplete
+        .signWithPrivateKey(this.privateKey)
+        .complete();
+
+      const txId = await signedTx.submit();
+      console.info(
+        `Cancel event by created pool transaction submitted successfully: ${txId}`
+      );
     } else {
       const ammFactoryUtxos = await this.lucid.utxosByOutRef([
         { txHash: ammFactory.txIn.txHash, outputIndex: ammFactory.txIn.index },
       ]);
-      invariant(ammFactoryUtxos.length === 1, "Can not find amm treasury Utxo");
+      invariant(ammFactoryUtxos.length === 1, "Can not find amm factory Utxo");
 
       const txComplete = await new LbeV2(this.lucid).createAmmPool({
         treasuryUtxo: treasuryUtxo,
@@ -319,11 +345,10 @@ export class LbeV2Worker {
     console.info(`Refund Orders transaction submitted successfully: ${txId}`);
   }
 
-  // TODO: cancel by created pool
   async handleEvent(
     eventData: LbeV2EventData,
     currentTime: UnixTime
-  ): Promise<void> {
+  ): Promise<"skip" | "success"> {
     // FIND PHASE OF BATCHER
     const checkPhaseAndHandle: {
       checkFn: (
@@ -435,27 +460,71 @@ export class LbeV2Worker {
       this.networkId,
       Data.from(rawTreasuryDatum)
     );
+    const {
+      endTime,
+      isCancelled,
+      totalPenalty,
+      reserveRaise,
+      isManagerCollected,
+      totalLiquidity,
+      collectedFund,
+    } = treasuryDatum;
+    if (
+      // NOT ENCOUNTER PHASE YET
+      (currentTime <= endTime && isCancelled === false) ||
+      // CANCELLED EVENT, waiting for owner closing it.
+      (isCancelled === true &&
+        totalPenalty + reserveRaise === 0n &&
+        isManagerCollected === true) ||
+      // FINISH EVENT
+      (totalLiquidity > 0n && collectedFund === 0n)
+    ) {
+      return "skip";
+    }
 
-    // TODO
-    const managerDatum = undefined;
+    let managerDatum = undefined;
+    if (eventData.managerUtxo! == undefined) {
+      const rawManagerDatum = eventData.managerUtxo;
+      invariant(rawManagerDatum, "Treasury utxo must have inline datum");
+      managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
+        Data.from(rawManagerDatum)
+      );
+    }
 
     for (const { checkFn, handleFn } of checkPhaseAndHandle) {
       if (checkFn(treasuryDatum, managerDatum)) {
         await handleFn(eventData, currentTime);
+        return "success";
       }
     }
+    return "success";
   }
 
   async runWorker(): Promise<void> {
-    const currentSlot = await this.blockfrostAdapter.currentSlot();
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
-
-    // FIND ALL EVENTS DATA
     const eventsData = await this.getData();
 
-    // LOOP EVENT
     for (const eventData of eventsData) {
-      await this.handleEvent(eventData, currentTime);
+      try {
+        const currentSlot = await this.blockfrostAdapter.currentSlot();
+        const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+        const handleEventResult = await this.handleEvent(
+          eventData,
+          currentTime
+        );
+        if (handleEventResult === "success") {
+          return;
+        }
+      } catch (err) {
+        const rawTreasuryDatum = eventData.treasuryUtxo.datum;
+        invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+        const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+          this.networkId,
+          Data.from(rawTreasuryDatum)
+        );
+        console.error(
+          `Fail to run worker for LBE ${PoolV2.computeLPAssetName(treasuryDatum.baseAsset, treasuryDatum.raiseAsset)}: ${err}`
+        );
+      }
     }
   }
 }
