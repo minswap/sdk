@@ -1614,7 +1614,7 @@ export class LbeV2 {
       [managerUtxo],
       Data.to(
         LbeV2Types.ManagerRedeemer.toPlutusData(
-          LbeV2Types.ManagerRedeemer.COLLECT_SELLERS
+          LbeV2Types.ManagerRedeemer.SPEND_MANAGER
         )
       )
     );
