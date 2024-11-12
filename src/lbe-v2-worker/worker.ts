@@ -2,10 +2,10 @@ import invariant from "@minswap/tiny-invariant";
 import { Data, Lucid, UnixTime, UTxO } from "lucid-cardano";
 
 import { BlockfrostAdapter, LbeV2Constant, PoolV2 } from "..";
+import { LbeV2 } from "../lbe-v2";
 import { LbeV2Types } from "../types/lbe-v2";
 import { NetworkEnvironment, NetworkId } from "../types/network";
 import { runRecurringJob } from "../utils/job";
-import { LbeV2 } from "../lbe-v2";
 
 type LbeV2WorkerConstructor = {
   networkEnv: NetworkEnvironment;
@@ -178,6 +178,145 @@ export class LbeV2Worker {
       .complete();
 
     const txId = await signedTx.submit();
+    console.info(`Counting seller transaction submitted successfully: ${txId}`);
+  }
+
+  async collectManager(
+    eventData: LbeV2EventData,
+    currentTime: UnixTime
+  ): Promise<void> {
+    const { treasuryUtxo, managerUtxo } = eventData;
+    invariant(managerUtxo, "collectManager: can not find manager");
+    const txComplete = await new LbeV2(this.lucid).collectManager({
+      treasuryUtxo: treasuryUtxo,
+      managerUtxo: managerUtxo,
+      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+    });
+
+    const signedTx = await txComplete
+      .signWithPrivateKey(this.privateKey)
+      .complete();
+
+    const txId = await signedTx.submit();
+    console.info(`Collect manager transaction submitted successfully: ${txId}`);
+  }
+
+  async collectOrders(
+    eventData: LbeV2EventData,
+    currentTime: UnixTime
+  ): Promise<void> {
+    const { treasuryUtxo, uncollectedOrderUtxos } = eventData;
+    const txComplete = await new LbeV2(this.lucid).collectOrders({
+      treasuryUtxo: treasuryUtxo,
+      orderUtxos: uncollectedOrderUtxos,
+      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+    });
+
+    const signedTx = await txComplete
+      .signWithPrivateKey(this.privateKey)
+      .complete();
+
+    const txId = await signedTx.submit();
+    console.info(`Collect orders transaction submitted successfully: ${txId}`);
+  }
+
+  async createAmmPoolOrCancelEvent(
+    eventData: LbeV2EventData,
+    currentTime: UnixTime
+  ): Promise<void> {
+    const { treasuryUtxo } = eventData;
+    const rawTreasuryDatum = eventData.treasuryUtxo.datum;
+    invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(rawTreasuryDatum)
+    );
+
+    if (treasuryDatum.collectedFund < (treasuryDatum.minimumRaise ?? 1n)) {
+      const txComplete = await new LbeV2(this.lucid).cancelEvent({
+        treasuryUtxo: treasuryUtxo,
+        cancelData: { reason: LbeV2Types.CancelReason.NOT_REACH_MINIMUM },
+        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      });
+
+      const signedTx = await txComplete
+        .signWithPrivateKey(this.privateKey)
+        .complete();
+
+      const txId = await signedTx.submit();
+      console.info(
+        `Create AMM Pool transaction submitted successfully: ${txId}`
+      );
+      return;
+    }
+
+    const ammFactory = await this.blockfrostAdapter.getFactoryV2ByPair(
+      treasuryDatum.baseAsset,
+      treasuryDatum.raiseAsset
+    );
+    if (ammFactory === null) {
+      // TODO: Find pool and cancel by created pool
+    } else {
+      const ammFactoryUtxos = await this.lucid.utxosByOutRef([
+        { txHash: ammFactory.txIn.txHash, outputIndex: ammFactory.txIn.index },
+      ]);
+      invariant(ammFactoryUtxos.length === 1, "Can not find amm treasury Utxo");
+
+      const txComplete = await new LbeV2(this.lucid).createAmmPool({
+        treasuryUtxo: treasuryUtxo,
+        ammFactoryUtxo: ammFactoryUtxos[0],
+        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      });
+
+      const signedTx = await txComplete
+        .signWithPrivateKey(this.privateKey)
+        .complete();
+
+      const txId = await signedTx.submit();
+      console.info(
+        `Create AMM Pool transaction submitted successfully: ${txId}`
+      );
+    }
+  }
+
+  async redeemOrders(
+    eventData: LbeV2EventData,
+    currentTime: UnixTime
+  ): Promise<void> {
+    const { treasuryUtxo, collectedOrderUtxos } = eventData;
+
+    const txComplete = await new LbeV2(this.lucid).redeemOrders({
+      treasuryUtxo: treasuryUtxo,
+      orderUtxos: collectedOrderUtxos,
+      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+    });
+
+    const signedTx = await txComplete
+      .signWithPrivateKey(this.privateKey)
+      .complete();
+
+    const txId = await signedTx.submit();
+    console.info(`Redeem Orders transaction submitted successfully: ${txId}`);
+  }
+
+  async refundOrders(
+    eventData: LbeV2EventData,
+    currentTime: UnixTime
+  ): Promise<void> {
+    const { treasuryUtxo, collectedOrderUtxos } = eventData;
+
+    const txComplete = await new LbeV2(this.lucid).refundOrders({
+      treasuryUtxo: treasuryUtxo,
+      orderUtxos: collectedOrderUtxos,
+      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+    });
+
+    const signedTx = await txComplete
+      .signWithPrivateKey(this.privateKey)
+      .complete();
+
+    const txId = await signedTx.submit();
+    console.info(`Refund Orders transaction submitted successfully: ${txId}`);
   }
 
   // TODO: cancel by created pool
@@ -191,7 +330,10 @@ export class LbeV2Worker {
         treasuryDatum: LbeV2Types.TreasuryDatum,
         managerDatum: LbeV2Types.ManagerDatum | undefined
       ) => boolean;
-      handleFn: (eventData: LbeV2EventData) => Promise<void>;
+      handleFn: (
+        eventData: LbeV2EventData,
+        currentTime: UnixTime
+      ) => Promise<void>;
     }[] = [
       // DONT DO ANYTHING
       {
@@ -216,7 +358,7 @@ export class LbeV2Worker {
             (totalLiquidity > 0n && collectedFund === 0n)
           );
         },
-        handleFn: async (_: LbeV2EventData) => {},
+        handleFn: async () => {},
       },
       // COUNTING SELLER
       {
@@ -228,8 +370,7 @@ export class LbeV2Worker {
           invariant(managerDatum, "can not find manager datum");
           return managerDatum.sellerCount > 0n;
         },
-        // TODO
-        handleFn: async (_: LbeV2EventData) => {},
+        handleFn: this.countingSellers,
       },
       // COLLECT MANAGER
       {
@@ -241,8 +382,7 @@ export class LbeV2Worker {
           invariant(managerDatum, "can not find manager datum");
           return true;
         },
-        // TODO
-        handleFn: async (_: LbeV2EventData) => {},
+        handleFn: this.collectManager,
       },
       // COLLECT COLLECT ORDER
       {
@@ -250,28 +390,20 @@ export class LbeV2Worker {
           const { reserveRaise, totalPenalty, collectedFund } = treasuryDatum;
           return reserveRaise + totalPenalty > collectedFund;
         },
-        // TODO
-        handleFn: async (_: LbeV2EventData) => {},
+        handleFn: this.collectOrders,
       },
-      // CREATE POOL
+      // CREATE POOL OR CANCEL EVENT
       {
         checkFn: (treasuryDatum, _) => {
-          const {
-            reserveRaise,
-            totalPenalty,
-            collectedFund,
-            isCancelled,
-            minimumRaise,
-          } = treasuryDatum;
+          const { reserveRaise, totalPenalty, collectedFund, isCancelled } =
+            treasuryDatum;
 
           return (
             reserveRaise + totalPenalty === collectedFund &&
-            isCancelled === false &&
-            collectedFund >= (minimumRaise ?? 1n)
+            isCancelled === false
           );
         },
-        // TODO
-        handleFn: async (_: LbeV2EventData) => {},
+        handleFn: this.createAmmPoolOrCancelEvent,
       },
       // REDEEM ORDERS
       {
@@ -279,26 +411,6 @@ export class LbeV2Worker {
           const { totalLiquidity, collectedFund } = treasuryDatum;
           return totalLiquidity > 0n && collectedFund > 0n;
         },
-        handleFn: async (_: LbeV2EventData) => {},
-      },
-      // CANCEL LBE by NOT REACH MINIMUM
-      {
-        checkFn: (treasuryDatum, _) => {
-          const {
-            reserveRaise,
-            totalPenalty,
-            collectedFund,
-            isCancelled,
-            minimumRaise,
-          } = treasuryDatum;
-
-          return (
-            reserveRaise + totalPenalty === collectedFund &&
-            isCancelled === false &&
-            collectedFund < (minimumRaise ?? 1n)
-          );
-        },
-        // TODO
         handleFn: async (_: LbeV2EventData) => {},
       },
       // REFUND ORDERS
@@ -313,8 +425,7 @@ export class LbeV2Worker {
             collectedFund > 0n
           );
         },
-        // TODO
-        handleFn: async (_: LbeV2EventData) => {},
+        handleFn: this.refundOrders,
       },
     ];
 
@@ -325,9 +436,12 @@ export class LbeV2Worker {
       Data.from(rawTreasuryDatum)
     );
 
+    // TODO
+    const managerDatum = undefined;
+
     for (const { checkFn, handleFn } of checkPhaseAndHandle) {
-      if (checkFn(treasuryDatum, undefined)) {
-        await handleFn(eventData);
+      if (checkFn(treasuryDatum, managerDatum)) {
+        await handleFn(eventData, currentTime);
       }
     }
   }
