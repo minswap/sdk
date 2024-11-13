@@ -1140,7 +1140,7 @@ export class LbeV2 {
       msg: [MetadataMessage.CLOSE_EVENT],
     });
 
-    return await lucidTx.complete();
+    return await lucidTx.complete({ coinSelection: true });
   }
 
   // MARK: ADD MORE SELLER
