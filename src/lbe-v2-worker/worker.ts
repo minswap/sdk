@@ -360,54 +360,29 @@ export class LbeV2Worker {
         currentTime: UnixTime
       ) => Promise<void>;
     }[] = [
-      // DONT DO ANYTHING
-      {
-        checkFn: (treasuryDatum, _) => {
-          const {
-            endTime,
-            isCancelled,
-            totalPenalty,
-            reserveRaise,
-            isManagerCollected,
-            totalLiquidity,
-            collectedFund,
-          } = treasuryDatum;
-          return (
-            // NOT ENCOUNTER PHASE YET
-            (currentTime <= endTime && isCancelled === false) ||
-            // CANCELLED EVENT, waiting for owner closing it.
-            (isCancelled === true &&
-              totalPenalty + reserveRaise === 0n &&
-              isManagerCollected === true) ||
-            // FINISH EVENT
-            (totalLiquidity > 0n && collectedFund === 0n)
-          );
-        },
-        handleFn: async () => {},
-      },
       // COUNTING SELLER
       {
         checkFn: (treasuryDatum, managerDatum) => {
           const { isManagerCollected } = treasuryDatum;
-          if (!isManagerCollected) {
+          if (isManagerCollected) {
             return false;
           }
           invariant(managerDatum, "can not find manager datum");
           return managerDatum.sellerCount > 0n;
         },
-        handleFn: this.countingSellers,
+        handleFn: this.countingSellers.bind(this),
       },
       // COLLECT MANAGER
       {
         checkFn: (treasuryDatum, managerDatum) => {
           const { isManagerCollected } = treasuryDatum;
-          if (!isManagerCollected) {
+          if (isManagerCollected) {
             return false;
           }
           invariant(managerDatum, "can not find manager datum");
           return true;
         },
-        handleFn: this.collectManager,
+        handleFn: this.collectManager.bind(this),
       },
       // COLLECT COLLECT ORDER
       {
@@ -415,7 +390,7 @@ export class LbeV2Worker {
           const { reserveRaise, totalPenalty, collectedFund } = treasuryDatum;
           return reserveRaise + totalPenalty > collectedFund;
         },
-        handleFn: this.collectOrders,
+        handleFn: this.collectOrders.bind(this),
       },
       // CREATE POOL OR CANCEL EVENT
       {
@@ -428,7 +403,7 @@ export class LbeV2Worker {
             isCancelled === false
           );
         },
-        handleFn: this.createAmmPoolOrCancelEvent,
+        handleFn: this.createAmmPoolOrCancelEvent.bind(this),
       },
       // REDEEM ORDERS
       {
@@ -436,7 +411,7 @@ export class LbeV2Worker {
           const { totalLiquidity, collectedFund } = treasuryDatum;
           return totalLiquidity > 0n && collectedFund > 0n;
         },
-        handleFn: async (_: LbeV2EventData) => {},
+        handleFn: this.redeemOrders.bind(this),
       },
       // REFUND ORDERS
       {
@@ -450,7 +425,7 @@ export class LbeV2Worker {
             collectedFund > 0n
           );
         },
-        handleFn: this.refundOrders,
+        handleFn: this.refundOrders.bind(this),
       },
     ];
 
@@ -471,7 +446,7 @@ export class LbeV2Worker {
     } = treasuryDatum;
     if (
       // NOT ENCOUNTER PHASE YET
-      (currentTime <= endTime && isCancelled === false) ||
+      (currentTime <= Number(endTime) && isCancelled === false) ||
       // CANCELLED EVENT, waiting for owner closing it.
       (isCancelled === true &&
         totalPenalty + reserveRaise === 0n &&
@@ -483,8 +458,8 @@ export class LbeV2Worker {
     }
 
     let managerDatum = undefined;
-    if (eventData.managerUtxo! == undefined) {
-      const rawManagerDatum = eventData.managerUtxo;
+    if (eventData.managerUtxo !== undefined) {
+      const rawManagerDatum = eventData.managerUtxo.datum;
       invariant(rawManagerDatum, "Treasury utxo must have inline datum");
       managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
         Data.from(rawManagerDatum)
@@ -502,11 +477,11 @@ export class LbeV2Worker {
 
   async runWorker(): Promise<void> {
     const eventsData = await this.getData();
+    const currentSlot = await this.blockfrostAdapter.currentSlot();
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
 
     for (const eventData of eventsData) {
       try {
-        const currentSlot = await this.blockfrostAdapter.currentSlot();
-        const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
         const handleEventResult = await this.handleEvent(
           eventData,
           currentTime
