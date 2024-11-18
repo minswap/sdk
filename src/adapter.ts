@@ -9,11 +9,11 @@ import * as Prisma from "@prisma/client";
 import Big from "big.js";
 import JSONBig from "json-bigint";
 import {
-  C,
+  CML,
   fromHex,
   SLOT_CONFIG_NETWORK,
   slotToBeginUnixTime,
-} from "lucid-cardano";
+} from "@lucid-evolution/lucid";
 
 import { StableswapCalculation } from "./calculate";
 import { PostgresRepositoryReader } from "./syncer/repository/postgres-repository";
@@ -656,8 +656,8 @@ export class MinswapAdapter extends BlockfrostAdapter {
       alwaysParseAsBig: true,
       useNativeBigInt: true,
     }).parse(prismaPool.value);
-    const datumHash = C.hash_plutus_data(
-      C.PlutusData.from_bytes(fromHex(prismaPool.raw_datum))
+    const datumHash = CML.hash_plutus_data(
+      CML.PlutusData.from_cbor_bytes(fromHex(prismaPool.raw_datum))
     ).to_hex();
     return new PoolV1.State(address, txIn, value, datumHash);
   }

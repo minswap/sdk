@@ -1,4 +1,4 @@
-import { Address, Assets, Lucid, OutputData } from "lucid-cardano";
+import { Address, Assets, getAddressDetails, LucidEvolution, OutputDatum } from "@lucid-evolution/lucid";
 
 /**
  * Return a Output that pay back to @sender and include @datum
@@ -9,17 +9,17 @@ import { Address, Assets, Lucid, OutputData } from "lucid-cardano";
  * @param datum
  */
 export function buildUtxoToStoreDatum(
-    lucid: Lucid,
+    lucid: LucidEvolution,
     sender: Address,
     receiver: Address,
     datum: string
 ): {
     address: Address;
-    outputData: OutputData;
+    outputData: OutputDatum;
     assets: Assets;
 } | null {
     const receivePaymentCred =
-        lucid.utils.getAddressDetails(receiver).paymentCredential;
+        getAddressDetails(receiver).paymentCredential;
     // If receiver is not a script address, we no need to store this datum On-chain because it's useless
     if (!receivePaymentCred || receivePaymentCred.type === "Key") {
         return null;
@@ -29,7 +29,8 @@ export function buildUtxoToStoreDatum(
         address: sender,
         assets: {},
         outputData: {
-            inline: datum,
+            kind: "inline",
+            value: datum,
         },
     };
 }

@@ -48,11 +48,16 @@
   },
   "homepage": "https://github.com/minswap/sdk#readme",
   "dependencies": {
-    "@blockfrost/blockfrost-js": "^5.3.1",
+    "@blockfrost/blockfrost-js": "^5.5.0",
+    "@cardano-ogmios/client": "^6.5.0",
+    "@cardano-ogmios/schema": "^6.5.0",
     "@lucid-evolution/lucid": "^0.4.4",
     "@minswap/tiny-invariant": "^1.2.0",
-    "big.js": "^6.1.1",
+    "big.js": "^6.2.1",
     "bignumber.js": "^9.1.2",
+    "exponential-backoff": "^3.1.1",
+    "ioredis": "^5.4.1",
+    "remeda": "^2.12.1",
     "sha3": "^2.1.4"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Assets, UTxO } from "lucid-cardano";
+import { Assets, UTxO } from "@lucid-evolution/lucid";
 
 import { NetworkEnvironment } from "../types/network";
 import {
