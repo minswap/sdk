@@ -1,4 +1,4 @@
-import { Network } from "lucid-cardano";
+import { Network } from "@lucid-evolution/lucid";
 
 import { NetworkEnvironment } from "../types/network";
 

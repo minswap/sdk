@@ -1,5 +1,5 @@
+import { Constr, Credential, Data } from "@lucid-evolution/lucid";
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Credential, Data } from "lucid-cardano";
 
 import { sha3 } from "../utils/hash.internal";
 import { LucidCredential } from "./address.internal";

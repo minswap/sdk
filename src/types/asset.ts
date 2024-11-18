@@ -1,4 +1,4 @@
-import { Constr, Data } from "lucid-cardano";
+import { Constr, Data } from "@lucid-evolution/lucid";
 
 import { StringUtils } from "./string";
 

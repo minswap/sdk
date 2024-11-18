@@ -1,5 +1,5 @@
+import { Address, Constr, Data } from "@lucid-evolution/lucid";
 import invariant from "@minswap/tiny-invariant";
-import { Address, Constr, Data } from "lucid-cardano";
 
 import { getScriptHashFromAddress } from "../utils/address-utils.internal";
 import { AddressPlutusData } from "./address.internal";
