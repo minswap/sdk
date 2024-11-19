@@ -2,7 +2,7 @@ import invariant from "@minswap/tiny-invariant";
 import { Data, Lucid, UnixTime, UTxO } from "lucid-cardano";
 
 import { BlockfrostAdapter, LbeV2Constant, PoolV2 } from "..";
-import { LbeV2 } from "../lbe-v2";
+import { LbeV2 } from "../lbe-v2/lbe-v2";
 import { LbeV2Types } from "../types/lbe-v2";
 import { NetworkEnvironment, NetworkId } from "../types/network";
 import { runRecurringJob } from "../utils/job";

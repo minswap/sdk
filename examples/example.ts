@@ -33,7 +33,7 @@ import {
   StableswapCalculation,
   StableswapConstant,
 } from "../src";
-import { LbeV2 } from "../src/lbe-v2";
+import { LbeV2 } from "../src/lbe-v2/lbe-v2";
 import { Stableswap } from "../src/stableswap";
 import { LbeV2Types } from "../src/types/lbe-v2";
 import { Slippage } from "../src/utils/slippage.internal";
