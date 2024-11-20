@@ -1,17 +1,18 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import invariant from "@minswap/tiny-invariant";
-import BigNumber from "bignumber.js";
 import {
   Address,
   Blockfrost,
   Constr,
   Data,
   Lucid,
+  LucidEvolution,
   Network,
   OutRef,
-  TxComplete,
+  TxSignBuilder,
   UTxO,
-} from "lucid-cardano";
+} from "@lucid-evolution/lucid";
+import invariant from "@minswap/tiny-invariant";
+import BigNumber from "bignumber.js";
 
 import {
   ADA,
@@ -71,7 +72,7 @@ async function main(): Promise<void> {
     utxos
   );
   const signedTx = await txComplete
-    .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+    .sign.withPrivateKey("<YOUR_PRIVATE_KEY>")
     .complete();
   const txId = await signedTx.submit();
   console.info(`Transaction submitted successfully: ${txId}`);
@@ -104,11 +105,11 @@ async function getPoolById(
 
 async function _depositTxExample(
   network: Network,
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
@@ -148,11 +149,11 @@ async function _depositTxExample(
 
 async function _swapExactInTxExample(
   network: Network,
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
@@ -189,11 +190,11 @@ async function _swapExactInTxExample(
 
 async function _swapExactOutTxExample(
   network: Network,
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
@@ -229,11 +230,11 @@ async function _swapExactOutTxExample(
 
 async function _swapLimitExample(
   network: Network,
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
@@ -260,11 +261,11 @@ async function _swapLimitExample(
 
 async function _withdrawTxExample(
   network: Network,
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
@@ -305,11 +306,11 @@ async function _withdrawTxExample(
 
 async function _zapTxExample(
   network: Network,
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
@@ -345,11 +346,11 @@ async function _zapTxExample(
 }
 
 async function _cancelTxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter,
   address: Address,
   orderOutRef: OutRef
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const orderUtxo = (await lucid.utxosByOutRef([orderOutRef]))[0];
   invariant(orderUtxo.datumHash, "order utxo missing datum hash");
   orderUtxo.datum = await blockFrostAdapter.getDatumByDatumHash(
@@ -363,9 +364,9 @@ async function _cancelTxExample(
 }
 
 async function _createPoolV2(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const dexV2 = new DexV2(lucid, blockFrostAdapter);
   const txComplete = await dexV2.createPoolTx({
     assetA: ADA,
@@ -382,11 +383,11 @@ async function _createPoolV2(
 }
 
 async function _swapExactInV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const assetA = ADA;
   const assetB = MIN;
 
@@ -427,11 +428,11 @@ async function _swapExactInV2TxExample(
 }
 
 async function _swapExactOutV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const assetA = ADA;
   const assetB = MIN;
 
@@ -471,11 +472,11 @@ async function _swapExactOutV2TxExample(
 }
 
 async function _depositV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const assetA = ADA;
   const assetB = MIN;
 
@@ -517,11 +518,11 @@ async function _depositV2TxExample(
 }
 
 async function _withdrawV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   // ADA-MIN Lp Asset
   const lpAsset = {
     policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
@@ -566,11 +567,11 @@ async function _withdrawV2TxExample(
 }
 
 async function _stopV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const assetA = ADA;
   const assetB = MIN;
   const amountA = 10_000n;
@@ -608,11 +609,11 @@ async function _stopV2TxExample(
 }
 
 async function _ocoV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const assetA = ADA;
   const assetB = MIN;
   const amountA = 10_000n;
@@ -654,11 +655,11 @@ async function _ocoV2TxExample(
 }
 
 async function _zapOutV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   // ADA-MIN Lp Asset
   const lpAsset = {
     policyId: "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0b",
@@ -698,11 +699,11 @@ async function _zapOutV2TxExample(
 }
 
 async function _partialSwapV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const assetA = ADA;
   const assetB = MIN;
   const amountA = 10_000n;
@@ -749,11 +750,11 @@ async function _partialSwapV2TxExample(
 }
 
 async function _multiRoutingTxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const assetA = MIN;
   const amountA = 10_000n;
 
@@ -834,9 +835,9 @@ async function _multiRoutingTxExample(
 }
 
 async function _cancelV2TxExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockFrostAdapter: BlockfrostAdapter
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   return new DexV2(lucid, blockFrostAdapter).cancelOrder({
     orderOutRefs: [
       {
@@ -849,11 +850,11 @@ async function _cancelV2TxExample(
 }
 
 async function _swapStableExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
   );
@@ -900,11 +901,11 @@ async function _swapStableExample(
 }
 
 async function _depositStableExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
   );
@@ -951,11 +952,11 @@ async function _depositStableExample(
 }
 
 async function _withdrawStableExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
   );
@@ -992,11 +993,11 @@ async function _withdrawStableExample(
 }
 
 async function _withdrawImbalanceStableExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
   );
@@ -1039,11 +1040,11 @@ async function _withdrawImbalanceStableExample(
 }
 
 async function _zapOutStableExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   blockfrostAdapter: BlockfrostAdapter,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
   );
@@ -1088,10 +1089,10 @@ async function _zapOutStableExample(
 }
 
 async function _bulkOrderStableExample(
-  lucid: Lucid,
+  lucid: LucidEvolution,
   address: Address,
   availableUtxos: UTxO[]
-): Promise<TxComplete> {
+): Promise<TxSignBuilder> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
   );
@@ -1121,7 +1122,9 @@ async function _bulkOrderStableExample(
   });
 }
 
-async function _cancelStableExample(lucid: Lucid): Promise<TxComplete> {
+async function _cancelStableExample(
+  lucid: LucidEvolution
+): Promise<TxSignBuilder> {
   const orderUtxos = await lucid.utxosByOutRef([
     {
       txHash:
@@ -1151,14 +1154,14 @@ async function _getBrowserLucidInstance(
   network: Network,
   projectId: string,
   blockfrostUrl: string
-): Promise<Lucid> {
+): Promise<LucidEvolution> {
   const provider = new Blockfrost(blockfrostUrl, projectId);
-  const lucid = await Lucid.new(provider, network);
+  const lucid =  await Lucid(provider, network);
 
   // This is an approach we can inject Eternl Extension to Lucid Instance
   // We can do similar with other wallet extensions
   const api = await window.cardano.eternl.enable();
-  lucid.selectWallet(api);
+  lucid.selectWallet.fromAPI(api);
   return lucid;
 }
 
@@ -1175,12 +1178,10 @@ async function getBackendLucidInstance(
   projectId: string,
   blockfrostUrl: string,
   address: Address
-): Promise<Lucid> {
+): Promise<LucidEvolution> {
   const provider = new Blockfrost(blockfrostUrl, projectId);
-  const lucid = await Lucid.new(provider, network);
-  lucid.selectWalletFrom({
-    address: address,
-  });
+  const lucid = await Lucid(provider, network);
+  lucid.selectWallet.fromAddress(address, await provider.getUtxos(address));
   return lucid;
 }
 

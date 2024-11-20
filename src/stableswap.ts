@@ -1,13 +1,13 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   Assets,
   Constr,
   Data,
-  Lucid,
-  TxComplete,
+  LucidEvolution,
+  TxSignBuilder,
   UTxO,
-} from "lucid-cardano";
+} from "@lucid-evolution/lucid";
+import invariant from "@minswap/tiny-invariant";
 
 import {
   FIXED_DEPOSIT_ADA,
@@ -86,16 +86,16 @@ export type BuildCancelOrderOptions = {
 };
 
 export class Stableswap {
-  private readonly lucid: Lucid;
+  private readonly lucid: LucidEvolution;
   private readonly networkId: NetworkId;
   private readonly networkEnv: NetworkEnvironment;
   private readonly dexVersion = DexVersion.STABLESWAP;
 
-  constructor(lucid: Lucid) {
+  constructor(lucid: LucidEvolution) {
     this.lucid = lucid;
     this.networkId =
-      lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
-    this.networkEnv = lucidToNetworkEnv(lucid.network);
+      lucid.config().network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
+    this.networkEnv = lucidToNetworkEnv(lucid.config().network);
   }
 
   buildOrderValue(option: OrderOptions): Assets {
@@ -286,7 +286,7 @@ export class Stableswap {
     }
   }
 
-  async createBulkOrdersTx(options: BulkOrdersOption): Promise<TxComplete> {
+  async createBulkOrdersTx(options: BulkOrdersOption): Promise<TxSignBuilder> {
     const { sender, availableUtxos, options: orderOptions } = options;
 
     invariant(
@@ -337,11 +337,9 @@ export class Stableswap {
         batcherFee: batcherFee,
         depositADA: FIXED_DEPOSIT_ADA,
       };
-      tx.payToContract(
+      tx.pay.ToContract(
         config.orderAddress,
-        {
-          inline: Data.to(StableOrder.Datum.toPlutusData(datum)),
-        },
+        { kind: "inline", value: Data.to(StableOrder.Datum.toPlutusData(datum)) },
         orderAssets
       );
 
@@ -353,7 +351,7 @@ export class Stableswap {
           customReceiver.receiverDatum.datum
         );
         if (utxoForStoringDatum) {
-          tx.payToAddressWithData(
+          tx.pay.ToAddressWithData(
             utxoForStoringDatum.address,
             utxoForStoringDatum.outputData,
             utxoForStoringDatum.assets
@@ -362,7 +360,7 @@ export class Stableswap {
       }
     }
     if (Object.keys(reductionAssets).length !== 0) {
-      tx.payToAddress(sender, reductionAssets);
+      tx.pay.ToAddress(sender, reductionAssets);
     }
     tx.attachMetadata(674, {
       msg: [
@@ -376,7 +374,7 @@ export class Stableswap {
 
   async buildCancelOrdersTx(
     options: BuildCancelOrderOptions
-  ): Promise<TxComplete> {
+  ): Promise<TxSignBuilder> {
     const tx = this.lucid.newTx();
 
     const redeemer = Data.to(new Constr(StableOrder.Redeemer.CANCEL_ORDER, []));
