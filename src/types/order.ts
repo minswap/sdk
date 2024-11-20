@@ -1,4 +1,4 @@
-import { Address, Constr, Data } from "lucid-cardano";
+import { Address, Constr, Data } from "@lucid-evolution/lucid";
 
 import { AddressPlutusData } from "./address.internal";
 import { Asset } from "./asset";

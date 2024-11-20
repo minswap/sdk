@@ -1,14 +1,14 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   Assets,
   Constr,
   Data,
-  Lucid,
+  LucidEvolution,
   SpendingValidator,
-  TxComplete,
+  TxSignBuilder,
   UTxO,
-} from "lucid-cardano";
+} from "@lucid-evolution/lucid";
+import invariant from "@minswap/tiny-invariant";
 
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
@@ -127,21 +127,21 @@ export type BuildSwapExactInTxOptions = CommonOptions & {
 };
 
 export class Dex {
-  private readonly lucid: Lucid;
+  private readonly lucid: LucidEvolution;
   private readonly networkId: NetworkId;
   private readonly networkEnv: NetworkEnvironment;
   private readonly dexVersion = DexVersion.DEX_V1;
 
-  constructor(lucid: Lucid) {
+  constructor(lucid: LucidEvolution) {
     this.lucid = lucid;
     this.networkId =
-      lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
-    this.networkEnv = lucidToNetworkEnv(lucid.network);
+      lucid.config().network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
+    this.networkEnv = lucidToNetworkEnv(lucid.config().network);
   }
 
   async buildSwapExactInTx(
     options: BuildSwapExactInTxOptions
-  ): Promise<TxComplete> {
+  ): Promise<TxSignBuilder> {
     const {
       sender,
       customReceiver,
@@ -181,14 +181,14 @@ export class Dex {
     };
     const tx = this.lucid
       .newTx()
-      .payToContract(
+      .pay.ToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        { kind: "inline", value: Data.to(OrderV1.Datum.toPlutusData(datum)) },
         orderAssets
       )
       .addSigner(sender);
     if (Object.keys(reductionAssets).length !== 0) {
-      tx.payToAddress(sender, reductionAssets);
+      tx.pay.ToAddress(sender, reductionAssets);
     }
     if (isLimitOrder) {
       tx.attachMetadata(674, {
@@ -199,13 +199,12 @@ export class Dex {
     }
     if (customReceiver && customReceiver.receiverDatum) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         customReceiver.receiver,
         customReceiver.receiverDatum.datum
       );
       if (utxoForStoringDatum) {
-        tx.payToAddressWithData(
+        tx.pay.ToAddressWithData(
           utxoForStoringDatum.address,
           utxoForStoringDatum.outputData,
           utxoForStoringDatum.assets
@@ -217,7 +216,7 @@ export class Dex {
 
   async buildSwapExactOutTx(
     options: BuildSwapExactOutTxOptions
-  ): Promise<TxComplete> {
+  ): Promise<TxSignBuilder> {
     const {
       sender,
       customReceiver,
@@ -259,24 +258,23 @@ export class Dex {
 
     const tx = this.lucid
       .newTx()
-      .payToContract(
+      .pay.ToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        { kind: "inline", value: Data.to(OrderV1.Datum.toPlutusData(datum)) },
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
+      .pay.ToAddress(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.SWAP_EXACT_OUT_ORDER] });
 
     if (customReceiver && customReceiver.receiverDatum) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         customReceiver.receiver,
         customReceiver.receiverDatum.datum
       );
       if (utxoForStoringDatum) {
-        tx.payToAddressWithData(
+        tx.pay.ToAddressWithData(
           utxoForStoringDatum.address,
           utxoForStoringDatum.outputData,
           utxoForStoringDatum.assets
@@ -287,7 +285,7 @@ export class Dex {
     return await tx.complete();
   }
 
-  async buildWithdrawTx(options: BuildWithdrawTxOptions): Promise<TxComplete> {
+  async buildWithdrawTx(options: BuildWithdrawTxOptions): Promise<TxSignBuilder> {
     const {
       sender,
       lpAsset,
@@ -328,18 +326,18 @@ export class Dex {
     };
     return await this.lucid
       .newTx()
-      .payToContract(
+      .pay.ToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        { kind: "inline", value: Data.to(OrderV1.Datum.toPlutusData(datum)) },
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
+      .pay.ToAddress(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.WITHDRAW_ORDER] })
       .complete();
   }
 
-  async buildZapInTx(options: BuildZapInTxOptions): Promise<TxComplete> {
+  async buildZapInTx(options: BuildZapInTxOptions): Promise<TxSignBuilder> {
     const {
       sender,
       assetIn,
@@ -378,18 +376,18 @@ export class Dex {
 
     return await this.lucid
       .newTx()
-      .payToContract(
+      .pay.ToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        { kind: "inline", value: Data.to(OrderV1.Datum.toPlutusData(datum)) },
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
+      .pay.ToAddress(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.ZAP_IN_ORDER] })
       .complete();
   }
 
-  async buildDepositTx(options: BuildDepositTxOptions): Promise<TxComplete> {
+  async buildDepositTx(options: BuildDepositTxOptions): Promise<TxSignBuilder> {
     const {
       sender,
       assetA,
@@ -430,12 +428,12 @@ export class Dex {
     };
     return await this.lucid
       .newTx()
-      .payToContract(
+      .pay.ToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        { kind: "inline", value: Data.to(OrderV1.Datum.toPlutusData(datum)) },
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
+      .pay.ToAddress(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.DEPOSIT_ORDER] })
       .complete();
@@ -443,7 +441,7 @@ export class Dex {
 
   async buildCancelOrder(
     options: BuildCancelOrderOptions
-  ): Promise<TxComplete> {
+  ): Promise<TxSignBuilder> {
     const { orderUtxo } = options;
     const redeemer = Data.to(new Constr(OrderV1.Redeemer.CANCEL_ORDER, []));
     const rawDatum = orderUtxo.datum;
@@ -459,7 +457,7 @@ export class Dex {
       .newTx()
       .collectFrom([orderUtxo], redeemer)
       .addSigner(orderDatum.sender)
-      .attachSpendingValidator(<SpendingValidator>DexV1Constant.ORDER_SCRIPT)
+      .attach.SpendingValidator(<SpendingValidator>DexV1Constant.ORDER_SCRIPT)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .complete();
   }

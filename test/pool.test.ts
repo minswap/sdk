@@ -1,5 +1,5 @@
+import { Data } from "@lucid-evolution/lucid";
 import JSONBig from "json-bigint";
-import { Data } from "lucid-cardano";
 
 import { NetworkId } from "../src";
 import { ADA, Asset } from "../src/types/asset";

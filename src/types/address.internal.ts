@@ -1,12 +1,12 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
-  C,
+  CML,
   Constr,
   Credential,
   Data,
   getAddressDetails,
-} from "lucid-cardano";
+} from "@lucid-evolution/lucid";
+import invariant from "@minswap/tiny-invariant";
 
 import { NetworkId } from "./network";
 
@@ -40,16 +40,16 @@ export namespace LucidCredential {
 
   export function toCSLStakeCredential(
     credential: Credential
-  ): C.StakeCredential {
+  ): CML.Credential {
     switch (credential.type) {
       case "Key": {
-        return C.StakeCredential.from_keyhash(
-          C.Ed25519KeyHash.from_hex(credential.hash)
+        return CML.Credential.new_pub_key(
+          CML.Ed25519KeyHash.from_hex(credential.hash)
         );
       }
       case "Script": {
-        return C.StakeCredential.from_scripthash(
-          C.ScriptHash.from_hex(credential.hash)
+        return CML.Credential.new_script(
+          CML.ScriptHash.from_hex(credential.hash)
         );
       }
     }
@@ -111,7 +111,7 @@ export namespace AddressPlutusData {
                 );
                 const cslStakeCredential =
                   LucidCredential.toCSLStakeCredential(stakeCredential);
-                const cslAddress = C.BaseAddress.new(
+                const cslAddress = CML.BaseAddress.new(
                   networkId,
                   cslPaymentCredential,
                   cslStakeCredential
@@ -130,7 +130,7 @@ export namespace AddressPlutusData {
           }
           case 1: {
             // Enterprise Address
-            const cslAddress = C.EnterpriseAddress.new(
+            const cslAddress = CML.EnterpriseAddress.new(
               networkId,
               cslPaymentCredential
             ).to_address();

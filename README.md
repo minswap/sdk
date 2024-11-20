@@ -22,7 +22,7 @@ We provide two adapter `BlockfrostAdapter` and `MinswapAdapter` to get the price
 
 ## ES Module Requirement
 
-This package depends on `lucid-cardano`, which is an ESM package, so it's also an ESM package. To import from ESM package, you need to specify `"type": "module"` in `package.json` and configure other build flags accordingly.
+This package depends on `LucidEvolution`, which is an ESM package, so it's also an ESM package. To import from ESM package, you need to specify `"type": "module"` in `package.json` and configure other build flags accordingly.
 
 ## Examples
 
