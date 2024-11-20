@@ -1,4 +1,3 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   Assets,
@@ -8,7 +7,6 @@ import {
   Data,
   datumToHash,
   getAddressDetails,
-  Lucid,
   LucidEvolution,
   OutRef,
   stakeCredentialOf,
@@ -16,6 +14,7 @@ import {
   TxSignBuilder,
   UTxO,
 } from "@lucid-evolution/lucid";  
+import invariant from "@minswap/tiny-invariant";
 
 import {
   Asset,
@@ -921,7 +920,6 @@ export class DexV2 {
     }
     for (const necessaryExtraDatum of necessaryExtraDatums) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         necessaryExtraDatum.receiver,
         necessaryExtraDatum.datum

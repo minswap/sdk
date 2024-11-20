@@ -1,4 +1,4 @@
-import { Address, Assets, getAddressDetails, LucidEvolution, OutputDatum } from "@lucid-evolution/lucid";
+import { Address, Assets, getAddressDetails, OutputDatum } from "@lucid-evolution/lucid";
 
 /**
  * Return a Output that pay back to @sender and include @datum
@@ -9,7 +9,6 @@ import { Address, Assets, getAddressDetails, LucidEvolution, OutputDatum } from 
  * @param datum
  */
 export function buildUtxoToStoreDatum(
-    lucid: LucidEvolution,
     sender: Address,
     receiver: Address,
     datum: string

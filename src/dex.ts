@@ -1,15 +1,14 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   Assets,
   Constr,
   Data,
-  Lucid,
   LucidEvolution,
   SpendingValidator,
   TxSignBuilder,
   UTxO,
 } from "@lucid-evolution/lucid";
+import invariant from "@minswap/tiny-invariant";
 
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
@@ -200,7 +199,6 @@ export class Dex {
     }
     if (customReceiver && customReceiver.receiverDatum) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         customReceiver.receiver,
         customReceiver.receiverDatum.datum
@@ -271,7 +269,6 @@ export class Dex {
 
     if (customReceiver && customReceiver.receiverDatum) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         customReceiver.receiver,
         customReceiver.receiverDatum.datum

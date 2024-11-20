@@ -345,7 +345,6 @@ export class Stableswap {
 
       if (customReceiver && customReceiver.receiverDatum) {
         const utxoForStoringDatum = buildUtxoToStoreDatum(
-          this.lucid,
           sender,
           customReceiver.receiver,
           customReceiver.receiverDatum.datum
