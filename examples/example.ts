@@ -1394,7 +1394,7 @@ async function _lbeV2WithdrawOrderExample(
   });
 }
 
-// FAIL ???
+// Example Tx: 9667528ebfe0c51aad3c6ef6b1dc7e1660c55c8d712d30eb81a5520dd4aca780
 async function _lbeV2CloseEventExample(
   lucid: Lucid,
   address: Address,

@@ -589,7 +589,7 @@ export function validateCollectOrders(
       Data.from(rawOrderDatum),
       networkId
     );
-    invariant(orderDatum.isCollected, "Order must not be collected");
+    invariant(orderDatum.isCollected === false, "Order must not be collected");
     invariant(
       config.orderAsset in orderUtxo.assets,
       "Order utxo assets must have order asset"

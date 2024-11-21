@@ -1069,6 +1069,15 @@ export class LbeV2 {
     );
     lucidTx.readFrom(orderRefs);
 
+    const factoryRefs = await this.lucid.utxosByOutRef([
+      LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].factory,
+    ]);
+    invariant(
+      factoryRefs.length === 1,
+      "cannot find deployed script for LbeV2 Factory"
+    );
+    lucidTx.readFrom(factoryRefs);
+
     const treasuryRefs = await this.lucid.utxosByOutRef([
       LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].treasury,
     ]);
@@ -1216,7 +1225,7 @@ export class LbeV2 {
     const dexV2Config = DexV2Constant.CONFIG[this.networkId];
 
     const lpAssetUnit =
-      dexV2Config.factoryScriptHash +
+      dexV2Config.lpPolicyId +
       PoolV2.computeLPAssetName(
         treasuryDatum.raiseAsset,
         treasuryDatum.baseAsset
@@ -1307,17 +1316,19 @@ export class LbeV2 {
 
     // PAY TO
     const newTreasuryAssets: Assets = { ...treasuryUtxo.assets };
-    if (raiseAssetUnit in newTreasuryAssets) {
+    if (raiseAssetUnit in newTreasuryAssets && totalOrderBonusRaise > 0n) {
       newTreasuryAssets[raiseAssetUnit] =
         newTreasuryAssets[raiseAssetUnit] - totalOrderBonusRaise;
-    } else {
-      newTreasuryAssets[raiseAssetUnit] = totalOrderBonusRaise;
+      if (newTreasuryAssets[raiseAssetUnit] === 0n) {
+        delete newTreasuryAssets[raiseAssetUnit];
+      }
     }
-    if (lpAssetUnit in newTreasuryAssets) {
+    if (lpAssetUnit in newTreasuryAssets && totalOrderLiquidity > 0n) {
       newTreasuryAssets[lpAssetUnit] =
         newTreasuryAssets[lpAssetUnit] - totalOrderLiquidity;
-    } else {
-      newTreasuryAssets[lpAssetUnit] = totalOrderLiquidity;
+      if (newTreasuryAssets[lpAssetUnit] === 0n) {
+        delete newTreasuryAssets[lpAssetUnit];
+      }
     }
     lucidTx.payToContract(
       config.treasuryAddress,
@@ -1334,6 +1345,16 @@ export class LbeV2 {
     for (const { assets, address } of orderOutputs) {
       lucidTx.payToAddress(address, assets);
     }
+
+    // MINT
+    lucidTx.mintAssets(
+      { [config.orderAsset]: -BigInt(orderDatums.length) },
+      Data.to(
+        LbeV2Types.FactoryRedeemer.toPlutusData({
+          type: LbeV2Types.FactoryRedeemerType.MINT_REDEEM_ORDERS,
+        })
+      )
+    );
 
     // WITHDRAW
     lucidTx.withdraw(
@@ -1405,7 +1426,7 @@ export class LbeV2 {
       }
       orderOutputs.push({
         address: orderDatum.owner,
-        assets: {},
+        assets: orderOutAssets,
       });
     }
 
@@ -1457,8 +1478,9 @@ export class LbeV2 {
     if (raiseAssetUnit in newTreasuryAssets) {
       newTreasuryAssets[raiseAssetUnit] =
         newTreasuryAssets[raiseAssetUnit] - refundAmount;
-    } else {
-      newTreasuryAssets[raiseAssetUnit] = -refundAmount;
+      if (newTreasuryAssets[raiseAssetUnit] === 0n) {
+        delete newTreasuryAssets[raiseAssetUnit];
+      }
     }
     lucidTx.payToContract(
       config.treasuryAddress,
@@ -1477,6 +1499,16 @@ export class LbeV2 {
     for (const { assets, address } of orderOutputs) {
       lucidTx.payToAddress(address, assets);
     }
+
+    // MINT
+    lucidTx.mintAssets(
+      { [config.orderAsset]: -BigInt(orderDatums.length) },
+      Data.to(
+        LbeV2Types.FactoryRedeemer.toPlutusData({
+          type: LbeV2Types.FactoryRedeemerType.MINT_REDEEM_ORDERS,
+        })
+      )
+    );
 
     // WITHDRAW
     lucidTx.withdraw(
@@ -1602,10 +1634,9 @@ export class LbeV2 {
       ...treasuryUtxo.assets,
     };
     delete newTreasuryAssets[Asset.toString(baseAsset)];
-    if (totalReserveRaise === collectedFund) {
+    newTreasuryAssets[Asset.toString(raiseAsset)] -= totalReserveRaise;
+    if (newTreasuryAssets[Asset.toString(raiseAsset)] === 0n) {
       delete newTreasuryAssets[Asset.toString(raiseAsset)];
-    } else {
-      newTreasuryAssets[Asset.toString(raiseAsset)] -= totalReserveRaise;
     }
     if (totalLbeLPs - receiverLP !== 0n) {
       newTreasuryAssets[Asset.toString(lpAsset)] = totalLbeLPs - receiverLP;

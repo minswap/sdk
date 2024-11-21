@@ -395,12 +395,18 @@ export class LbeV2Worker {
       // CREATE POOL OR CANCEL EVENT
       {
         checkFn: (treasuryDatum, _) => {
-          const { reserveRaise, totalPenalty, collectedFund, isCancelled } =
-            treasuryDatum;
+          const {
+            reserveRaise,
+            totalPenalty,
+            collectedFund,
+            isCancelled,
+            totalLiquidity,
+          } = treasuryDatum;
 
           return (
             reserveRaise + totalPenalty === collectedFund &&
-            isCancelled === false
+            isCancelled === false &&
+            totalLiquidity === 0n
           );
         },
         handleFn: this.createAmmPoolOrCancelEvent.bind(this),
