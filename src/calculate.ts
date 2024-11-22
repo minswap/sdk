@@ -1056,8 +1056,6 @@ export namespace StableswapCalculation {
   }
 }
 
-export namespace LbeV2Calculation {}
-
 function shortenFraction([numerator, denominator]: [bigint, bigint]): [
   bigint,
   bigint,
