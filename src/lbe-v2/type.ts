@@ -30,6 +30,14 @@ export type LbeV2CreateEventOptions = {
   projectDetails?: LbeV2ProjectDetails;
 };
 
+export type LbeV2UpdateEventOptions = {
+  owner: Address;
+  treasuryUtxo: UTxO;
+  lbeV2Parameters: LbeV2Types.LbeV2Parameters;
+  currentSlot: number;
+  projectDetails?: LbeV2ProjectDetails;
+};
+
 export type LbeV2CancelEventOptions = {
   treasuryUtxo: UTxO;
   cancelData:

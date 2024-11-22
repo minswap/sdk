@@ -1221,6 +1221,75 @@ async function _createLbeV2EventExample(
   });
 }
 
+// Example Tx: 40116c275da234ec6b7c88ff38dfa45ad18c7c1388c2d3f8f6e43dfef90b7e70
+async function _updateLbeV2EventExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0ba547d1ae595c49041570991a1c33729106e635f20643b99e3ddb1e77dc439586"
+  );
+  const curSlot = lucid.currentSlot();
+  const curDate = lucid.utils.slotToUnixTime(curSlot);
+  const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
+    baseAsset: baseAsset,
+    reserveBase: 100_000n,
+    raiseAsset: ADA,
+    startTime: BigInt(curDate + _ONE_DAY_IN_MS * 20),
+    endTime: BigInt(curDate + _ONE_DAY_IN_MS * 20 + 2 * ONE_HOUR_IN_MS),
+    owner: address,
+    receiver: address,
+    poolAllocation: 100n,
+    minimumOrderRaise: undefined,
+    minimumRaise: 10_000_000n,
+    maximumRaise: 100_000_000n,
+    penaltyConfig: {
+      penaltyStartTime: BigInt(
+        curDate + _ONE_DAY_IN_MS * 20 + 10 * ONE_MINUTE_IN_MS
+      ),
+      percent: 20n,
+    },
+    revocable: true,
+    poolBaseFee: 30n,
+  };
+  const projectDetails = {
+    eventName: "TEST SDK hiiiiiiii",
+    description: "test lbe v2 in public sdk",
+    socialLinks: {
+      twitter: "https://x.com/MinswapDEX",
+      telegram: "https://t.me/MinswapMafia",
+      discord: "https://discord.gg/minswap",
+      website: "https://app.minswap.org/",
+    },
+    tokenomics: [
+      {
+        tag: "admin",
+        percentage: "70",
+      },
+      {
+        tag: "LBE",
+        percentage: "30",
+      },
+    ],
+  };
+  const currentSlot = await blockfrostAdapter.currentSlot();
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, ADA);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, "Event is not created");
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { outputIndex: treasury.txIn.index, txHash: treasury.txIn.txHash },
+  ]);
+  invariant(treasuryUtxos.length !== 0, "Can not find factory utxo");
+  return new LbeV2(lucid).updateEvent({
+    owner: await lucid.wallet.address(),
+    treasuryUtxo: treasuryUtxos[0],
+    lbeV2Parameters: lbeV2Parameters,
+    currentSlot: currentSlot,
+    projectDetails: projectDetails,
+  });
+}
+
 // Example Tx: b3c7049ff4402bdb2f3fe6522c720fad499d5f3dae512299dfb3a5e011a66496
 async function _lbeV2AddMoreSellersExample(
   lucid: Lucid,

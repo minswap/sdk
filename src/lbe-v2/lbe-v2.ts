@@ -35,6 +35,7 @@ import {
   LbeV2CancelEventOptions,
   LbeV2CreateEventOptions,
   LbeV2DepositOrWithdrawOptions,
+  LbeV2UpdateEventOptions,
   RedeemOrdersOptions,
   RefundOrdersOptions,
 } from "./type";
@@ -50,6 +51,7 @@ import {
   validateDepositOrWithdrawOrder,
   validateRedeemOrders,
   validateRefundOrders,
+  validateUpdateEvent,
 } from "./validation";
 
 function compareUtxo(s1: UTxO, s2: UTxO): number {
@@ -79,7 +81,7 @@ export class LbeV2 {
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
     this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
-  // MARK: CREATE EVENT
+
   async createEvent(options: LbeV2CreateEventOptions): Promise<TxComplete> {
     validateCreateEvent(options, this.lucid, this.networkId);
     const { lbeV2Parameters, factoryUtxo, projectDetails, currentSlot } =
@@ -252,7 +254,98 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: CANCEL EVENT
+  async updateEvent(options: LbeV2UpdateEventOptions): Promise<TxComplete> {
+    validateUpdateEvent(options, this.lucid, this.networkId);
+
+    const {
+      owner,
+      treasuryUtxo,
+      lbeV2Parameters,
+      currentSlot,
+      projectDetails,
+    } = options;
+    const config = LbeV2Constant.CONFIG[this.networkId];
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+
+    const datum = treasuryUtxo.datum;
+    invariant(datum, "Treasury utxo must have inline datum");
+    const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+      this.networkId,
+      Data.from(datum)
+    );
+
+    const newTreasuryDatum: LbeV2Types.TreasuryDatum =
+      LbeV2Types.LbeV2Parameters.toLbeV2TreasuryDatum(
+        this.networkId,
+        lbeV2Parameters
+      );
+    const lucidTx = this.lucid.newTx();
+
+    // READ FROM
+    const treasuryRefs = await this.lucid.utxosByOutRef([
+      LbeV2Constant.DEPLOYED_SCRIPTS[this.networkId].treasury,
+    ]);
+    invariant(
+      treasuryRefs.length === 1,
+      "cannot find deployed script for LbeV2 Factory"
+    );
+    lucidTx.readFrom(treasuryRefs);
+
+    // COLLECT FROM
+    lucidTx.collectFrom(
+      [treasuryUtxo],
+      Data.to(
+        LbeV2Types.TreasuryRedeemer.toPlutusData({
+          type: LbeV2Types.TreasuryRedeemerType.UPDATE_LBE,
+        })
+      )
+    );
+
+    // PAY TO
+    lucidTx.payToContract(
+      config.treasuryAddress,
+      {
+        inline: Data.to(
+          LbeV2Types.TreasuryDatum.toPlutusData(newTreasuryDatum)
+        ),
+      },
+      {
+        [config.treasuryAsset]: 1n,
+        lovelace:
+          LbeV2Constant.TREASURY_MIN_ADA + LbeV2Constant.CREATE_POOL_COMMISSION,
+        [Asset.toString(newTreasuryDatum.baseAsset)]:
+          lbeV2Parameters.reserveBase,
+      }
+    );
+
+    // SIGNER
+    lucidTx.addSigner(owner);
+
+    // TIME RANGE
+    lucidTx
+      .validFrom(currentTime)
+      .validTo(
+        Math.min(
+          Number(treasuryDatum.startTime) - 1000,
+          Number(lbeV2Parameters.startTime) - 1000,
+          currentTime + THREE_HOUR_IN_MS
+        )
+      );
+
+    // METADATA
+    const extraData: string[] | null =
+      projectDetails !== undefined
+        ? JSONBig.stringify(projectDetails).match(/.{1,64}/g)
+        : null;
+    invariant(extraData, "cannot parse LbeV2 Project Details");
+    lucidTx.attachMetadata(674, {
+      msg: [MetadataMessage.UPDATE_EVENT],
+      extraData: extraData ?? [],
+    });
+
+    return await lucidTx.complete();
+  }
+
   async cancelEvent(options: LbeV2CancelEventOptions): Promise<TxComplete> {
     validateCancelEvent(options, this.lucid, this.networkId);
     const { treasuryUtxo, cancelData, currentSlot } = options;
@@ -334,7 +427,6 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: DEPOSIT OR WITHDRAW ORDER
   calculatePenaltyAmount(options: {
     time: bigint;
     totalInputAmount: bigint;
@@ -560,7 +652,6 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: CLOSE EVENT
   async closeEventTx(options: CloseEventOptions): Promise<TxComplete> {
     validateCloseEvent(options, this.networkId);
     const { treasuryUtxo, headFactoryUtxo, tailFactoryUtxo, currentSlot } =
@@ -676,7 +767,6 @@ export class LbeV2 {
     return await lucidTx.complete();
   }
 
-  // MARK: ADD MORE SELLER
   async addSellers(options: AddSellersOptions): Promise<TxComplete> {
     validateAddSeller(options, this.lucid, this.networkId);
     const {
@@ -797,7 +887,6 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: COUNTING SELLER
   async countingSellers(options: CountingSellersOptions): Promise<TxComplete> {
     validateCountingSeller(options, this.lucid, this.networkId);
     const { treasuryUtxo, managerUtxo, sellerUtxos, currentSlot } = options;
@@ -923,7 +1012,6 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: COLLECT MANAGER
   async collectManager(options: CollectManagerOptions): Promise<TxComplete> {
     validateCollectManager(options, this.lucid, this.networkId);
     const { treasuryUtxo, managerUtxo, currentSlot } = options;
@@ -1028,7 +1116,6 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: COLLECT ORDERS
   async collectOrders(options: CollectOrdersOptions): Promise<TxComplete> {
     validateCollectOrders(options, this.networkId);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
@@ -1169,7 +1256,6 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: REDEEM ORDERS
   calculateRedeemAmount(params: CalculationRedeemAmountParams): {
     liquidityAmount: bigint;
     returnedRaiseAmount: bigint;
@@ -1378,7 +1464,6 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: REFUND ORDERS
   async refundOrders(options: RefundOrdersOptions): Promise<TxComplete> {
     validateRefundOrders(options, this.networkId);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
@@ -1532,7 +1617,6 @@ export class LbeV2 {
     return lucidTx.complete();
   }
 
-  // MARK: CREATE AMM POOL
   async createAmmPool(options: CreateAmmPoolTxOptions): Promise<TxComplete> {
     validateCreateAmmPool(options, this.networkId);
     const { treasuryUtxo, ammFactoryUtxo, currentSlot } = options;

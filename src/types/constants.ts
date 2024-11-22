@@ -767,6 +767,7 @@ export enum MetadataMessage {
   CREATE_POOL = "SDK Minswap: Create Pool",
   // LAUNCH
   CREATE_EVENT = "SDK Minswap: Create Event",
+  UPDATE_EVENT = "SDK Minswap: Update Event",
   CANCEL_EVENT_BY_OWNER = "SDK Minswap: Cancel Event By Onwer",
   CANCEL_EVENT_BY_WORKER = "SDK Minswap: Cancel Event By Worker",
   LBE_V2_DEPOSIT_ORDER_EVENT = "SDK Minswap: Deposit Lbe V2 Order",

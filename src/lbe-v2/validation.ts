@@ -23,6 +23,7 @@ import {
   LbeV2CreateEventOptions,
   LbeV2DepositOrWithdrawOptions,
   LbeV2ProjectDetails,
+  LbeV2UpdateEventOptions,
   RedeemOrdersOptions,
   RefundOrdersOptions,
 } from "./type";
@@ -147,6 +148,50 @@ export function validateProjectDetails(details: LbeV2ProjectDetails): void {
     totalPercentage === 100 || tokenomics === undefined,
     "total percentage is not 100%"
   );
+}
+
+export function validateUpdateEvent(
+  options: LbeV2UpdateEventOptions,
+  lucid: Lucid,
+  networkId: NetworkId
+): void {
+  const { owner, treasuryUtxo, lbeV2Parameters, currentSlot, projectDetails } =
+    options;
+  const config = LbeV2Constant.CONFIG[networkId];
+  const currentTime = lucid.utils.slotToUnixTime(currentSlot);
+  const datum = treasuryUtxo.datum;
+  invariant(
+    config.treasuryAsset in treasuryUtxo.assets,
+    "Treasury utxo assets must have treasury asset"
+  );
+  invariant(datum, "Treasury utxo must have inline datum");
+  const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
+    networkId,
+    Data.from(datum)
+  );
+  invariant(
+    currentTime < treasuryDatum.startTime,
+    "validateUpdateLbe: currentTime must be before start time"
+  );
+  invariant(
+    treasuryDatum.isCancelled === false,
+    "validateUpdateLbe: LBE is cancelled"
+  );
+  invariant(
+    Asset.toString(treasuryDatum.baseAsset) ===
+      Asset.toString(lbeV2Parameters.baseAsset),
+    "Invalid base asset"
+  );
+  invariant(
+    Asset.toString(treasuryDatum.raiseAsset) ===
+      Asset.toString(lbeV2Parameters.raiseAsset),
+    "Invalid raise asset"
+  );
+  invariant(owner === treasuryDatum.owner, "Invalid owner");
+  validateLbeV2Parameters(lbeV2Parameters, currentTime);
+  if (projectDetails !== undefined) {
+    validateProjectDetails(projectDetails);
+  }
 }
 
 export function validateCancelEvent(
