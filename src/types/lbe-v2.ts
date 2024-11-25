@@ -1,4 +1,4 @@
-import { Address, Constr, Data } from "lucid-cardano";
+import { Address, Constr, Data } from "@minswap/lucid-cardano";
 
 import { Asset, LbeV2Constant, NetworkId, PoolV2 } from "..";
 import { AddressPlutusData } from "./address.internal";

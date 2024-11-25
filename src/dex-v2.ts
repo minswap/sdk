@@ -1,4 +1,3 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   Assets,
@@ -10,7 +9,8 @@ import {
   Tx,
   TxComplete,
   UTxO,
-} from "lucid-cardano";
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
 
 import {
   Asset,

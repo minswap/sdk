@@ -1,4 +1,4 @@
-import { Address, UTxO } from "lucid-cardano";
+import { Address, UTxO } from "@minswap/lucid-cardano";
 
 import { LbeV2Types } from "../types/lbe-v2";
 

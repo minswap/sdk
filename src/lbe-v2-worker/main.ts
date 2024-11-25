@@ -1,5 +1,5 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { Address, Blockfrost, Lucid, Network } from "lucid-cardano";
+import { Address, Blockfrost, Lucid, Network } from "@minswap/lucid-cardano";
 
 import { BlockfrostAdapter, NetworkId } from "../../src";
 import { NetworkEnvironment } from "../types/network";

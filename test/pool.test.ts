@@ -1,5 +1,5 @@
 import JSONBig from "json-bigint";
-import { Data } from "lucid-cardano";
+import { Data } from "@minswap/lucid-cardano";
 
 import { NetworkId } from "../src";
 import { ADA, Asset } from "../src/types/asset";

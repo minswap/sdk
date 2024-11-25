@@ -1,6 +1,4 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import invariant from "@minswap/tiny-invariant";
-import BigNumber from "bignumber.js";
 import {
   Address,
   Blockfrost,
@@ -11,7 +9,9 @@ import {
   OutRef,
   TxComplete,
   UTxO,
-} from "lucid-cardano";
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
+import BigNumber from "bignumber.js";
 
 import {
   ADA,
@@ -45,7 +45,7 @@ const MIN: Asset = {
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "hihi";
+  const blockfrostProjectId = "preprodSj4PM4LDOTa2BbfAY4XIEqASI9gKzOEz";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =

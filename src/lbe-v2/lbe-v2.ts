@@ -1,5 +1,3 @@
-import invariant from "@minswap/tiny-invariant";
-import JSONBig from "json-bigint";
 import {
   Address,
   Assets,
@@ -9,7 +7,9 @@ import {
   Tx,
   TxComplete,
   UTxO,
-} from "lucid-cardano";
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
+import JSONBig from "json-bigint";
 
 import {
   DexV2Calculation,

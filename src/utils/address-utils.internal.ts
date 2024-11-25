@@ -1,4 +1,4 @@
-import { C } from "lucid-cardano";
+import { C } from "@minswap/lucid-cardano";
 
 export function getScriptHashFromAddress(addr: string): string | null {
   try {

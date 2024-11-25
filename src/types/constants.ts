@@ -1,5 +1,5 @@
+import { Address, OutRef, Script } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
-import { Address, OutRef, Script } from "lucid-cardano";
 
 import { Asset } from "..";
 import { NetworkEnvironment, NetworkId } from "./network";

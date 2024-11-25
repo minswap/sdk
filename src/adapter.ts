@@ -4,17 +4,17 @@ import {
   Responses,
 } from "@blockfrost/blockfrost-js";
 import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
-import invariant from "@minswap/tiny-invariant";
-import * as Prisma from "@prisma/client";
-import Big from "big.js";
-import JSONBig from "json-bigint";
 import {
   Address,
   C,
   fromHex,
   SLOT_CONFIG_NETWORK,
   slotToBeginUnixTime,
-} from "lucid-cardano";
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
+import * as Prisma from "@prisma/client";
+import Big from "big.js";
+import JSONBig from "json-bigint";
 
 import { StableswapCalculation } from "./calculate";
 import { PostgresRepositoryReader } from "./syncer/repository/postgres-repository";

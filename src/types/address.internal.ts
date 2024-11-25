@@ -1,4 +1,3 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   C,
@@ -6,7 +5,8 @@ import {
   Credential,
   Data,
   getAddressDetails,
-} from "lucid-cardano";
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
 
 import { NetworkId } from "./network";
 

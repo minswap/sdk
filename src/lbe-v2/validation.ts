@@ -1,5 +1,5 @@
+import { Data, Lucid } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
-import { Data, Lucid } from "lucid-cardano";
 
 import {
   Asset,

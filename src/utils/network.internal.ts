@@ -1,4 +1,4 @@
-import { Network } from "lucid-cardano";
+import { Network } from "@minswap/lucid-cardano";
 
 import { NetworkEnvironment } from "../types/network";
 
