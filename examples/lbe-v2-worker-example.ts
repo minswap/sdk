@@ -1,9 +1,10 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { Address, Blockfrost, Lucid, Network } from "@minswap/lucid-cardano";
+import { Network } from "@minswap/lucid-cardano";
 
-import { BlockfrostAdapter, NetworkId } from "..";
-import { NetworkEnvironment } from "../types/network";
-import { LbeV2Worker } from "./worker";
+import { BlockfrostAdapter, NetworkId } from "../src";
+import { NetworkEnvironment } from "../src/types/network";
+import { LbeV2Worker } from "../src/lbe-v2-worker/worker";
+import { getBackendLucidInstance } from "../src/utils/lucid";
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
@@ -37,28 +38,6 @@ async function main(): Promise<void> {
   });
 
   await worker.start();
-}
-
-/**
- * Initialize Lucid Instance for Backend Environment
- * @param network Network you're working on
- * @param projectId Blockfrost API KEY
- * @param blockfrostUrl Blockfrost URL
- * @param address Your own address
- * @returns
- */
-async function getBackendLucidInstance(
-  network: Network,
-  projectId: string,
-  blockfrostUrl: string,
-  address: Address
-): Promise<Lucid> {
-  const provider = new Blockfrost(blockfrostUrl, projectId);
-  const lucid = await Lucid.new(provider, network);
-  lucid.selectWalletFrom({
-    address: address,
-  });
-  return lucid;
 }
 
 void main();

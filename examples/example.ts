@@ -37,6 +37,7 @@ import { LbeV2 } from "../src/lbe-v2/lbe-v2";
 import { Stableswap } from "../src/stableswap";
 import { LbeV2Types } from "../src/types/lbe-v2";
 import { Slippage } from "../src/utils/slippage.internal";
+import { getBackendLucidInstance } from "../src/utils/lucid";
 
 const MIN: Asset = {
   policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
@@ -67,7 +68,7 @@ async function main(): Promise<void> {
 
   // const utxos = await lucid.utxosAt(address);
 
-  const txComplete = await _lbeV2AddMoreSellersExample(
+  const txComplete = await _lbeV2DepositOrderExample(
     lucid,
     address,
     blockfrostAdapter
@@ -1530,28 +1531,6 @@ async function _getBrowserLucidInstance(
   // We can do similar with other wallet extensions
   const api = await window.cardano.eternl.enable();
   lucid.selectWallet(api);
-  return lucid;
-}
-
-/**
- * Initialize Lucid Instance for Backend Environment
- * @param network Network you're working on
- * @param projectId Blockfrost API KEY
- * @param blockfrostUrl Blockfrost URL
- * @param address Your own address
- * @returns
- */
-async function getBackendLucidInstance(
-  network: Network,
-  projectId: string,
-  blockfrostUrl: string,
-  address: Address
-): Promise<Lucid> {
-  const provider = new Blockfrost(blockfrostUrl, projectId);
-  const lucid = await Lucid.new(provider, network);
-  lucid.selectWalletFrom({
-    address: address,
-  });
   return lucid;
 }
 
