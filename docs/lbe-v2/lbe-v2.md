@@ -8,13 +8,11 @@ This documentation provides guidelines for communicating with and interacting wi
 
 [LBE Specification](./LBE%20Specification.pdf)
 
-Worker is a class that executes off-chain actions when an event ends. 
-
 ### Transaction Builder Function
 
 - **LBEV2 Class**: Located in `src/lbe-v2/lbe-v2.ts`.
 - **User and project owner action Example**: Located in `example/example.ts`.
-- **LBEV2Worker Class**: Located in `src/lbe-v2-worker/worker.ts`.
+- **LBEV2Worker Class**: is a class that executes off-chain actions when an event ends. Located in `src/lbe-v2-worker/worker.ts`.
 - **LBEV2Worker Example**: Located in `examples/lbe-v2-worker-example.ts`.
 
 ## Example Usage
