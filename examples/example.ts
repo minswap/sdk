@@ -36,8 +36,8 @@ import {
 import { LbeV2 } from "../src/lbe-v2/lbe-v2";
 import { Stableswap } from "../src/stableswap";
 import { LbeV2Types } from "../src/types/lbe-v2";
-import { Slippage } from "../src/utils/slippage.internal";
 import { getBackendLucidInstance } from "../src/utils/lucid";
+import { Slippage } from "../src/utils/slippage.internal";
 
 const MIN: Asset = {
   policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
@@ -46,7 +46,7 @@ const MIN: Asset = {
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "preprodSj4PM4LDOTa2BbfAY4XIEqASI9gKzOEz";
+  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
@@ -66,14 +66,14 @@ async function main(): Promise<void> {
     })
   );
 
-  // const utxos = await lucid.utxosAt(address);
-
   const txComplete = await _lbeV2DepositOrderExample(
     lucid,
     address,
     blockfrostAdapter
   );
-  const signedTx = await txComplete.signWithPrivateKey("hihi").complete();
+  const signedTx = await txComplete
+    .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+    .complete();
 
   const txId = await signedTx.submit();
   console.info(`Transaction submitted successfully: ${txId}`);
