@@ -12,6 +12,7 @@ import invariant from "@minswap/tiny-invariant";
 import JSONBig from "json-bigint";
 
 import {
+  compareUtxo,
   DexV2Calculation,
   DexV2Constant,
   LbeV2Constant,
@@ -53,20 +54,6 @@ import {
   validateRefundOrders,
   validateUpdateEvent,
 } from "./validation";
-
-function compareUtxo(s1: UTxO, s2: UTxO): number {
-  if (s1.txHash === s2.txHash) {
-    return s1.outputIndex - s2.outputIndex;
-  }
-
-  if (s1.txHash < s2.txHash) {
-    return -1;
-  }
-  if (s1.txHash === s2.txHash) {
-    return 0;
-  }
-  return 1;
-}
 
 const THREE_HOUR_IN_MS = 3 * 60 * 60 * 1000;
 
