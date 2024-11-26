@@ -1,4 +1,5 @@
 import { Constr, Data } from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
 
 import { StringUtils } from "./string";
 
@@ -48,6 +49,10 @@ export namespace Asset {
         if (data.index !== 0) {
             throw new Error(`Index of Asset must be 0, actual: ${data.index}`)
         }
+        invariant(
+          data.fields.length === 2,
+          `Asset fields length must be 2, actual: ${data.fields.length}`
+        );
         return {
             policyId: data.fields[0] as string,
             tokenName: data.fields[1] as string

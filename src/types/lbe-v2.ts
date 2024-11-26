@@ -1,9 +1,11 @@
 import { Address, Constr, Data } from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
 
 import { Asset, LbeV2Constant, NetworkId, PoolV2 } from "..";
 import { AddressPlutusData } from "./address.internal";
 import { Bool, Options } from "./common";
 import { TxIn, Value } from "./tx.internal";
+
 export namespace LbeV2Types {
   export enum ReceiverDatumType {
     NO_DATUM = 0,
@@ -37,16 +39,28 @@ export namespace LbeV2Types {
 
     export function fromPlutusData(data: Constr<Data>): ReceiverDatum {
       switch (data.index) {
-        case 0: {
+        case ReceiverDatumType.NO_DATUM: {
+          invariant(
+            data.fields.length === 0,
+            `NO_DATUM Receiver Datum fields length must be 0, actual: ${data.fields.length}`
+          );
           return { type: ReceiverDatumType.NO_DATUM };
         }
-        case 1: {
+        case ReceiverDatumType.DATUM_HASH: {
+          invariant(
+            data.fields.length === 1,
+            `DATUM_HASH Receiver Datum fields length must be 1, actual: ${data.fields.length}`
+          );
           return {
             type: ReceiverDatumType.DATUM_HASH,
             hash: data.fields[0] as string,
           };
         }
-        case 2: {
+        case ReceiverDatumType.INLINE_DATUM: {
+          invariant(
+            data.fields.length === 1,
+            `INLINE_DATUM Receiver Datum fields length must be 1, actual: ${data.fields.length}`
+          );
           return {
             type: ReceiverDatumType.INLINE_DATUM,
             hash: data.fields[0] as string,
@@ -74,6 +88,10 @@ export namespace LbeV2Types {
     export function fromPlutusData(data: Constr<Data>): PenaltyConfig {
       switch (data.index) {
         case 0: {
+          invariant(
+            data.fields.length === 2,
+            `Penalty Config fields length must be 2, actual: ${data.fields.length}`
+          );
           return {
             penaltyStartTime: data.fields[0] as bigint,
             percent: data.fields[1] as bigint,
@@ -196,6 +214,10 @@ export namespace LbeV2Types {
         );
       }
 
+      invariant(
+        data.fields.length === 25,
+        `Treasury Datum fields length must be 25, actual: ${data.fields.length}`
+      );
       const fields = data.fields;
       return {
         factoryPolicyId: fields[0] as string,
@@ -411,6 +433,10 @@ export namespace LbeV2Types {
     export function fromPlutusData(data: Constr<Data>): FactoryDatum {
       switch (data.index) {
         case 0: {
+          invariant(
+            data.fields.length === 2,
+            `Factory Datum fields length must be 2, actual: ${data.fields.length}`
+          );
           return {
             head: data.fields[0] as string,
             tail: data.fields[1] as string,
@@ -541,6 +567,10 @@ export namespace LbeV2Types {
       switch (data.index) {
         case 0: {
           const fields = data.fields;
+          invariant(
+            fields.length === 6,
+            `Manager Datum fields length must be 6, actual: ${fields.length}`
+          );
           return {
             factoryPolicyId: fields[0] as string,
             baseAsset: Asset.fromPlutusData(fields[1] as Constr<Data>),
@@ -634,6 +664,10 @@ export namespace LbeV2Types {
       switch (data.index) {
         case 0: {
           const fields = data.fields;
+          invariant(
+            fields.length === 6,
+            `Seller Datum fields length must be 6, actual: ${fields.length}`
+          );
           return {
             factoryPolicyId: fields[0] as string,
             owner: AddressPlutusData.fromPlutusData(
@@ -732,6 +766,10 @@ export namespace LbeV2Types {
       switch (data.index) {
         case 0: {
           const fields = data.fields;
+          invariant(
+            fields.length === 7,
+            `Order Datum fields length must be 7, actual: ${fields.length}`
+          );
           return {
             factoryPolicyId: fields[0] as string,
             baseAsset: Asset.fromPlutusData(fields[1] as Constr<Data>),
