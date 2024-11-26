@@ -1197,7 +1197,7 @@ export namespace OrderV2 {
             }
             default: {
               throw new Error(
-                `Index of Expiry Options must have 1, actual: ${expiryOptions.index}`
+                `Index of Expiry Options must be 0, actual: ${expiryOptions.index}`
               );
             }
           }
@@ -1205,7 +1205,7 @@ export namespace OrderV2 {
         }
         case 1: {
           expiry = undefined;
-          if (maybeExpiry.fields.length === 0) {
+          if (maybeExpiry.fields.length !== 0) {
             throw new Error(
               `Order undefined Expiry must have 0 elements, actual: ${maybeExpiry.fields.length}`
             );

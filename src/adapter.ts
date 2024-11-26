@@ -594,18 +594,20 @@ export class BlockfrostAdapter implements Adapter {
             utxo.amount,
             utxo.inline_datum
           );
-        }
-        if (utxo.data_hash !== null) {
-          const orderDatum = await this.blockFrostApi.scriptsDatumCbor(
-            utxo.data_hash
-          );
-          order = new OrderV2.State(
-            this.networkId,
-            utxo.address,
-            { txHash: utxo.tx_hash, index: utxo.output_index },
-            utxo.amount,
-            orderDatum.cbor
-          );
+          console.log(utxo.data_hash);
+        } else {
+          if (utxo.data_hash !== null) {
+            const orderDatum = await this.blockFrostApi.scriptsDatumCbor(
+              utxo.data_hash
+            );
+            order = new OrderV2.State(
+              this.networkId,
+              utxo.address,
+              { txHash: utxo.tx_hash, index: utxo.output_index },
+              utxo.amount,
+              orderDatum.cbor
+            );
+          }
         }
         if (order === undefined) {
           throw new Error(`Cannot find datum of Order V2, tx: ${utxo.tx_hash}`);
