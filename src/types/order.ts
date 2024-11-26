@@ -3,6 +3,7 @@ import { Address, Constr, Data } from "@minswap/lucid-cardano";
 import { AddressPlutusData } from "./address.internal";
 import { Asset } from "./asset";
 import { NetworkId } from "./network";
+import { TxIn, Value } from "./tx.internal";
 
 export namespace OrderV1 {
   export enum StepType {
@@ -1227,5 +1228,27 @@ export namespace OrderV2 {
     APPLY_ORDER = 0,
     CANCEL_ORDER_BY_OWNER,
     CANCEL_EXPIRED_ORDER_BY_ANYONE,
+  }
+
+  export class State {
+    public readonly address: string;
+    public readonly txIn: TxIn;
+    public readonly value: Value;
+    public readonly datumCbor: string;
+    public readonly datum: Datum;
+
+    constructor(
+      networkId: NetworkId,
+      address: string,
+      txIn: TxIn,
+      value: Value,
+      datum: string
+    ) {
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumCbor = datum;
+      this.datum = Datum.fromPlutusData(networkId, Data.from(datum));
+    }
   }
 }

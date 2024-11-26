@@ -28,6 +28,7 @@ import {
 import { FactoryV2 } from "./types/factory";
 import { LbeV2Types } from "./types/lbe-v2";
 import { NetworkEnvironment, NetworkId } from "./types/network";
+import { OrderV2 } from "./types/order";
 import { PoolV1, PoolV2, StablePool } from "./types/pool";
 import {
   checkValidPoolOutput,
@@ -272,6 +273,7 @@ export class BlockfrostAdapter implements Adapter {
     return latestBlock.slot ?? 0;
   }
 
+  // MARK: DEX V1
   public async getV1PoolInTx({
     txHash,
   }: GetPoolInTxParams): Promise<PoolV1.State | null> {
@@ -386,6 +388,7 @@ export class BlockfrostAdapter implements Adapter {
     return [priceAB, priceBA];
   }
 
+  // MARK: DEX V2
   public async getAllV2Pools(): Promise<{
     pools: PoolV2.State[];
     errors: unknown[];
@@ -569,6 +572,57 @@ export class BlockfrostAdapter implements Adapter {
     return null;
   }
 
+  public async getAllV2Orders(): Promise<{
+    orders: OrderV2.State[];
+    errors: unknown[];
+  }> {
+    const v2Config = DexV2Constant.CONFIG[this.networkId];
+    const utxos = await this.blockFrostApi.addressesUtxosAll(
+      v2Config.orderScriptHashBech32
+    );
+
+    const orders: OrderV2.State[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxos) {
+      try {
+        let order: OrderV2.State | undefined = undefined;
+        if (utxo.inline_datum !== null) {
+          order = new OrderV2.State(
+            this.networkId,
+            utxo.address,
+            { txHash: utxo.tx_hash, index: utxo.output_index },
+            utxo.amount,
+            utxo.inline_datum
+          );
+        }
+        if (utxo.data_hash !== null) {
+          const orderDatum = await this.blockFrostApi.scriptsDatumCbor(
+            utxo.data_hash
+          );
+          order = new OrderV2.State(
+            this.networkId,
+            utxo.address,
+            { txHash: utxo.tx_hash, index: utxo.output_index },
+            utxo.amount,
+            orderDatum.cbor
+          );
+        }
+        if (order === undefined) {
+          throw new Error(`Cannot find datum of Order V2, tx: ${utxo.tx_hash}`);
+        }
+
+        orders.push(order);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      orders: orders,
+      errors: errors,
+    };
+  }
+
+  // MARK: STABLESWAP
   private async parseStablePoolState(
     utxo: Responses["address_utxo_content"][0]
   ): Promise<StablePool.State> {

@@ -389,6 +389,7 @@ export namespace StableswapConstant {
 }
 
 export namespace DexV2Constant {
+  export const DEFAULT_CANCEL_TIPS = 300_000n;
   export type Config = {
     factoryAsset: string;
     poolAuthenAsset: string;
@@ -397,6 +398,7 @@ export namespace DexV2Constant {
     globalSettingScriptHash: string;
     globalSettingScriptHashBech32: string;
     orderScriptHash: string;
+    orderScriptHashBech32: string;
     poolScriptHash: string;
     poolScriptHashBech32: string;
     poolCreationAddress: Address;
@@ -432,6 +434,8 @@ export namespace DexV2Constant {
         "script1664wypvm4msc3a6fzayneamr0enee5sehham7nwtavwsk2s2vg9",
       orderScriptHash:
         "da9525463841173ad1230b1d5a1b5d0a3116bbdeb4412327148a1b7a",
+      orderScriptHashBech32:
+        "script1m22j233cgytn45frpvw45x6apgc3dw77k3qjxfc53gdh5cejhly",
       poolScriptHash:
         "d6ba9b7509eac866288ff5072d2a18205ac56f744bc82dcd808cb8fe",
       poolScriptHashBech32:
@@ -465,6 +469,8 @@ export namespace DexV2Constant {
         "script17kqgctyepkrd549le97cnnhxa73qekzxzctrt9rcm945c880puk",
       orderScriptHash:
         "c3e28c36c3447315ba5a56f33da6a6ddc1770a876a8d9f0cb3a97c4c",
+      orderScriptHashBech32:
+        "script1c03gcdkrg3e3twj62menmf4xmhqhwz58d2xe7r9n497yc6r9qhd",
       poolScriptHash:
         "ea07b733d932129c378af627436e7cbc2ef0bf96e0036bb51b3bde6b",
       poolScriptHashBech32:
@@ -665,29 +671,40 @@ export namespace LbeV2Constant {
     [NetworkId.MAINNET]: {
       factoryAsset: MAINNET_FACTORY_HASH + FACTORY_AUTH_AN,
       factoryHash: MAINNET_FACTORY_HASH,
-      factoryHashBech32: "script1m6550tz4ldxzcw9mzy6p72uzkttzuxsjqvc0stwpu4h26pl45ch",
-      factoryAddress: "addr1w802j3av2ha5ctpchvgng8ets2edvts6zgpnp7pdc8jkatgwxaxhw",
-      factoryRewardAddress: "stake17802j3av2ha5ctpchvgng8ets2edvts6zgpnp7pdc8jkatgjvaqtu",
+      factoryHashBech32:
+        "script1m6550tz4ldxzcw9mzy6p72uzkttzuxsjqvc0stwpu4h26pl45ch",
+      factoryAddress:
+        "addr1w802j3av2ha5ctpchvgng8ets2edvts6zgpnp7pdc8jkatgwxaxhw",
+      factoryRewardAddress:
+        "stake17802j3av2ha5ctpchvgng8ets2edvts6zgpnp7pdc8jkatgjvaqtu",
 
       treasuryAsset: MAINNET_FACTORY_HASH + TREASURY_AUTH_AN,
       treasuryHash: "1ce6abbd967cab867ad73855f8b154fcc57e41b15605b91590451650",
-      treasuryHashBech32: "script1rnn2h0vk0j4cv7kh8p2l3v25lnzhusd32czmj9vsg5t9q69xnhh",
-      treasuryAddress: "addr1wywwd2aaje72hpn66uu9t7932n7v2ljpk9tqtwg4jpz3v5qpqs70n",
+      treasuryHashBech32:
+        "script1rnn2h0vk0j4cv7kh8p2l3v25lnzhusd32czmj9vsg5t9q69xnhh",
+      treasuryAddress:
+        "addr1wywwd2aaje72hpn66uu9t7932n7v2ljpk9tqtwg4jpz3v5qpqs70n",
 
       managerAsset: MAINNET_FACTORY_HASH + MANAGER_AUTH_AN,
       managerHash: "e951d381ef510ae02b7496c2ff039e640ab2e2a561423d0cbf34b032",
-      managerHashBech32: "script1a9ga8q002y9wq2m5jmp07qu7vs9t9c49v9pr6r9lxjcry2xehgl",
-      managerAddress: "addr1w854r5upaags4cptwjtv9lcrnejq4vhz54s5y0gvhu6tqvsccjry6",
+      managerHashBech32:
+        "script1a9ga8q002y9wq2m5jmp07qu7vs9t9c49v9pr6r9lxjcry2xehgl",
+      managerAddress:
+        "addr1w854r5upaags4cptwjtv9lcrnejq4vhz54s5y0gvhu6tqvsccjry6",
 
       sellerAsset: MAINNET_FACTORY_HASH + SELLER_AUTH_AN,
       sellerHash: "ecf97d6f0ace26e69fa428610c7dbf5a686e1197f76511449d9a1b64",
-      sellerHashBech32: "script1anuh6mc2ecnwd8ay9psscldltf5xuyvh7aj3z3yangdkgh7ds8d",
-      sellerAddress: "addr1w8k0jlt0pt8zde5l5s5xzrrahadxsms3jlmk2y2ynkdpkeqn95g7r",
+      sellerHashBech32:
+        "script1anuh6mc2ecnwd8ay9psscldltf5xuyvh7aj3z3yangdkgh7ds8d",
+      sellerAddress:
+        "addr1w8k0jlt0pt8zde5l5s5xzrrahadxsms3jlmk2y2ynkdpkeqn95g7r",
 
       orderAsset: MAINNET_FACTORY_HASH + ORDER_AUTH_AN,
       orderHash: "5176775eed690d088bd29d9a6934b1e35ef1d897deb61d7b5dde11ca",
-      orderHashBech32: "script129m8whhddyxs3z7jnkdxjd93ud00rkyhm6mp676amcgu5kg5c44",
-      orderAddress: "addr1z9ghva67a45s6zyt62we56f5k834auwcjl0tv8tmth0prjjj2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pqsk3urw",
+      orderHashBech32:
+        "script129m8whhddyxs3z7jnkdxjd93ud00rkyhm6mp676amcgu5kg5c44",
+      orderAddress:
+        "addr1z9ghva67a45s6zyt62we56f5k834auwcjl0tv8tmth0prjjj2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pqsk3urw",
     },
   };
 
