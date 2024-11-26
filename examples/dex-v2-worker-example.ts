@@ -3,7 +3,6 @@ import { Network } from "@minswap/lucid-cardano";
 
 import { BlockfrostAdapter, NetworkId } from "../src";
 import { DexV2Worker } from "../src/dex-v2-worker";
-import { NetworkEnvironment } from "../src/types/network";
 import { getBackendLucidInstance } from "../src/utils/lucid";
 
 async function main(): Promise<void> {
@@ -29,8 +28,6 @@ async function main(): Promise<void> {
   );
 
   const worker = new DexV2Worker({
-    networkEnv: NetworkEnvironment.TESTNET_PREPROD,
-    networkId: NetworkId.TESTNET,
     lucid,
     blockfrostAdapter,
     privateKey:

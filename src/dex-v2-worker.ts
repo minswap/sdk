@@ -1,33 +1,24 @@
-import { Lucid } from "@minswap/lucid-cardano";
+import { Data, Lucid } from "@minswap/lucid-cardano";
 
 import { BlockfrostAdapter, DexV2, DexV2Constant, OrderV2 } from ".";
-import { NetworkEnvironment, NetworkId } from "./types/network";
 import { runRecurringJob } from "./utils/job";
 
 type DexV2WorkerConstructor = {
-  networkEnv: NetworkEnvironment;
-  networkId: NetworkId;
   lucid: Lucid;
   blockfrostAdapter: BlockfrostAdapter;
   privateKey: string;
 };
 
 export class DexV2Worker {
-  private readonly networkEnv: NetworkEnvironment;
-  private readonly networkId: NetworkId;
   private readonly lucid: Lucid;
   private readonly blockfrostAdapter: BlockfrostAdapter;
   private readonly privateKey: string;
 
   constructor({
-    networkEnv,
-    networkId,
     lucid,
     blockfrostAdapter,
     privateKey,
   }: DexV2WorkerConstructor) {
-    this.networkEnv = networkEnv;
-    this.networkId = networkId;
     this.lucid = lucid;
     this.blockfrostAdapter = blockfrostAdapter;
     this.privateKey = privateKey;
@@ -42,11 +33,10 @@ export class DexV2Worker {
   }
 
   async runWorker(): Promise<void> {
+    console.info("start run dex v2 worker");
     const { orders: allOrders } = await this.blockfrostAdapter.getAllV2Orders();
     const currentSlot = await this.blockfrostAdapter.currentSlot();
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
-    const expiredOrders: OrderV2.State[] = [];
-    const mapDatum: Record<string, string> = {};
     for (const order of allOrders) {
       const orderDatum = order.datum;
       const expiredOptions = orderDatum.expiredOptions;
@@ -62,46 +52,51 @@ export class DexV2Worker {
         continue;
       }
 
+      const mapDatum: Record<string, string> = {};
       const receiverDatum = orderDatum.refundReceiverDatum;
+      let rawDatum: string | undefined = undefined;
       if (receiverDatum.type === OrderV2.ExtraDatumType.INLINE_DATUM) {
-        let rawDatum: string | undefined = undefined;
         try {
           rawDatum = await this.blockfrostAdapter.getDatumByDatumHash(
             receiverDatum.hash
           );
+          mapDatum[receiverDatum.hash] = rawDatum;
           // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (_err) {
           continue;
         }
-        mapDatum[receiverDatum.hash] = rawDatum;
       }
-      expiredOrders.push(order);
-      if (expiredOrders.length === 20) {
+
+      const orderUtxos = await this.lucid.utxosByOutRef([
+        {
+          txHash: order.txIn.txHash,
+          outputIndex: order.txIn.index,
+        },
+      ]);
+      if (orderUtxos.length === 0) {
+        continue;
+      }
+      try {
+        orderUtxos[0].datum = Data.to(OrderV2.Datum.toPlutusData(orderDatum));
+        const txComplete = await new DexV2(
+          this.lucid,
+          this.blockfrostAdapter
+        ).cancelExpiredOrders({
+          orderUtxos: orderUtxos,
+          currentSlot,
+          extraDatumMap: mapDatum,
+        });
+        const signedTx = await txComplete
+          .signWithPrivateKey(this.privateKey)
+          .complete();
+
+        const txId = await signedTx.submit();
+        console.info(`Transaction submitted successfully: ${txId}`);
         break;
+      } catch (err) {
+        console.error(err);
+        continue;
       }
-    }
-    if (expiredOrders.length > 0) {
-      const orderUtxos = await this.lucid.utxosByOutRef(
-        expiredOrders.map((state) => ({
-          txHash: state.txIn.txHash,
-          outputIndex: state.txIn.index,
-        }))
-      );
-      const txComplete = await new DexV2(
-        this.lucid,
-        this.blockfrostAdapter
-      ).cancelExpiredOrders({
-        orderUtxos: orderUtxos,
-        currentSlot,
-        extraDatumMap: mapDatum,
-      });
-
-      const signedTx = await txComplete
-        .signWithPrivateKey(this.privateKey)
-        .complete();
-
-      const txId = await signedTx.submit();
-      console.info(`Transaction submitted successfully: ${txId}`);
     }
   }
 }
