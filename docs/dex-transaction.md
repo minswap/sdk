@@ -9,8 +9,8 @@ This documentation provides details on how to interact with the **Stableswap** a
 - **Stableswap class**: Located in `src/stableswap.ts`.
 - **AMM V2 class**: Located in `src/dex-v2.ts`.
 - **Example file**: Demonstrates usage of both classes, located in `examples/example.ts`.
-- **DexV2Worker Class**: Located in `src/dex-v2-worker.ts`.
-- **DexV2Worker Example**: Located in `examples/dex-v2-worker-example.ts`.
+- **ExpiredOrderMonitor Class**: Located in `src/expired-order-monitor.ts`.
+- **ExpiredOrderMonitor Example**: Located in `examples/expired-order-monitor-example.ts`.
 
 ### Utility Functions
 
@@ -221,7 +221,7 @@ const txId = await signedTx.submit();
 console.info(`Transaction submitted successfully: ${txId}`);
 ```
 
-### 4. Run Dex V2 Worker
+### 4. Off-chain component to track and cancel the expired orders
 
 ```ts
 const network: Network = "Preprod";
@@ -244,13 +244,13 @@ const blockfrostAdapter = new BlockfrostAdapter(
   })
 );
 
-const worker = new DexV2Worker({
+const monitor = new ExpiredOrderMonitor({
   lucid,
   blockfrostAdapter,
   privateKey: "<YOUR_PRIVATE_KEY>",
 });
 
-await worker.start();
+await monitor.start();
 ```
 
 ## Additional Examples

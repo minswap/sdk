@@ -2,7 +2,7 @@ import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { Network } from "@minswap/lucid-cardano";
 
 import { BlockfrostAdapter, NetworkId } from "../src";
-import { DexV2Worker } from "../src/dex-v2-worker";
+import { ExpiredOrderMonitor } from "../src/expired-order-monitor";
 import { getBackendLucidInstance } from "../src/utils/lucid";
 
 async function main(): Promise<void> {
@@ -27,13 +27,13 @@ async function main(): Promise<void> {
     })
   );
 
-  const worker = new DexV2Worker({
+  const monitor = new ExpiredOrderMonitor({
     lucid,
     blockfrostAdapter,
     privateKey: "<YOUR_PRIVATE_KEY>",
   });
 
-  await worker.start();
+  await monitor.start();
 }
 
 void main();

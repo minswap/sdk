@@ -9,7 +9,7 @@ type DexV2WorkerConstructor = {
   privateKey: string;
 };
 
-export class DexV2Worker {
+export class ExpiredOrderMonitor {
   private readonly lucid: Lucid;
   private readonly blockfrostAdapter: BlockfrostAdapter;
   private readonly privateKey: string;
@@ -66,7 +66,10 @@ export class DexV2Worker {
           mapDatum[receiverDatum.hash] = rawDatum;
           // eslint-disable-next-line unused-imports/no-unused-vars
         } catch (_err) {
-          continue;
+          if (receiverDatum.type === OrderV2.ExtraDatumType.INLINE_DATUM) {
+            // if receiver Datum type is INLINE_DATUM, skip this order.
+            continue;
+          }
         }
       }
       orders.push(order);
