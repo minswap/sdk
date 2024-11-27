@@ -55,7 +55,10 @@ export class DexV2Worker {
       }
       const receiverDatum = orderDatum.refundReceiverDatum;
       let rawDatum: string | undefined = undefined;
-      if (receiverDatum.type === OrderV2.ExtraDatumType.INLINE_DATUM) {
+      if (
+        receiverDatum.type === OrderV2.ExtraDatumType.INLINE_DATUM ||
+        receiverDatum.type === OrderV2.ExtraDatumType.DATUM_HASH
+      ) {
         try {
           rawDatum = await this.blockfrostAdapter.getDatumByDatumHash(
             receiverDatum.hash
@@ -104,7 +107,7 @@ export class DexV2Worker {
       const txId = await signedTx.submit();
       console.info(`Transaction submitted successfully: ${txId}`);
     } catch (_err) {
-      console.log(
+      console.error(
         `Error when the worker runs: orders ${orders.map((order) => `${order.txIn.txHash}#${order.txIn.index}`).join(", ")}`,
         _err
       );

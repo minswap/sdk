@@ -1069,9 +1069,13 @@ export class DexV2 {
           break;
         }
         case OrderV2.ExtraDatumType.DATUM_HASH: {
+          invariant(
+            refundDatum.hash in extraDatumMap,
+            `Can not find refund datum of order ${orderUtxo.txHash}#${orderUtxo.outputIndex}`
+          );
           lucidTx.payToAddressWithData(
             datum.refundReceiver,
-            { hash: refundDatum.hash },
+            { asHash: extraDatumMap[refundDatum.hash] },
             outAssets
           );
           break;

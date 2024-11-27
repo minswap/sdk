@@ -1,4 +1,4 @@
-# Minswap AMM V2 & Stableswap Classes Documentation
+# Minswap DEX Classes documentation
 
 ## Overview
 
@@ -9,6 +9,8 @@ This documentation provides details on how to interact with the **Stableswap** a
 - **Stableswap class**: Located in `src/stableswap.ts`.
 - **AMM V2 class**: Located in `src/dex-v2.ts`.
 - **Example file**: Demonstrates usage of both classes, located in `examples/example.ts`.
+- **DexV2Worker Class**: Located in `src/dex-v2-worker.ts`.
+- **DexV2Worker Example**: Located in `examples/dex-v2-worker-example.ts`.
 
 ### Utility Functions
 
@@ -54,7 +56,10 @@ const blockfrostAdapter = new BlockfrostAdapter(
 const utxos = await lucid.utxosAt(address);
 
 const lpAsset = Asset.fromString("<STABLE_POOL_LP_ASSET>");
-const config = StableswapConstant.getConfigByLpAsset(lpAsset, NetworkId.TESTNET);
+const config = StableswapConstant.getConfigByLpAsset(
+  lpAsset,
+  NetworkId.TESTNET
+);
 
 const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
 
@@ -92,7 +97,9 @@ const txComplete = await new Stableswap(lucid).createBulkOrdersTx({
   ],
 });
 
-const signedTx = await txComplete.signWithPrivateKey("<YOUR_PRIVATE_KEY>").complete();
+const signedTx = await txComplete
+  .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+  .complete();
 const txId = await signedTx.submit();
 console.info(`Transaction submitted successfully: ${txId}`);
 ```
@@ -144,27 +151,30 @@ const acceptedAmountOut = Slippage.apply({
   type: "down",
 });
 
-const txComplete = await new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx({
-  sender: address,
-  availableUtxos: utxos,
-  orderOptions: [
-    {
-      type: OrderV2.StepType.SWAP_EXACT_IN,
-      amountIn: swapAmount,
-      assetIn: assetA,
-      direction: OrderV2.Direction.A_TO_B,
-      minimumAmountOut: acceptedAmountOut,
-      lpAsset: pool.lpAsset,
-      isLimitOrder: false,
-      killOnFailed: false,
-    },
-  ],
-});
+const txComplete = await new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx(
+  {
+    sender: address,
+    availableUtxos: utxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.SWAP_EXACT_IN,
+        amountIn: swapAmount,
+        assetIn: assetA,
+        direction: OrderV2.Direction.A_TO_B,
+        minimumAmountOut: acceptedAmountOut,
+        lpAsset: pool.lpAsset,
+        isLimitOrder: false,
+        killOnFailed: false,
+      },
+    ],
+  }
+);
 
-const signedTx = await txComplete.signWithPrivateKey("<YOUR_PRIVATE_KEY>").complete();
+const signedTx = await txComplete
+  .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+  .complete();
 const txId = await signedTx.submit();
 console.info(`Transaction submitted successfully: ${txId}`);
-
 ```
 
 ### 3. Create the DEX V2 Liquiditiy Pool
@@ -204,9 +214,43 @@ const txComplete = await new DexV2(lucid, blockfrostAdapter).createPoolTx({
   tradingFeeNumerator: 100n,
 });
 
-const signedTx = await txComplete.signWithPrivateKey("<YOUR_PRIVATE_KEY>").complete();
+const signedTx = await txComplete
+  .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+  .complete();
 const txId = await signedTx.submit();
 console.info(`Transaction submitted successfully: ${txId}`);
+```
+
+### 4. Run Dex V2 Worker
+
+```ts
+const network: Network = "Preprod";
+const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
+
+const address = "<YOUR_ADDRESS>";
+const lucid = await getBackendLucidInstance(
+  network,
+  blockfrostProjectId,
+  blockfrostUrl,
+  address
+);
+
+const blockfrostAdapter = new BlockfrostAdapter(
+  NetworkId.TESTNET,
+  new BlockFrostAPI({
+    projectId: blockfrostProjectId,
+    network: "preprod",
+  })
+);
+
+const worker = new DexV2Worker({
+  lucid,
+  blockfrostAdapter,
+  privateKey: "<YOUR_PRIVATE_KEY>",
+});
+
+await worker.start();
 ```
 
 ## Additional Examples
@@ -214,6 +258,7 @@ console.info(`Transaction submitted successfully: ${txId}`);
 You can explore more examples in the [Examples](../examples/example.ts) folder to learn how to integrate the Stableswap and DexV2 classes in more complex scenarios.
 
 ## Conclusion
+
 The Stableswap and AMM V2 classes offer powerful tools for interacting with Minswap’s decentralized exchange. They allow users to easily manage liquidity pools and make swaps, with built-in support for Minswap Batcher Fee discounts. By utilizing these classes, users can create efficient transactions and leverage the utility of $MIN to reduce costs.
 
 For more details, you can refer to the specific class files:
