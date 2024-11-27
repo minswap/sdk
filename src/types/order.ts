@@ -1184,23 +1184,15 @@ export namespace OrderV2 {
               `Order maybeExpiry length must have 1 field, actual: ${maybeExpiry.fields.length}`
             );
           }
-          const expiryOptions = maybeExpiry.fields[0] as Constr<Data>;
-          switch (expiryOptions.index) {
-            case 0: {
-              expiry = expiryOptions.fields as bigint[];
-              if (expiry.length !== 2) {
-                throw new Error(
-                  `Order Expiry list must have 2 elements, actual: ${expiry.length}`
-                );
-              }
-              break;
-            }
-            default: {
-              throw new Error(
-                `Index of Expiry Options must be 0, actual: ${expiryOptions.index}`
-              );
-            }
+          if (
+            !Array.isArray(maybeExpiry.fields[0]) ||
+            maybeExpiry.fields[0].length !== 2
+          ) {
+            throw new Error(
+              `maybeExpiry field0's length must be 2-element array, actual: ${maybeExpiry.fields[0]}`
+            );
           }
+          expiry = maybeExpiry.fields[0] as bigint[];
           break;
         }
         case 1: {
@@ -1260,10 +1252,10 @@ export namespace OrderV2 {
         datum.maxBatcherFee,
         datum.expiredOptions
           ? new Constr(0, [
-              new Constr(0, [
+              [
                 datum.expiredOptions.expiredTime,
                 datum.expiredOptions.maxCancellationTip,
-              ]),
+              ],
             ])
           : new Constr(1, []),
       ]);

@@ -769,6 +769,7 @@ export namespace LbeV2Constant {
 export enum MetadataMessage {
   DEPOSIT_ORDER = "SDK Minswap: Deposit Order",
   CANCEL_ORDER = "SDK Minswap: Cancel Order",
+  CANCEL_ORDER_AUTOMATICALLY = "SDK Minswap: Cancel Order Automatically",
   ZAP_IN_ORDER = "SDK Minswap: Zap Order",
   ZAP_OUT_ORDER = "SDK Minswap: Zap Out Order",
   SWAP_EXACT_IN_ORDER = "SDK Minswap: Swap Exact In Order",

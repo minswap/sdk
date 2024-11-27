@@ -93,8 +93,11 @@ export class DexV2Worker {
         const txId = await signedTx.submit();
         console.info(`Transaction submitted successfully: ${txId}`);
         break;
-      } catch (err) {
-        console.error(err);
+      } catch (_err) {
+        console.log(
+          `Error order: order ${order.txIn.txHash}#${order.txIn.index}`,
+          _err
+        );
         continue;
       }
     }

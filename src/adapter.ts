@@ -594,7 +594,6 @@ export class BlockfrostAdapter implements Adapter {
             utxo.amount,
             utxo.inline_datum
           );
-          console.log(utxo.data_hash);
         } else {
           if (utxo.data_hash !== null) {
             const orderDatum = await this.blockFrostApi.scriptsDatumCbor(

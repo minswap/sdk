@@ -1097,7 +1097,10 @@ export class DexV2 {
         Data.to(0n)
       )
       .validFrom(currentTime)
-      .validTo(currentTime + 3 * 60 * 60 * 1000);
+      .validTo(currentTime + 3 * 60 * 60 * 1000)
+      .attachMetadata(674, {
+        msg: [MetadataMessage.CANCEL_ORDER_AUTOMATICALLY],
+      });
     return await lucidTx.complete();
   }
 }
