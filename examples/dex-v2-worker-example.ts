@@ -7,7 +7,7 @@ import { getBackendLucidInstance } from "../src/utils/lucid";
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "preprodSj4PM4LDOTa2BbfAY4XIEqASI9gKzOEz";
+  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
@@ -30,8 +30,7 @@ async function main(): Promise<void> {
   const worker = new DexV2Worker({
     lucid,
     blockfrostAdapter,
-    privateKey:
-      "ed25519e_sk1pqs6ssazw755demuks2974mdwu6stz0uxpj543edm5cm0y96p9gk9lcv5jspdg3aq7wtv9r96uaru0rnu4qdm7lccarntjm22mtk72cm5cjrj",
+    privateKey: "<YOUR_PRIVATE_KEY>",
   });
 
   await worker.start();
