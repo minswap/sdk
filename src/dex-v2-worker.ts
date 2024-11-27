@@ -1,4 +1,4 @@
-import { Data, Lucid } from "@minswap/lucid-cardano";
+import { Lucid } from "@minswap/lucid-cardano";
 
 import { BlockfrostAdapter, DexV2, DexV2Constant, OrderV2 } from ".";
 import { runRecurringJob } from "./utils/job";
@@ -37,6 +37,8 @@ export class DexV2Worker {
     const { orders: allOrders } = await this.blockfrostAdapter.getAllV2Orders();
     const currentSlot = await this.blockfrostAdapter.currentSlot();
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const mapDatum: Record<string, string> = {};
+    const orders: OrderV2.State[] = [];
     for (const order of allOrders) {
       const orderDatum = order.datum;
       const expiredOptions = orderDatum.expiredOptions;
@@ -51,8 +53,6 @@ export class DexV2Worker {
       ) {
         continue;
       }
-
-      const mapDatum: Record<string, string> = {};
       const receiverDatum = orderDatum.refundReceiverDatum;
       let rawDatum: string | undefined = undefined;
       if (receiverDatum.type === OrderV2.ExtraDatumType.INLINE_DATUM) {
@@ -66,40 +66,48 @@ export class DexV2Worker {
           continue;
         }
       }
+      orders.push(order);
 
-      const orderUtxos = await this.lucid.utxosByOutRef([
-        {
-          txHash: order.txIn.txHash,
-          outputIndex: order.txIn.index,
-        },
-      ]);
-      if (orderUtxos.length === 0) {
-        continue;
-      }
-      try {
-        orderUtxos[0].datum = Data.to(OrderV2.Datum.toPlutusData(orderDatum));
-        const txComplete = await new DexV2(
-          this.lucid,
-          this.blockfrostAdapter
-        ).cancelExpiredOrders({
-          orderUtxos: orderUtxos,
-          currentSlot,
-          extraDatumMap: mapDatum,
-        });
-        const signedTx = await txComplete
-          .signWithPrivateKey(this.privateKey)
-          .complete();
-
-        const txId = await signedTx.submit();
-        console.info(`Transaction submitted successfully: ${txId}`);
+      // CANCEL MAX 20 Orders
+      if (orders.length === 20) {
         break;
-      } catch (_err) {
-        console.log(
-          `Error order: order ${order.txIn.txHash}#${order.txIn.index}`,
-          _err
-        );
-        continue;
       }
+    }
+
+    if (orders.length === 0) {
+      console.info(`SKIP | No orders.`);
+      return;
+    }
+    const orderUtxos = await this.lucid.utxosByOutRef(
+      orders.map((order) => ({
+        txHash: order.txIn.txHash,
+        outputIndex: order.txIn.index,
+      }))
+    );
+    if (orderUtxos.length === 0) {
+      console.info(`SKIP | Can not find any order utxos.`);
+      return;
+    }
+    try {
+      const txComplete = await new DexV2(
+        this.lucid,
+        this.blockfrostAdapter
+      ).cancelExpiredOrders({
+        orderUtxos: orderUtxos,
+        currentSlot,
+        extraDatumMap: mapDatum,
+      });
+      const signedTx = await txComplete
+        .signWithPrivateKey(this.privateKey)
+        .complete();
+
+      const txId = await signedTx.submit();
+      console.info(`Transaction submitted successfully: ${txId}`);
+    } catch (_err) {
+      console.log(
+        `Error when the worker runs: orders ${orders.map((order) => `${order.txIn.txHash}#${order.txIn.index}`).join(", ")}`,
+        _err
+      );
     }
   }
 }
