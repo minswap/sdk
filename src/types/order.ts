@@ -1,8 +1,10 @@
 import { Address, Constr, Data } from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
 
 import { AddressPlutusData } from "./address.internal";
 import { Asset } from "./asset";
 import { NetworkId } from "./network";
+import { TxIn, Value } from "./tx.internal";
 
 export namespace OrderV1 {
   export enum StepType {
@@ -478,6 +480,11 @@ export namespace OrderV2 {
   export namespace AuthorizationMethod {
     export function fromPlutusData(data: Constr<Data>): AuthorizationMethod {
       let type: AuthorizationMethodType;
+      if (data.fields.length !== 1) {
+        throw Error(
+          `Field length of AuthorizationMethod must be in 1, actual: ${data.fields.length}`
+        );
+      }
       switch (data.index) {
         case AuthorizationMethodType.SIGNATURE: {
           type = AuthorizationMethodType.SIGNATURE;
@@ -1090,17 +1097,29 @@ export namespace OrderV2 {
     export function fromPlutusData(data: Constr<Data>): ExtraDatum {
       switch (data.index) {
         case ExtraDatumType.NO_DATUM: {
+          invariant(
+            data.fields.length === 0,
+            `Field Length of ExtraDatum.NO_DATUM must be 0, actually ${data.fields.length}`
+          );
           return {
             type: ExtraDatumType.NO_DATUM,
           };
         }
         case ExtraDatumType.DATUM_HASH: {
+          invariant(
+            data.fields.length === 1,
+            `Field Length of ExtraDatum.DATUM_HASH must be 1, actually ${data.fields.length}`
+          );
           return {
             type: ExtraDatumType.DATUM_HASH,
             hash: data.fields[0] as string,
           };
         }
         case ExtraDatumType.INLINE_DATUM: {
+          invariant(
+            data.fields.length === 1,
+            `Field Length of ExtraDatum.INLINE_DATUM must be 1, actually ${data.fields.length}`
+          );
           return {
             type: ExtraDatumType.INLINE_DATUM,
             hash: data.fields[0] as string,
@@ -1151,20 +1170,38 @@ export namespace OrderV2 {
           `Index of Order Datum must be 0, actual: ${data.index}`
         );
       }
+      if (data.fields.length !== 9) {
+        throw new Error(
+          `Fields Length of Order Datum must be 9, actual: ${data.index}`
+        );
+      }
       const maybeExpiry = data.fields[8] as Constr<Data>;
       let expiry: bigint[] | undefined;
       switch (maybeExpiry.index) {
         case 0: {
-          expiry = maybeExpiry.fields as bigint[];
-          if (expiry.length !== 2) {
+          if (maybeExpiry.fields.length !== 1) {
             throw new Error(
-              `Order Expiry list must have 2 elements, actual: ${expiry.length}`
+              `Order maybeExpiry length must have 1 field, actual: ${maybeExpiry.fields.length}`
             );
           }
+          if (
+            !Array.isArray(maybeExpiry.fields[0]) ||
+            maybeExpiry.fields[0].length !== 2
+          ) {
+            throw new Error(
+              `maybeExpiry field0's length must be 2-element array, actual: ${maybeExpiry.fields[0]}`
+            );
+          }
+          expiry = maybeExpiry.fields[0] as bigint[];
           break;
         }
         case 1: {
           expiry = undefined;
+          if (maybeExpiry.fields.length !== 0) {
+            throw new Error(
+              `Order undefined Expiry must have 0 elements, actual: ${maybeExpiry.fields.length}`
+            );
+          }
           break;
         }
         default: {
@@ -1215,8 +1252,10 @@ export namespace OrderV2 {
         datum.maxBatcherFee,
         datum.expiredOptions
           ? new Constr(0, [
-              datum.expiredOptions.expiredTime,
-              datum.expiredOptions.maxCancellationTip,
+              [
+                datum.expiredOptions.expiredTime,
+                datum.expiredOptions.maxCancellationTip,
+              ],
             ])
           : new Constr(1, []),
       ]);
@@ -1227,5 +1266,27 @@ export namespace OrderV2 {
     APPLY_ORDER = 0,
     CANCEL_ORDER_BY_OWNER,
     CANCEL_EXPIRED_ORDER_BY_ANYONE,
+  }
+
+  export class State {
+    public readonly address: string;
+    public readonly txIn: TxIn;
+    public readonly value: Value;
+    public readonly datumCbor: string;
+    public readonly datum: Datum;
+
+    constructor(
+      networkId: NetworkId,
+      address: string,
+      txIn: TxIn,
+      value: Value,
+      datum: string
+    ) {
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumCbor = datum;
+      this.datum = Datum.fromPlutusData(networkId, Data.from(datum));
+    }
   }
 }
