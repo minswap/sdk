@@ -12,7 +12,7 @@ This documentation provides guidelines for communicating with and interacting wi
 
 - **LBEV2 Class**: Located in `src/lbe-v2/lbe-v2.ts`.
 - **User and project owner action Example**: Located in `example/example.ts`.
-- **LBEV2Worker Class**: is a class that executes off-chain actions when an event ends. Located in `src/lbe-v2-worker/worker.ts`.
+- **LBEV2Worker Class**: A class that executes off-chain actions when an event ends. It handles collecting funds to create a liquidity pool and distributing LP Assets to participants in the LBE. This class is located in `src/lbe-v2-worker/worker.ts`.
 - **LBEV2Worker Example**: Located in `examples/lbe-v2-worker-example.ts`.
 
 ## Example Usage
