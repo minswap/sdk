@@ -1,4 +1,3 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   Assets,
@@ -8,7 +7,8 @@ import {
   SpendingValidator,
   TxComplete,
   UTxO,
-} from "lucid-cardano";
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
 
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";

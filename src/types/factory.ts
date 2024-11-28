@@ -1,4 +1,4 @@
-import { Constr, Data } from "lucid-cardano";
+import { Constr, Data } from "@minswap/lucid-cardano";
 
 import { Asset } from "./asset";
 import { DexV2Constant } from "./constants";

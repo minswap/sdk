@@ -1,4 +1,4 @@
-import { Address, Assets, Lucid, OutputData } from "lucid-cardano";
+import { Address, Assets, Lucid, OutputData } from "@minswap/lucid-cardano";
 
 /**
  * Return a Output that pay back to @sender and include @datum

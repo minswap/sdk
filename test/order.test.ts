@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Address, Data, getAddressDetails } from "lucid-cardano";
+import { Address, Data, getAddressDetails } from "@minswap/lucid-cardano";
 
 import { FIXED_BATCHER_FEE } from "../src/batcher-fee-reduction/configs.internal";
 import { Asset } from "../src/types/asset";

@@ -1,6 +1,4 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import invariant from "@minswap/tiny-invariant";
-import BigNumber from "bignumber.js";
 import {
   Address,
   Blockfrost,
@@ -11,7 +9,9 @@ import {
   OutRef,
   TxComplete,
   UTxO,
-} from "lucid-cardano";
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
+import BigNumber from "bignumber.js";
 
 import {
   ADA,
@@ -28,11 +28,15 @@ import {
   NetworkId,
   OrderV2,
   PoolV1,
+  PoolV2,
   StableOrder,
   StableswapCalculation,
   StableswapConstant,
 } from "../src";
+import { LbeV2 } from "../src/lbe-v2/lbe-v2";
 import { Stableswap } from "../src/stableswap";
+import { LbeV2Types } from "../src/types/lbe-v2";
+import { getBackendLucidInstance } from "../src/utils/lucid";
 import { Slippage } from "../src/utils/slippage.internal";
 
 const MIN: Asset = {
@@ -46,7 +50,7 @@ async function main(): Promise<void> {
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
-    "addr_test1vrd9v47japxwp8540vsrh4grz4u9urfpfawwy7sf6r0vxqgm7wdxh";
+    "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
   const lucid = await getBackendLucidInstance(
     network,
     blockfrostProjectId,
@@ -62,17 +66,15 @@ async function main(): Promise<void> {
     })
   );
 
-  const utxos = await lucid.utxosAt(address);
-
-  const txComplete = await _stopV2TxExample(
+  const txComplete = await _lbeV2DepositOrderExample(
     lucid,
-    blockfrostAdapter,
     address,
-    utxos
+    blockfrostAdapter
   );
   const signedTx = await txComplete
     .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
     .complete();
+
   const txId = await signedTx.submit();
   console.info(`Transaction submitted successfully: ${txId}`);
 }
@@ -102,6 +104,7 @@ async function getPoolById(
   };
 }
 
+// MARK: DEX V1
 async function _depositTxExample(
   network: Network,
   lucid: Lucid,
@@ -362,6 +365,7 @@ async function _cancelTxExample(
   });
 }
 
+// MARK: DEX V2
 async function _createPoolV2(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter
@@ -848,6 +852,7 @@ async function _cancelV2TxExample(
   });
 }
 
+// MARK: STABLESWAP
 async function _swapStableExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
@@ -1140,6 +1145,373 @@ async function _cancelStableExample(lucid: Lucid): Promise<TxComplete> {
   });
 }
 
+// MARK: LBE V2
+const ONE_MINUTE_IN_MS = 1000 * 60;
+const ONE_HOUR_IN_MS = 1000 * 60 * 60;
+const _ONE_DAY_IN_MS = 1000 * 60 * 60 * 24;
+
+// Example Tx: e1f42baa7b685acf083d5a3ffe4eefd1f53f4682226f0f39de56310de108239b
+async function _createLbeV2EventExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
+  );
+  const curSlot = lucid.currentSlot();
+  const curDate = lucid.utils.slotToUnixTime(curSlot);
+  const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
+    baseAsset: baseAsset,
+    reserveBase: 100_000n,
+    raiseAsset: ADA,
+    startTime: BigInt(curDate + ONE_HOUR_IN_MS),
+    endTime: BigInt(curDate + 2 * ONE_HOUR_IN_MS),
+    owner: address,
+    receiver: address,
+    poolAllocation: 100n,
+    minimumOrderRaise: undefined,
+    minimumRaise: 10_000_000n,
+    maximumRaise: 100_000_000n,
+    penaltyConfig: {
+      penaltyStartTime: BigInt(
+        curDate + ONE_HOUR_IN_MS + 20 * ONE_MINUTE_IN_MS
+      ),
+      percent: 20n,
+    },
+    revocable: true,
+    poolBaseFee: 30n,
+  };
+  const factory = await blockfrostAdapter.getLbeV2Factory(
+    lbeV2Parameters.baseAsset,
+    lbeV2Parameters.raiseAsset
+  );
+  invariant(factory !== null, "Can not find factory");
+  const factoryUtxos = await lucid.utxosByOutRef([
+    { outputIndex: factory.txIn.index, txHash: factory.txIn.txHash },
+  ]);
+  invariant(factoryUtxos.length !== 0, "Can not find factory utxo");
+  const projectDetails = {
+    eventName: "TEST SDK",
+    description: "test lbe v2 in public sdk",
+    socialLinks: {
+      twitter: "https://x.com/MinswapDEX",
+      telegram: "https://t.me/MinswapMafia",
+      discord: "https://discord.gg/minswap",
+      website: "https://minswap.org/",
+    },
+    tokenomics: [
+      {
+        tag: "admin",
+        percentage: "70",
+      },
+      {
+        tag: "LBE",
+        percentage: "30",
+      },
+    ],
+  };
+  const currentSlot = await blockfrostAdapter.currentSlot();
+  return new LbeV2(lucid).createEvent({
+    factoryUtxo: factoryUtxos[0],
+    lbeV2Parameters: lbeV2Parameters,
+    currentSlot: currentSlot,
+    sellerOwner: address,
+    sellerCount: 10,
+    projectDetails: projectDetails,
+  });
+}
+
+// Example Tx: 40116c275da234ec6b7c88ff38dfa45ad18c7c1388c2d3f8f6e43dfef90b7e70
+async function _updateLbeV2EventExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0ba547d1ae595c49041570991a1c33729106e635f20643b99e3ddb1e77dc439586"
+  );
+  const curSlot = lucid.currentSlot();
+  const curDate = lucid.utils.slotToUnixTime(curSlot);
+  const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
+    baseAsset: baseAsset,
+    reserveBase: 100_000n,
+    raiseAsset: ADA,
+    startTime: BigInt(curDate + _ONE_DAY_IN_MS * 20),
+    endTime: BigInt(curDate + _ONE_DAY_IN_MS * 20 + 2 * ONE_HOUR_IN_MS),
+    owner: address,
+    receiver: address,
+    poolAllocation: 100n,
+    minimumOrderRaise: undefined,
+    minimumRaise: 10_000_000n,
+    maximumRaise: 100_000_000n,
+    penaltyConfig: {
+      penaltyStartTime: BigInt(
+        curDate + _ONE_DAY_IN_MS * 20 + 10 * ONE_MINUTE_IN_MS
+      ),
+      percent: 20n,
+    },
+    revocable: true,
+    poolBaseFee: 30n,
+  };
+  const projectDetails = {
+    eventName: "TEST SDK hiiiiiiii",
+    description: "test lbe v2 in public sdk",
+    socialLinks: {
+      twitter: "https://x.com/MinswapDEX",
+      telegram: "https://t.me/MinswapMafia",
+      discord: "https://discord.gg/minswap",
+      website: "https://app.minswap.org/",
+    },
+    tokenomics: [
+      {
+        tag: "admin",
+        percentage: "70",
+      },
+      {
+        tag: "LBE",
+        percentage: "30",
+      },
+    ],
+  };
+  const currentSlot = await blockfrostAdapter.currentSlot();
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, ADA);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, "Event is not created");
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { outputIndex: treasury.txIn.index, txHash: treasury.txIn.txHash },
+  ]);
+  invariant(treasuryUtxos.length !== 0, "Can not find factory utxo");
+  return new LbeV2(lucid).updateEvent({
+    owner: await lucid.wallet.address(),
+    treasuryUtxo: treasuryUtxos[0],
+    lbeV2Parameters: lbeV2Parameters,
+    currentSlot: currentSlot,
+    projectDetails: projectDetails,
+  });
+}
+
+// Example Tx: b3c7049ff4402bdb2f3fe6522c720fad499d5f3dae512299dfb3a5e011a66496
+async function _lbeV2AddMoreSellersExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
+
+  const manager = await blockfrostAdapter.getLbeV2ManagerByLbeId(lbeId);
+  invariant(manager !== null, `Can not find manager by lbeId ${lbeId}`);
+  const managerUtxos = await lucid.utxosByOutRef([
+    { txHash: manager.txIn.txHash, outputIndex: manager.txIn.index },
+  ]);
+  invariant(managerUtxos.length === 1, "Can not find manager Utxo");
+
+  return new LbeV2(lucid).addSellers({
+    treasuryUtxo: treasuryUtxos[0],
+    managerUtxo: managerUtxos[0],
+    addSellerCount: 2,
+    sellerOwner: address,
+    currentSlot: await blockfrostAdapter.currentSlot(),
+  });
+}
+
+// Example Tx: b1819fbee0bb1eace80f97a75089a8b87047ea2f18959092949306e5301b048d
+async function _cancelLbeV2EventByOwnerExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d865190718981e4e7fab3eb80963f14148714d7a7847652d4017d0fb744db075027"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
+
+  return new LbeV2(lucid).cancelEvent({
+    treasuryUtxo: treasuryUtxos[0],
+    cancelData: { reason: LbeV2Types.CancelReason.BY_OWNER, owner: address },
+    currentSlot: await blockfrostAdapter.currentSlot(),
+  });
+}
+
+// Example Tx: 7af5ea80b6a4a587e2c6cfce383367829f0cb68c90b65656c8198a72afc3f419
+async function _lbeV2DepositOrderExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
+
+  const seller = await blockfrostAdapter.getLbeV2SellerByLbeId(lbeId);
+  invariant(seller !== null, `Can not find seller by lbeId ${lbeId}`);
+  const sellerUtxos = await lucid.utxosByOutRef([
+    { txHash: seller.txIn.txHash, outputIndex: seller.txIn.index },
+  ]);
+  invariant(sellerUtxos.length === 1, "Can not find seller Utxo");
+
+  const orders = await blockfrostAdapter.getLbeV2OrdersByLbeIdAndOwner(
+    lbeId,
+    address
+  );
+  const orderUtxos =
+    orders.length > 0
+      ? await lucid.utxosByOutRef(
+          orders.map((o) => ({
+            txHash: o.txIn.txHash,
+            outputIndex: o.txIn.index,
+          }))
+        )
+      : [];
+
+  invariant(
+    orderUtxos.length === orders.length,
+    "Can not find enough order Utxos"
+  );
+
+  const currentSlot = await blockfrostAdapter.currentSlot();
+  return new LbeV2(lucid).depositOrWithdrawOrder({
+    currentSlot: currentSlot,
+    existingOrderUtxos: orderUtxos,
+    treasuryUtxo: treasuryUtxos[0],
+    sellerUtxo: sellerUtxos[0],
+    owner: address,
+    action: { type: "deposit", additionalAmount: 1_000_000n },
+  });
+}
+
+// Example Tx: 3388b9ce7f2175576b12ac48eacfb78da24b2319ab0595b5cc6bf9531e781eef
+async function _lbeV2WithdrawOrderExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
+
+  const seller = await blockfrostAdapter.getLbeV2SellerByLbeId(lbeId);
+  invariant(seller !== null, `Can not find seller by lbeId ${lbeId}`);
+  const sellerUtxos = await lucid.utxosByOutRef([
+    { txHash: seller.txIn.txHash, outputIndex: seller.txIn.index },
+  ]);
+  invariant(sellerUtxos.length === 1, "Can not find seller Utxo");
+
+  const orders = await blockfrostAdapter.getLbeV2OrdersByLbeIdAndOwner(
+    lbeId,
+    address
+  );
+  const orderUtxos =
+    orders.length > 0
+      ? await lucid.utxosByOutRef(
+          orders.map((o) => ({
+            txHash: o.txIn.txHash,
+            outputIndex: o.txIn.index,
+          }))
+        )
+      : [];
+
+  invariant(
+    orderUtxos.length === orders.length,
+    "Can not find enough order Utxos"
+  );
+
+  const currentSlot = await blockfrostAdapter.currentSlot();
+  return new LbeV2(lucid).depositOrWithdrawOrder({
+    currentSlot: currentSlot,
+    existingOrderUtxos: orderUtxos,
+    treasuryUtxo: treasuryUtxos[0],
+    sellerUtxo: sellerUtxos[0],
+    owner: address,
+    action: { type: "withdraw", withdrawalAmount: 1_000_000n },
+  });
+}
+
+// Example Tx: 9667528ebfe0c51aad3c6ef6b1dc7e1660c55c8d712d30eb81a5520dd4aca780
+async function _lbeV2CloseEventExample(
+  lucid: Lucid,
+  address: Address,
+  blockfrostAdapter: BlockfrostAdapter
+): Promise<TxComplete> {
+  const baseAsset = Asset.fromString(
+    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
+  );
+  const raiseAsset = Asset.fromString("lovelace");
+
+  const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+  const treasury = await blockfrostAdapter.getLbeV2TreasuryByLbeId(lbeId);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  const headAndTailFactory =
+    await blockfrostAdapter.getLbeV2HeadAndTailFactory(lbeId);
+  invariant(
+    headAndTailFactory,
+    `Can not find head and tail factory by lbeId ${lbeId}`
+  );
+  const { head: headFactory, tail: tailFactory } = headAndTailFactory;
+
+  const treasuryUtxos = await lucid.utxosByOutRef([
+    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+  ]);
+  invariant(treasuryUtxos.length !== 0, "Can not find treasury Utxo");
+
+  const headFactoryUtxos = await lucid.utxosByOutRef([
+    { txHash: headFactory.txIn.txHash, outputIndex: headFactory.txIn.index },
+  ]);
+
+  invariant(headFactoryUtxos.length !== 0, "Can not find head factory Utxo");
+
+  const tailFactoryUtxos = await lucid.utxosByOutRef([
+    { txHash: tailFactory.txIn.txHash, outputIndex: tailFactory.txIn.index },
+  ]);
+  invariant(tailFactoryUtxos.length !== 0, "Can not find tail factory Utxo");
+  const currentSlot = await blockfrostAdapter.currentSlot();
+
+  return new LbeV2(lucid).closeEventTx({
+    treasuryUtxo: treasuryUtxos[0],
+    headFactoryUtxo: headFactoryUtxos[0],
+    tailFactoryUtxo: tailFactoryUtxos[0],
+    currentSlot: currentSlot,
+    owner: address,
+  });
+}
+
 /**
  * Initialize Lucid Instance for Browser Environment
  * @param network Network you're working on
@@ -1159,28 +1531,6 @@ async function _getBrowserLucidInstance(
   // We can do similar with other wallet extensions
   const api = await window.cardano.eternl.enable();
   lucid.selectWallet(api);
-  return lucid;
-}
-
-/**
- * Initialize Lucid Instance for Backend Environment
- * @param network Network you're working on
- * @param projectId Blockfrost API KEY
- * @param blockfrostUrl Blockfrost URL
- * @param address Your own address
- * @returns
- */
-async function getBackendLucidInstance(
-  network: Network,
-  projectId: string,
-  blockfrostUrl: string,
-  address: Address
-): Promise<Lucid> {
-  const provider = new Blockfrost(blockfrostUrl, projectId);
-  const lucid = await Lucid.new(provider, network);
-  lucid.selectWalletFrom({
-    address: address,
-  });
   return lucid;
 }
 

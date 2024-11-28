@@ -1,19 +1,17 @@
+import { Constr, Credential, Data } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Credential, Data } from "lucid-cardano";
 
 import { sha3 } from "../utils/hash.internal";
 import { LucidCredential } from "./address.internal";
 import { ADA, Asset } from "./asset";
-import {
-  DexV1Constant,
-  DexV2Constant,
-  StableswapConstant,
-} from "./constants";
+import { DexV1Constant, DexV2Constant, StableswapConstant } from "./constants";
 import { NetworkId } from "./network";
 import { normalizeAssets, PoolFeeSharing } from "./pool.internal";
 import { TxIn, Value } from "./tx.internal";
 
 export const DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR = 10000n;
+export const MIN_POOL_V2_TRADING_FEE_NUMERATOR = 5n;
+export const MAX_POOL_V2_TRADING_FEE_NUMERATOR = 2000n;
 
 export namespace PoolV1 {
   /**
@@ -34,7 +32,9 @@ export namespace PoolV1 {
       this.value = value;
       this.datumHash = datumHash;
 
-      const nft = value.find(({ unit }) => unit.startsWith(DexV1Constant.POOL_NFT_POLICY_ID));
+      const nft = value.find(({ unit }) =>
+        unit.startsWith(DexV1Constant.POOL_NFT_POLICY_ID)
+      );
       invariant(nft, "pool doesn't have NFT");
       const poolId = nft.unit.slice(56);
       // validate and memoize assetA and assetB
@@ -50,7 +50,10 @@ export namespace PoolV1 {
           const nonADAAssets = relevantAssets.filter(
             ({ unit }) => unit !== "lovelace"
           );
-          invariant(nonADAAssets.length === 1, "pool must have 1 non-ADA asset");
+          invariant(
+            nonADAAssets.length === 1,
+            "pool must have 1 non-ADA asset"
+          );
           this.assetB = nonADAAssets[0].unit;
           break;
         }
@@ -59,7 +62,10 @@ export namespace PoolV1 {
           const nonADAAssets = relevantAssets.filter(
             ({ unit }) => unit !== "lovelace"
           );
-          invariant(nonADAAssets.length === 2, "pool must have 1 non-ADA asset");
+          invariant(
+            nonADAAssets.length === 2,
+            "pool must have 1 non-ADA asset"
+          );
           [this.assetA, this.assetB] = normalizeAssets(
             nonADAAssets[0].unit,
             nonADAAssets[1].unit
@@ -170,7 +176,7 @@ export namespace StablePool {
     public readonly value: Value;
     public readonly datumCbor: string;
     public readonly datum: Datum;
-    public readonly config: StableswapConstant.Config
+    public readonly config: StableswapConstant.Config;
 
     constructor(
       networkId: NetworkId,
@@ -179,52 +185,54 @@ export namespace StablePool {
       value: Value,
       datum: string
     ) {
-      this.address = address
-      this.txIn = txIn
-      this.value = value
-      this.datumCbor = datum
-      this.datum = Datum.fromPlutusData(Data.from(datum))
-      const allConfigs = StableswapConstant.CONFIG[networkId]
-      const config = allConfigs.find((cfg) => cfg.poolAddress === address)
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumCbor = datum;
+      this.datum = Datum.fromPlutusData(Data.from(datum));
+      const allConfigs = StableswapConstant.CONFIG[networkId];
+      const config = allConfigs.find((cfg) => cfg.poolAddress === address);
       if (!config) {
-        throw new Error("Invalid Stable Pool address")
+        throw new Error("Invalid Stable Pool address");
       }
-      this.config = config
-      if (!value.find((v) => v.unit === config.nftAsset && v.quantity === "1")) {
-        throw new Error("Cannot find the Pool NFT in the value")
+      this.config = config;
+      if (
+        !value.find((v) => v.unit === config.nftAsset && v.quantity === "1")
+      ) {
+        throw new Error("Cannot find the Pool NFT in the value");
       }
     }
 
     get assets(): string[] {
-      return this.config.assets
+      return this.config.assets;
     }
 
     get nft(): string {
-      return this.config.nftAsset
+      return this.config.nftAsset;
     }
 
     get lpAsset(): string {
-      return this.config.lpAsset
+      return this.config.lpAsset;
     }
 
     get reserves(): bigint[] {
-      return this.datum.balances
+      return this.datum.balances;
     }
 
     get totalLiquidity(): bigint {
-      return this.datum.totalLiquidity
+      return this.datum.totalLiquidity;
     }
 
     get orderHash(): string {
-      return this.datum.orderHash
+      return this.datum.orderHash;
     }
 
     get amp(): bigint {
-      return this.datum.amplificationCoefficient
+      return this.datum.amplificationCoefficient;
     }
 
     get id(): string {
-      return this.nft
+      return this.nft;
     }
   }
 
@@ -233,16 +241,17 @@ export namespace StablePool {
     totalLiquidity: bigint;
     amplificationCoefficient: bigint;
     orderHash: string;
-  }
+  };
 
   export namespace Datum {
     export function toPlutusData(datum: Datum): Constr<Data> {
-      const { balances, totalLiquidity, amplificationCoefficient, orderHash } = datum;
+      const { balances, totalLiquidity, amplificationCoefficient, orderHash } =
+        datum;
       return new Constr(0, [
         balances,
         totalLiquidity,
         amplificationCoefficient,
-        orderHash
+        orderHash,
       ]);
     }
 
@@ -254,8 +263,8 @@ export namespace StablePool {
         balances: data.fields[0] as bigint[],
         totalLiquidity: data.fields[1] as bigint,
         amplificationCoefficient: data.fields[2] as bigint,
-        orderHash: data.fields[3] as string
-      }
+        orderHash: data.fields[3] as string,
+      };
     }
   }
 }
@@ -271,9 +280,9 @@ export namespace PoolV2 {
     const [normalizedA, normalizedB] = normalizeAssets(
       Asset.toString(assetA),
       Asset.toString(assetB)
-    )
-    const normalizedAssetA = Asset.fromString(normalizedA)
-    const normalizedAssetB = Asset.fromString(normalizedB)
+    );
+    const normalizedAssetA = Asset.fromString(normalizedA);
+    const normalizedAssetB = Asset.fromString(normalizedB);
     const k1 = sha3(normalizedAssetA.policyId + normalizedAssetA.tokenName);
     const k2 = sha3(normalizedAssetB.policyId + normalizedAssetB.tokenName);
     return sha3(k1 + k2);
@@ -288,14 +297,14 @@ export namespace PoolV2 {
       feeBNumerator: bigint;
     };
     feeSharingNumerator?: bigint;
-  }
+  };
   export class State {
     public readonly address: string;
     public readonly txIn: TxIn;
     public readonly value: Value;
     public readonly datumRaw: string;
     public readonly datum: Datum;
-    public readonly config: DexV2Constant.Config
+    public readonly config: DexV2Constant.Config;
     public readonly lpAsset: Asset;
     public readonly authenAsset: Asset;
     constructor(
@@ -305,73 +314,81 @@ export namespace PoolV2 {
       value: Value,
       datum: string
     ) {
-      this.address = address
-      this.txIn = txIn
-      this.value = value
-      this.datumRaw = datum
-      this.datum = Datum.fromPlutusData(Data.from(datum))
-      this.config = DexV2Constant.CONFIG[networkId]
+      this.address = address;
+      this.txIn = txIn;
+      this.value = value;
+      this.datumRaw = datum;
+      this.datum = Datum.fromPlutusData(Data.from(datum));
+      this.config = DexV2Constant.CONFIG[networkId];
       this.lpAsset = {
         policyId: this.config.lpPolicyId,
-        tokenName: computeLPAssetName(this.datum.assetA, this.datum.assetB)
-      }
-      this.authenAsset = Asset.fromString(this.config.poolAuthenAsset)
-      if (!value.find((v) => v.unit === this.config.poolAuthenAsset && v.quantity === "1")) {
-        throw new Error("Cannot find the Pool Authentication Asset in the value")
+        tokenName: computeLPAssetName(this.datum.assetA, this.datum.assetB),
+      };
+      this.authenAsset = Asset.fromString(this.config.poolAuthenAsset);
+      if (
+        !value.find(
+          (v) => v.unit === this.config.poolAuthenAsset && v.quantity === "1"
+        )
+      ) {
+        throw new Error(
+          "Cannot find the Pool Authentication Asset in the value"
+        );
       }
     }
 
     get assetA(): string {
-      return Asset.toString(this.datum.assetA)
+      return Asset.toString(this.datum.assetA);
     }
 
     get assetB(): string {
-      return Asset.toString(this.datum.assetB)
+      return Asset.toString(this.datum.assetB);
     }
 
     get totalLiquidity(): bigint {
-      return this.datum.totalLiquidity
+      return this.datum.totalLiquidity;
     }
 
     get reserveA(): bigint {
-      return this.datum.reserveA
+      return this.datum.reserveA;
     }
 
     get reserveB(): bigint {
-      return this.datum.reserveB
+      return this.datum.reserveB;
     }
 
     get feeA(): [bigint, bigint] {
       return [
         this.datum.baseFee.feeANumerator,
-        DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR
-      ]
+        DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR,
+      ];
     }
 
     get feeB(): [bigint, bigint] {
       return [
         this.datum.baseFee.feeBNumerator,
-        DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR
-      ]
+        DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR,
+      ];
     }
 
     get feeShare(): [bigint, bigint] | undefined {
       if (this.datum.feeSharingNumerator !== undefined) {
         return [
           this.datum.feeSharingNumerator,
-          DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR
-        ]
+          DEFAULT_POOL_V2_TRADING_FEE_DENOMINATOR,
+        ];
       } else {
-        return undefined
+        return undefined;
       }
     }
 
     get datumReserves(): [bigint, bigint] {
-      return [this.datum.reserveA, this.datum.reserveB]
+      return [this.datum.reserveA, this.datum.reserveB];
     }
 
     get valueReserveA(): bigint {
-      const amount = BigInt(this.value.find((v) => v.unit === this.assetA)?.quantity ?? "0")
+      const amount = BigInt(
+        this.value.find((v) => v.unit === this.assetA)?.quantity ?? "0"
+      );
       if (Asset.equals(this.datum.assetA, ADA)) {
         return amount - DEFAULT_POOL_ADA;
       }
@@ -379,7 +396,9 @@ export namespace PoolV2 {
     }
 
     get valueReserveB(): bigint {
-      return BigInt(this.value.find((v) => v.unit === this.assetB)?.quantity ?? "0")
+      return BigInt(
+        this.value.find((v) => v.unit === this.assetB)?.quantity ?? "0"
+      );
     }
 
     get valueReserves(): [bigint, bigint] {
@@ -392,8 +411,8 @@ export namespace PoolV2 {
         valueReserves: this.valueReserves,
         totalLiquidity: this.datum.totalLiquidity,
         tradingFee: this.datum.baseFee,
-        feeSharingNumerator: this.datum.feeSharingNumerator
-      }
+        feeSharingNumerator: this.datum.feeSharingNumerator,
+      };
     }
   }
 
@@ -410,7 +429,7 @@ export namespace PoolV2 {
     };
     feeSharingNumerator?: bigint;
     allowDynamicFee: boolean;
-  }
+  };
 
   export namespace Datum {
     export function toPlutusData(datum: Datum): Constr<Data> {
@@ -423,10 +442,12 @@ export namespace PoolV2 {
         reserveB,
         baseFee,
         feeSharingNumerator,
-        allowDynamicFee
+        allowDynamicFee,
       } = datum;
       return new Constr(0, [
-        new Constr(0, [LucidCredential.toPlutusData(poolBatchingStakeCredential)]),
+        new Constr(0, [
+          LucidCredential.toPlutusData(poolBatchingStakeCredential),
+        ]),
         Asset.toPlutusData(assetA),
         Asset.toPlutusData(assetB),
         totalLiquidity,
@@ -437,7 +458,7 @@ export namespace PoolV2 {
         feeSharingNumerator !== undefined
           ? new Constr(0, [feeSharingNumerator])
           : new Constr(1, []),
-        new Constr(allowDynamicFee ? 1 : 0, [])
+        new Constr(allowDynamicFee ? 1 : 0, []),
       ]);
     }
 
@@ -445,15 +466,17 @@ export namespace PoolV2 {
       if (data.index !== 0) {
         throw new Error(`Index of Pool Datum must be 0, actual: ${data.index}`);
       }
-      const stakeCredentialConstr = data.fields[0] as Constr<Data>
+      const stakeCredentialConstr = data.fields[0] as Constr<Data>;
       if (stakeCredentialConstr.index !== 0) {
-        throw new Error(`Index of Stake Credential must be 0, actual: ${stakeCredentialConstr.index}`);
+        throw new Error(
+          `Index of Stake Credential must be 0, actual: ${stakeCredentialConstr.index}`
+        );
       }
       let feeSharingNumerator: bigint | undefined = undefined;
       const maybeFeeSharingConstr = data.fields[8] as Constr<Data>;
       switch (maybeFeeSharingConstr.index) {
         case 0: {
-          feeSharingNumerator = maybeFeeSharingConstr.fields[0] as bigint
+          feeSharingNumerator = maybeFeeSharingConstr.fields[0] as bigint;
           break;
         }
         case 1: {
@@ -469,7 +492,9 @@ export namespace PoolV2 {
       const allowDynamicFeeConstr = data.fields[9] as Constr<Data>;
       const allowDynamicFee = allowDynamicFeeConstr.index === 1;
       return {
-        poolBatchingStakeCredential: LucidCredential.fromPlutusData(stakeCredentialConstr.fields[0] as Constr<Data>),
+        poolBatchingStakeCredential: LucidCredential.fromPlutusData(
+          stakeCredentialConstr.fields[0] as Constr<Data>
+        ),
         assetA: Asset.fromPlutusData(data.fields[1] as Constr<Data>),
         assetB: Asset.fromPlutusData(data.fields[2] as Constr<Data>),
         totalLiquidity: data.fields[3] as bigint,
@@ -477,10 +502,10 @@ export namespace PoolV2 {
         reserveB: data.fields[5] as bigint,
         baseFee: {
           feeANumerator: data.fields[6] as bigint,
-          feeBNumerator: data.fields[7] as bigint
+          feeBNumerator: data.fields[7] as bigint,
         },
         feeSharingNumerator: feeSharingNumerator,
-        allowDynamicFee: allowDynamicFee
+        allowDynamicFee: allowDynamicFee,
       };
     }
   }

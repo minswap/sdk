@@ -1,8 +1,8 @@
 import * as OgmiosSchema from "@cardano-ogmios/schema";
+import { Data } from "@minswap/lucid-cardano";
 import * as Prisma from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import JSONBig from "json-bigint"
-import { Data } from "lucid-cardano";
 
 import { Asset } from "../../types/asset";
 import { SECURITY_PARAM } from "../../types/constants";

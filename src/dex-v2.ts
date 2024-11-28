@@ -1,4 +1,3 @@
-import invariant from "@minswap/tiny-invariant";
 import {
   Address,
   Assets,
@@ -9,12 +8,15 @@ import {
   OutRef,
   Tx,
   TxComplete,
+  UnixTime,
   UTxO,
-} from "lucid-cardano";
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
 
 import {
   Asset,
   BlockfrostAdapter,
+  compareUtxo,
   DexV2Calculation,
   DexV2Constant,
   FIXED_DEPOSIT_ADA,
@@ -188,6 +190,12 @@ export type CancelBulkOrdersOptions = {
   orderOutRefs: OutRef[];
   composeTx?: Tx;
   AuthorizationMethodType?: OrderV2.AuthorizationMethodType;
+};
+
+export type CancelExpiredOrderOptions = {
+  orderUtxos: UTxO[];
+  currentSlot: UnixTime;
+  extraDatumMap: Record<string, string>;
 };
 
 export class DexV2 {
@@ -694,17 +702,6 @@ export class DexV2 {
     );
   }
 
-  private getOrderScriptHash(): string | undefined {
-    const orderAddress =
-      DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
-    const addrDetails = this.lucid.utils.getAddressDetails(orderAddress);
-    invariant(
-      addrDetails.paymentCredential?.type === "Script",
-      "order address should be a script address"
-    );
-    return addrDetails.paymentCredential.hash;
-  }
-
   private getOrderMetadata(orderOption: OrderOptions): string {
     switch (orderOption.type) {
       case OrderV2.StepType.SWAP_EXACT_IN: {
@@ -940,7 +937,6 @@ export class DexV2 {
     orderOutRefs,
     composeTx,
   }: CancelBulkOrdersOptions): Promise<TxComplete> {
-    const v2OrderScriptHash = this.getOrderScriptHash();
     const orderUtxos = await this.lucid.utxosByOutRef(orderOutRefs);
     if (orderUtxos.length === 0) {
       throw new Error("Order Utxos are empty");
@@ -962,7 +958,8 @@ export class DexV2 {
         this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
       invariant(
         orderScriptPaymentCred?.type === "Script" &&
-          orderScriptPaymentCred.hash === v2OrderScriptHash,
+          orderScriptPaymentCred.hash ===
+            DexV2Constant.CONFIG[this.networkId].orderScriptHash,
         `Utxo is not belonged Minswap's order address, utxo: ${utxo.txHash}`
       );
       let datum: OrderV2.Datum;
@@ -1002,5 +999,110 @@ export class DexV2 {
       lucidTx.compose(composeTx);
     }
     return lucidTx.complete();
+  }
+
+  async cancelExpiredOrders({
+    orderUtxos,
+    currentSlot,
+    extraDatumMap,
+  }: CancelExpiredOrderOptions): Promise<TxComplete> {
+    const refScript = await this.lucid.utxosByOutRef([
+      DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].order,
+      DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].expiredOrderCancellation,
+    ]);
+    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    invariant(
+      refScript.length === 2,
+      "cannot find deployed script for V2 Order or Expired Order Cancellation"
+    );
+    const sortedOrderUtxos = [...orderUtxos].sort(compareUtxo);
+
+    const lucidTx = this.lucid.newTx().readFrom(refScript);
+    lucidTx.collectFrom(
+      sortedOrderUtxos,
+      Data.to(new Constr(OrderV2.Redeemer.CANCEL_EXPIRED_ORDER_BY_ANYONE, []))
+    );
+    for (const orderUtxo of sortedOrderUtxos) {
+      const orderAddr = orderUtxo.address;
+      const orderScriptPaymentCred =
+        this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
+      invariant(
+        orderScriptPaymentCred?.type === "Script" &&
+          orderScriptPaymentCred.hash ===
+            DexV2Constant.CONFIG[this.networkId].orderScriptHash,
+        `Utxo is not belonged Minswap's order address, utxo: ${orderUtxo.txHash}`
+      );
+      let datum: OrderV2.Datum;
+      if (orderUtxo.datum) {
+        const rawDatum = orderUtxo.datum;
+        datum = OrderV2.Datum.fromPlutusData(
+          this.networkId,
+          Data.from(rawDatum)
+        );
+      } else if (orderUtxo.datumHash) {
+        const rawDatum = await this.lucid.datumOf(orderUtxo);
+        datum = OrderV2.Datum.fromPlutusData(
+          this.networkId,
+          rawDatum as Constr<Data>
+        );
+      } else {
+        throw new Error(
+          "Utxo without Datum Hash or Inline Datum can not be spent"
+        );
+      }
+      const expiryOptions = datum.expiredOptions;
+      invariant(expiryOptions !== undefined, "Order must have expiry options");
+      invariant(
+        expiryOptions.maxCancellationTip >= DexV2Constant.DEFAULT_CANCEL_TIPS,
+        "Cancel tip is too low"
+      );
+      invariant(
+        expiryOptions.expiredTime < BigInt(currentTime),
+        "Order is not expired"
+      );
+      const refundDatum = datum.refundReceiverDatum;
+      const outAssets = { ...orderUtxo.assets };
+      outAssets["lovelace"] -= expiryOptions.maxCancellationTip;
+      switch (refundDatum.type) {
+        case OrderV2.ExtraDatumType.NO_DATUM: {
+          lucidTx.payToAddress(datum.refundReceiver, outAssets);
+          break;
+        }
+        case OrderV2.ExtraDatumType.DATUM_HASH: {
+          lucidTx.payToAddressWithData(
+            datum.refundReceiver,
+            refundDatum.hash in extraDatumMap
+              ? { asHash: extraDatumMap[refundDatum.hash] }
+              : { hash: refundDatum.hash },
+            outAssets
+          );
+          break;
+        }
+        case OrderV2.ExtraDatumType.INLINE_DATUM: {
+          invariant(
+            refundDatum.hash in extraDatumMap,
+            `Can not find refund datum of order ${orderUtxo.txHash}#${orderUtxo.outputIndex}`
+          );
+          lucidTx.payToAddressWithData(
+            datum.refundReceiver,
+            { inline: extraDatumMap[refundDatum.hash] },
+            outAssets
+          );
+          break;
+        }
+      }
+    }
+    lucidTx
+      .withdraw(
+        DexV2Constant.CONFIG[this.networkId].expiredOrderCancelAddress,
+        0n,
+        Data.to(0n)
+      )
+      .validFrom(currentTime)
+      .validTo(currentTime + 3 * 60 * 60 * 1000)
+      .attachMetadata(674, {
+        msg: [MetadataMessage.CANCEL_ORDERS_AUTOMATICALLY],
+      });
+    return await lucidTx.complete();
   }
 }
