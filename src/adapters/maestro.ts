@@ -4,6 +4,9 @@ import { Asset } from "../types/asset";
 import { FactoryV2 } from "../types/factory";
 import { LbeV2Types } from "../types/lbe-v2";
 import { TxHistory } from "../types/tx.internal";
+import { DexV1Constant } from "../types/constants";
+import { checkValidPoolOutput } from "../types/pool.internal";
+import invariant from "@minswap/tiny-invariant";
 import {
   Adapter,
   GetPoolByIdParams,
@@ -16,29 +19,79 @@ import {
   GetV2PoolHistoryParams,
   GetV2PoolPriceParams,
 } from "./adapter";
+import { getScriptHashFromAddress } from "../utils/address-utils.internal";
+import { NetworkId } from "../types/network";
+import { MaestroClient } from "@maestro-org/typescript-sdk";
+
+export declare class MaestroServerError {
+  code: number;
+  error: string;
+  message: string;
+}
 
 export class MaestroAdapter implements Adapter {
-  getAssetDecimals(asset: string): Promise<number> {
+  protected readonly networkId: NetworkId;
+  private readonly maestroClient: MaestroClient;
+
+  constructor(networkId: NetworkId, maestroClient: MaestroClient) {
+    this.networkId = networkId;
+    this.maestroClient = maestroClient;
+  }
+
+  public async getAssetDecimals(asset: string): Promise<number> {
+    if (asset === "lovelace") {
+      return 6;
+    }
+    try {
+      const assetAInfo = await this.maestroClient.assets.assetInfo(asset);
+      return assetAInfo.data.token_registry_metadata?.decimals ?? 0;
+    } catch (err) {
+      if (err instanceof MaestroServerError && err.code === 400) {
+        return 0;
+      }
+      throw err;
+    }
+  }
+
+  public async getDatumByDatumHash(datumHash: string): Promise<string> {
+    const scriptsDatum = await this.maestroClient.datum.lookupDatum(datumHash);
+    return scriptsDatum.data.bytes;
+  }
+
+  public async currentSlot(): Promise<number> {
+    // TODO: implement latest block handler in typescript-sdk
     throw new Error("Method not implemented.");
   }
-  getDatumByDatumHash(datumHash: string): Promise<string> {
+
+  public async getV1PoolInTx({
+    txHash,
+  }: GetPoolInTxParams): Promise<PoolV1.State | null> {
+    const poolTx = await this.maestroClient.transactions.txInfo(txHash);
+    const poolUtxo = poolTx.data.outputs.find(
+      (o: (typeof poolTx.data.outputs)[number]) =>
+        getScriptHashFromAddress(o.address) === DexV1Constant.POOL_SCRIPT_HASH,
+    );
+    if (!poolUtxo) {
+      return null;
+    }
+
+    // TODO
+
     throw new Error("Method not implemented.");
   }
-  currentSlot(): Promise<number> {
-    throw new Error("Method not implemented.");
-  }
-  getV1PoolInTx({ txHash }: GetPoolInTxParams): Promise<PoolV1.State | null> {
-    throw new Error("Method not implemented.");
-  }
+
   getV1PoolById({ id }: GetPoolByIdParams): Promise<PoolV1.State | null> {
     throw new Error("Method not implemented.");
   }
+
   getV1Pools(params: GetPoolsParams): Promise<PoolV1.State[]> {
     throw new Error("Method not implemented.");
   }
+
   getV1PoolHistory(params: GetV1PoolHistoryParams): Promise<TxHistory[]> {
     throw new Error("Method not implemented.");
   }
+
   getV1PoolPrice(params: GetPoolPriceParams): Promise<[Big, Big]> {
     throw new Error("Method not implemented.");
   }
