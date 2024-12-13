@@ -1,12 +1,12 @@
 import { Address } from "@minswap/lucid-cardano";
-import { PoolV1, PoolV2, StablePool } from "..";
+import { MaestroClient } from "@maestro-org/typescript-sdk";
+import { DexV1Constant } from "../types/constants";
 import { Asset } from "../types/asset";
 import { FactoryV2 } from "../types/factory";
 import { LbeV2Types } from "../types/lbe-v2";
+import { NetworkId } from "../types/network";
+import { PoolV1, PoolV2, StablePool } from "..";
 import { TxHistory } from "../types/tx.internal";
-import { DexV1Constant } from "../types/constants";
-import { checkValidPoolOutput } from "../types/pool.internal";
-import invariant from "@minswap/tiny-invariant";
 import {
   Adapter,
   GetPoolByIdParams,
@@ -20,8 +20,6 @@ import {
   GetV2PoolPriceParams,
 } from "./adapter";
 import { getScriptHashFromAddress } from "../utils/address-utils.internal";
-import { NetworkId } from "../types/network";
-import { MaestroClient } from "@maestro-org/typescript-sdk";
 
 export declare class MaestroServerError {
   code: number;
@@ -63,6 +61,7 @@ export class MaestroAdapter implements Adapter {
     throw new Error("Method not implemented.");
   }
 
+  // TODO
   public async getV1PoolInTx({
     txHash,
   }: GetPoolInTxParams): Promise<PoolV1.State | null> {
@@ -80,8 +79,18 @@ export class MaestroAdapter implements Adapter {
     throw new Error("Method not implemented.");
   }
 
-  getV1PoolById({ id }: GetPoolByIdParams): Promise<PoolV1.State | null> {
-    throw new Error("Method not implemented.");
+  public async getV1PoolById({
+    id,
+  }: GetPoolByIdParams): Promise<PoolV1.State | null> {
+    const nft = `${DexV1Constant.POOL_NFT_POLICY_ID}${id}`;
+    const nftTxs = await this.maestroClient.assets.assetTxs(nft, {
+      count: 1,
+      order: "desc",
+    });
+    if (nftTxs.data.length === 0) {
+      return null;
+    }
+    return this.getV1PoolInTx({ txHash: nftTxs.data[0].tx_hash });
   }
 
   getV1Pools(params: GetPoolsParams): Promise<PoolV1.State[]> {
