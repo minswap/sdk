@@ -85,7 +85,6 @@ export class MaestroAdapter implements Adapter {
     throw new Error('Method not implemented.');
   }
 
-  // TODO
   public async getV1PoolInTx({
     txHash,
   }: GetPoolInTxParams): Promise<PoolV1.State | null> {
@@ -130,7 +129,6 @@ export class MaestroAdapter implements Adapter {
     return this.getV1PoolInTx({ txHash: nftTxs.data[0].tx_hash });
   }
 
-  // TODO
   public async getV1Pools({
     cursor,
     count = 100,

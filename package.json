@@ -51,7 +51,7 @@
     "@blockfrost/blockfrost-js": "^5.5.0",
     "@cardano-ogmios/client": "^6.5.0",
     "@cardano-ogmios/schema": "^6.5.0",
-    "@maestro-org/typescript-sdk": "^1.6.1",
+    "@maestro-org/typescript-sdk": "^1.6.3",
     "@minswap/lucid-cardano": "0.10.10-minswap.4",
     "@minswap/tiny-invariant": "^1.2.0",
     "big.js": "^6.2.1",
