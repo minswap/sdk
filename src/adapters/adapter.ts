@@ -1,10 +1,10 @@
-import { Address } from "@minswap/lucid-cardano";
-import Big from "big.js";
-import { Asset } from "../types/asset";
-import { FactoryV2 } from "../types/factory";
-import { LbeV2Types } from "../types/lbe-v2";
-import { PoolV1, PoolV2, StablePool } from "../types/pool";
-import { TxHistory } from "../types/tx.internal";
+import { Address } from '@minswap/lucid-cardano';
+import Big from 'big.js';
+import { Asset } from '../types/asset';
+import { FactoryV2 } from '../types/factory';
+import { LbeV2Types } from '../types/lbe-v2';
+import { PoolV1, PoolV2, StablePool } from '../types/pool';
+import { TxHistory } from '../types/tx.internal';
 
 export type GetPoolInTxParams = {
   txHash: string;
@@ -15,7 +15,8 @@ export type GetPoolByIdParams = {
 };
 
 export type GetPoolsParams = {
-  page: number;
+  page?: number;
+  cursor?: string;
 };
 
 export type GetV1PoolHistoryParams = {
