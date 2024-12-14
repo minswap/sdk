@@ -41,11 +41,11 @@ import { getScriptHashFromAddress } from '../utils/address-utils.internal';
 import { networkEnvToLucidNetwork } from '../utils/network.internal';
 import {
   Adapter,
-  GetPoolInTxParams,
   GetPoolByIdParams,
-  GetV2PoolPriceParams,
+  GetPoolInTxParams,
   GetPoolPriceParams,
   GetStablePoolPriceParams,
+  GetV2PoolPriceParams,
 } from './adapter';
 
 export type GetPoolsParams = Omit<PaginationOptions, 'page'> & {

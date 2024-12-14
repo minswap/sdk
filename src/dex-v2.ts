@@ -10,8 +10,8 @@ import {
   TxComplete,
   UnixTime,
   UTxO,
-} from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
+} from '@minswap/lucid-cardano';
+import invariant from '@minswap/tiny-invariant';
 
 import {
   Asset,
@@ -22,14 +22,14 @@ import {
   MetadataMessage,
   OrderV2,
   PoolV2,
-} from ".";
-import { BlockfrostAdapter } from "./adapters/blockfrost";
-import { BatcherFee } from "./batcher-fee-reduction/calculate";
-import { DexVersion } from "./batcher-fee-reduction/configs.internal";
-import { FactoryV2 } from "./types/factory";
-import { NetworkEnvironment, NetworkId } from "./types/network";
-import { lucidToNetworkEnv } from "./utils/network.internal";
-import { buildUtxoToStoreDatum } from "./utils/tx.internal";
+} from '.';
+import { BlockfrostAdapter } from './adapters/blockfrost';
+import { BatcherFee } from './batcher-fee-reduction/calculate';
+import { DexVersion } from './batcher-fee-reduction/configs.internal';
+import { FactoryV2 } from './types/factory';
+import { NetworkEnvironment, NetworkId } from './types/network';
+import { lucidToNetworkEnv } from './utils/network.internal';
+import { buildUtxoToStoreDatum } from './utils/tx.internal';
 
 export type V2CustomReceiver = {
   refundReceiver: Address;
@@ -208,7 +208,7 @@ export class DexV2 {
   constructor(lucid: Lucid, adapter: BlockfrostAdapter) {
     this.lucid = lucid;
     this.networkId =
-      lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
+      lucid.network === 'Mainnet' ? NetworkId.MAINNET : NetworkId.TESTNET;
     this.adapter = adapter;
     this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
@@ -292,13 +292,13 @@ export class DexV2 {
     ]);
     invariant(
       factoryRefs.length === 1,
-      "cannot find deployed script for Factory Validator",
+      'cannot find deployed script for Factory Validator',
     );
     const factoryRef = factoryRefs[0];
     const authenRefs = await this.lucid.utxosByOutRef([deployedScripts.authen]);
     invariant(
       authenRefs.length === 1,
-      "cannot find deployed script for Authen Minting Policy",
+      'cannot find deployed script for Authen Minting Policy',
     );
     const authenRef = authenRefs[0];
     const factoryUtxos = await this.lucid.utxosByOutRef([
@@ -307,7 +307,7 @@ export class DexV2 {
         outputIndex: factory.txIn.index,
       },
     ]);
-    invariant(factoryUtxos.length === 1, "cannot find Utxo of Factory");
+    invariant(factoryUtxos.length === 1, 'cannot find Utxo of Factory');
     const factoryUtxo = factoryUtxos[0];
 
     const factoryRedeemer: FactoryV2.Redeemer = {
@@ -375,11 +375,11 @@ export class DexV2 {
         const { assetA, assetB, amountA, amountB, minimumLPReceived } = options;
         invariant(
           amountA >= 0n && amountB >= 0n && amountA + amountB > 0n,
-          "amount must be positive",
+          'amount must be positive',
         );
         invariant(
           minimumLPReceived > 0n,
-          "minimum LP received must be positive",
+          'minimum LP received must be positive',
         );
         orderAssets[Asset.toString(assetA)] = amountA;
         orderAssets[Asset.toString(assetB)] = amountB;
@@ -392,59 +392,59 @@ export class DexV2 {
           minimumAssetAReceived,
           minimumAssetBReceived,
         } = options;
-        invariant(lpAmount > 0n, "LP amount must be positive");
+        invariant(lpAmount > 0n, 'LP amount must be positive');
         invariant(
           minimumAssetAReceived > 0n && minimumAssetBReceived > 0n,
-          "minimum asset received must be positive",
+          'minimum asset received must be positive',
         );
         orderAssets[Asset.toString(lpAsset)] = lpAmount;
         break;
       }
       case OrderV2.StepType.SWAP_EXACT_IN: {
         const { assetIn, amountIn, minimumAmountOut } = options;
-        invariant(amountIn > 0n, "amount in must be positive");
-        invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
+        invariant(amountIn > 0n, 'amount in must be positive');
+        invariant(minimumAmountOut > 0n, 'minimum amount out must be positive');
         orderAssets[Asset.toString(assetIn)] = amountIn;
         break;
       }
       case OrderV2.StepType.SWAP_EXACT_OUT: {
         const { assetIn, maximumAmountIn, expectedReceived } = options;
-        invariant(maximumAmountIn > 0n, "amount in must be positive");
-        invariant(expectedReceived > 0n, "minimum amount out must be positive");
+        invariant(maximumAmountIn > 0n, 'amount in must be positive');
+        invariant(expectedReceived > 0n, 'minimum amount out must be positive');
         orderAssets[Asset.toString(assetIn)] = maximumAmountIn;
         break;
       }
       case OrderV2.StepType.STOP: {
         const { assetIn, amountIn, stopAmount } = options;
-        invariant(amountIn > 0n, "amount in must be positive");
-        invariant(stopAmount > 0n, "stop amount out must be positive");
+        invariant(amountIn > 0n, 'amount in must be positive');
+        invariant(stopAmount > 0n, 'stop amount out must be positive');
         orderAssets[Asset.toString(assetIn)] = amountIn;
         break;
       }
       case OrderV2.StepType.OCO: {
         const { assetIn, amountIn, stopAmount, limitAmount } = options;
-        invariant(amountIn > 0n, "amount in must be positive");
-        invariant(stopAmount > 0n, "stop amount out must be positive");
-        invariant(limitAmount > 0n, "limit amount out must be positive");
+        invariant(amountIn > 0n, 'amount in must be positive');
+        invariant(stopAmount > 0n, 'stop amount out must be positive');
+        invariant(limitAmount > 0n, 'limit amount out must be positive');
         orderAssets[Asset.toString(assetIn)] = amountIn;
         break;
       }
       case OrderV2.StepType.ZAP_OUT: {
         const { lpAsset, lpAmount, minimumReceived } = options;
-        invariant(lpAmount > 0n, "lp amount in must be positive");
-        invariant(minimumReceived > 0n, "minimum amount out must be positive");
+        invariant(lpAmount > 0n, 'lp amount in must be positive');
+        invariant(minimumReceived > 0n, 'minimum amount out must be positive');
         orderAssets[Asset.toString(lpAsset)] = lpAmount;
         break;
       }
       case OrderV2.StepType.PARTIAL_SWAP: {
         const { assetIn, amountIn, expectedInOutRatio } = options;
-        invariant(amountIn > 0n, "amount in must be positive");
+        invariant(amountIn > 0n, 'amount in must be positive');
         const [expectedInOutRatioNumerator, expectedInOutRatioDenominator] =
           expectedInOutRatio;
         invariant(
           expectedInOutRatioNumerator > 0n &&
             expectedInOutRatioDenominator > 0n,
-          "expected input and output ratio must be positive",
+          'expected input and output ratio must be positive',
         );
         orderAssets[Asset.toString(assetIn)] = amountIn;
         break;
@@ -452,25 +452,25 @@ export class DexV2 {
       case OrderV2.StepType.WITHDRAW_IMBALANCE: {
         const { lpAsset, lpAmount, ratioAssetA, ratioAssetB, minimumAssetA } =
           options;
-        invariant(lpAmount > 0n, "LP amount must be positive");
+        invariant(lpAmount > 0n, 'LP amount must be positive');
         invariant(
           ratioAssetA > 0n && ratioAssetB > 0n && minimumAssetA > 0n,
-          "minimum asset and ratio received must be positive",
+          'minimum asset and ratio received must be positive',
         );
         orderAssets[Asset.toString(lpAsset)] = lpAmount;
         break;
       }
       case OrderV2.StepType.SWAP_ROUTING: {
         const { assetIn, amountIn } = options;
-        invariant(amountIn > 0n, "Amount must be positive");
+        invariant(amountIn > 0n, 'Amount must be positive');
         orderAssets[Asset.toString(assetIn)] = amountIn;
         break;
       }
     }
-    if ("lovelace" in orderAssets) {
-      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA;
+    if ('lovelace' in orderAssets) {
+      orderAssets['lovelace'] += FIXED_DEPOSIT_ADA;
     } else {
-      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA;
+      orderAssets['lovelace'] = FIXED_DEPOSIT_ADA;
     }
     return orderAssets;
   }
@@ -481,11 +481,11 @@ export class DexV2 {
         const { amountA, amountB, minimumLPReceived, killOnFailed } = options;
         invariant(
           amountA >= 0n && amountB >= 0n && amountA + amountB > 0n,
-          "amount must be positive",
+          'amount must be positive',
         );
         invariant(
           minimumLPReceived > 0n,
-          "minimum LP received must be positive",
+          'minimum LP received must be positive',
         );
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.DEPOSIT,
@@ -508,10 +508,10 @@ export class DexV2 {
           minimumAssetBReceived,
           killOnFailed,
         } = options;
-        invariant(lpAmount > 0n, "LP amount must be positive");
+        invariant(lpAmount > 0n, 'LP amount must be positive');
         invariant(
           minimumAssetAReceived > 0n && minimumAssetBReceived > 0n,
-          "minimum asset received must be positive",
+          'minimum asset received must be positive',
         );
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.WITHDRAW,
@@ -529,8 +529,8 @@ export class DexV2 {
       }
       case OrderV2.StepType.SWAP_EXACT_IN: {
         const { amountIn, direction, minimumAmountOut, killOnFailed } = options;
-        invariant(amountIn > 0n, "amount in must be positive");
-        invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
+        invariant(amountIn > 0n, 'amount in must be positive');
+        invariant(minimumAmountOut > 0n, 'minimum amount out must be positive');
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.SWAP_EXACT_IN,
           direction: direction,
@@ -548,8 +548,8 @@ export class DexV2 {
       case OrderV2.StepType.SWAP_EXACT_OUT: {
         const { maximumAmountIn, expectedReceived, direction, killOnFailed } =
           options;
-        invariant(maximumAmountIn > 0n, "amount in must be positive");
-        invariant(expectedReceived > 0n, "minimum amount out must be positive");
+        invariant(maximumAmountIn > 0n, 'amount in must be positive');
+        invariant(expectedReceived > 0n, 'minimum amount out must be positive');
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.SWAP_EXACT_OUT,
           direction: direction,
@@ -566,8 +566,8 @@ export class DexV2 {
       }
       case OrderV2.StepType.STOP: {
         const { amountIn, direction, stopAmount } = options;
-        invariant(amountIn > 0n, "amount in must be positive");
-        invariant(stopAmount > 0n, "stop amount out must be positive");
+        invariant(amountIn > 0n, 'amount in must be positive');
+        invariant(stopAmount > 0n, 'stop amount out must be positive');
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.STOP,
           direction: direction,
@@ -581,9 +581,9 @@ export class DexV2 {
       }
       case OrderV2.StepType.OCO: {
         const { amountIn, direction, stopAmount, limitAmount } = options;
-        invariant(amountIn > 0n, "amount in must be positive");
-        invariant(stopAmount > 0n, "stop amount out must be positive");
-        invariant(limitAmount > 0n, "limit amount out must be positive");
+        invariant(amountIn > 0n, 'amount in must be positive');
+        invariant(stopAmount > 0n, 'stop amount out must be positive');
+        invariant(limitAmount > 0n, 'limit amount out must be positive');
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.OCO,
           direction: direction,
@@ -598,8 +598,8 @@ export class DexV2 {
       }
       case OrderV2.StepType.ZAP_OUT: {
         const { lpAmount, minimumReceived, direction, killOnFailed } = options;
-        invariant(lpAmount > 0n, "lp amount in must be positive");
-        invariant(minimumReceived > 0n, "minimum amount out must be positive");
+        invariant(lpAmount > 0n, 'lp amount in must be positive');
+        invariant(minimumReceived > 0n, 'minimum amount out must be positive');
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.ZAP_OUT,
           direction: direction,
@@ -622,13 +622,13 @@ export class DexV2 {
           maximumSwapTime,
           minimumSwapAmountRequired,
         } = options;
-        invariant(amountIn > 0n, "amount in must be positive");
+        invariant(amountIn > 0n, 'amount in must be positive');
         const [expectedInOutRatioNumerator, expectedInOutRatioDenominator] =
           expectedInOutRatio;
         invariant(
           expectedInOutRatioNumerator > 0n &&
             expectedInOutRatioDenominator > 0n,
-          "expected input and output ratio must be positive",
+          'expected input and output ratio must be positive',
         );
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.PARTIAL_SWAP,
@@ -650,10 +650,10 @@ export class DexV2 {
           minimumAssetA,
           killOnFailed,
         } = options;
-        invariant(lpAmount > 0n, "LP amount must be positive");
+        invariant(lpAmount > 0n, 'LP amount must be positive');
         invariant(
           ratioAssetA > 0n && ratioAssetB > 0n && minimumAssetA > 0n,
-          "minimum asset and ratio received must be positive",
+          'minimum asset and ratio received must be positive',
         );
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.WITHDRAW_IMBALANCE,
@@ -672,7 +672,7 @@ export class DexV2 {
       }
       case OrderV2.StepType.SWAP_ROUTING: {
         const { amountIn, routings, minimumReceived } = options;
-        invariant(amountIn > 0n, "Amount must be positive");
+        invariant(amountIn > 0n, 'Amount must be positive');
         const orderStep: OrderV2.Step = {
           type: OrderV2.StepType.SWAP_ROUTING,
           routings: routings,
@@ -694,7 +694,7 @@ export class DexV2 {
       this.lucid.utils.getAddressDetails(orderAddress).paymentCredential;
     invariant(
       orderAddressPaymentCred,
-      "order address payment credentials not found",
+      'order address payment credentials not found',
     );
     return this.lucid.utils.credentialToAddress(
       orderAddressPaymentCred,
@@ -795,17 +795,17 @@ export class DexV2 {
       } else {
         totalBatcherFee = batcherFee;
       }
-      if ("lovelace" in orderAssets) {
-        orderAssets["lovelace"] += totalBatcherFee;
+      if ('lovelace' in orderAssets) {
+        orderAssets['lovelace'] += totalBatcherFee;
       } else {
-        orderAssets["lovelace"] = totalBatcherFee;
+        orderAssets['lovelace'] = totalBatcherFee;
       }
 
       const senderPaymentCred =
         this.lucid.utils.getAddressDetails(sender).paymentCredential;
       invariant(
         senderPaymentCred,
-        "sender address payment credentials not found",
+        'sender address payment credentials not found',
       );
 
       const canceller = authorizationMethodType
@@ -939,7 +939,7 @@ export class DexV2 {
   }: CancelBulkOrdersOptions): Promise<TxComplete> {
     const orderUtxos = await this.lucid.utxosByOutRef(orderOutRefs);
     if (orderUtxos.length === 0) {
-      throw new Error("Order Utxos are empty");
+      throw new Error('Order Utxos are empty');
     }
     const requiredPubKeyHashSet = new Set<string>();
     const orderRefs = await this.lucid.utxosByOutRef([
@@ -947,7 +947,7 @@ export class DexV2 {
     ]);
     invariant(
       orderRefs.length === 1,
-      "cannot find deployed script for V2 Order",
+      'cannot find deployed script for V2 Order',
     );
 
     const orderRef = orderRefs[0];
@@ -957,7 +957,7 @@ export class DexV2 {
       const orderScriptPaymentCred =
         this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
       invariant(
-        orderScriptPaymentCred?.type === "Script" &&
+        orderScriptPaymentCred?.type === 'Script' &&
           orderScriptPaymentCred.hash ===
             DexV2Constant.CONFIG[this.networkId].orderScriptHash,
         `Utxo is not belonged Minswap's order address, utxo: ${utxo.txHash}`,
@@ -977,7 +977,7 @@ export class DexV2 {
         );
       } else {
         throw new Error(
-          "Utxo without Datum Hash or Inline Datum can not be spent",
+          'Utxo without Datum Hash or Inline Datum can not be spent',
         );
       }
 
@@ -1013,7 +1013,7 @@ export class DexV2 {
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
     invariant(
       refScript.length === 2,
-      "cannot find deployed script for V2 Order or Expired Order Cancellation",
+      'cannot find deployed script for V2 Order or Expired Order Cancellation',
     );
     const sortedOrderUtxos = [...orderUtxos].sort(compareUtxo);
 
@@ -1027,7 +1027,7 @@ export class DexV2 {
       const orderScriptPaymentCred =
         this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
       invariant(
-        orderScriptPaymentCred?.type === "Script" &&
+        orderScriptPaymentCred?.type === 'Script' &&
           orderScriptPaymentCred.hash ===
             DexV2Constant.CONFIG[this.networkId].orderScriptHash,
         `Utxo is not belonged Minswap's order address, utxo: ${orderUtxo.txHash}`,
@@ -1047,22 +1047,22 @@ export class DexV2 {
         );
       } else {
         throw new Error(
-          "Utxo without Datum Hash or Inline Datum can not be spent",
+          'Utxo without Datum Hash or Inline Datum can not be spent',
         );
       }
       const expiryOptions = datum.expiredOptions;
-      invariant(expiryOptions !== undefined, "Order must have expiry options");
+      invariant(expiryOptions !== undefined, 'Order must have expiry options');
       invariant(
         expiryOptions.maxCancellationTip >= DexV2Constant.DEFAULT_CANCEL_TIPS,
-        "Cancel tip is too low",
+        'Cancel tip is too low',
       );
       invariant(
         expiryOptions.expiredTime < BigInt(currentTime),
-        "Order is not expired",
+        'Order is not expired',
       );
       const refundDatum = datum.refundReceiverDatum;
       const outAssets = { ...orderUtxo.assets };
-      outAssets["lovelace"] -= expiryOptions.maxCancellationTip;
+      outAssets['lovelace'] -= expiryOptions.maxCancellationTip;
       switch (refundDatum.type) {
         case OrderV2.ExtraDatumType.NO_DATUM: {
           lucidTx.payToAddress(datum.refundReceiver, outAssets);

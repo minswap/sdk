@@ -1,15 +1,32 @@
-import { Address, Tx } from '@minswap/lucid-cardano';
 import {
-  MaestroClient,
   Asset as MaestroUtxoAsset,
+  MaestroClient,
+  UtxoWithSlot,
 } from '@maestro-org/typescript-sdk';
-import { DexV1Constant, DexV2Constant } from '../types/constants';
+import { Address } from '@minswap/lucid-cardano';
+import invariant from '@minswap/tiny-invariant';
+import Big from 'big.js';
+
+import { PoolV1, PoolV2, StablePool } from '..';
+import { StableswapCalculation } from '../calculate';
 import { Asset } from '../types/asset';
+import {
+  DexV1Constant,
+  DexV2Constant,
+  LbeV2Constant,
+  StableswapConstant,
+} from '../types/constants';
 import { FactoryV2 } from '../types/factory';
 import { LbeV2Types } from '../types/lbe-v2';
 import { NetworkId } from '../types/network';
-import { PoolV1, PoolV2, StablePool } from '..';
+import {
+  checkValidPoolOutput,
+  isValidPoolOutput,
+  normalizeAssets,
+} from '../types/pool.internal';
+import { StringUtils } from '../types/string';
 import { TxHistory, TxIn, Value } from '../types/tx.internal';
+import { getScriptHashFromAddress } from '../utils/address-utils.internal';
 import {
   Adapter,
   GetPoolByIdParams,
@@ -20,15 +37,6 @@ import {
   GetV2PoolHistoryParams,
   GetV2PoolPriceParams,
 } from './adapter';
-import { getScriptHashFromAddress } from '../utils/address-utils.internal';
-import {
-  checkValidPoolOutput,
-  isValidPoolOutput,
-  normalizeAssets,
-} from '../types/pool.internal';
-import invariant from '@minswap/tiny-invariant';
-import Big from 'big.js';
-import { StringUtils } from '../types/string';
 
 export declare class MaestroServerError {
   code: number;
@@ -169,7 +177,6 @@ export class MaestroAdapter implements Adapter {
       });
   }
 
-  // TODO
   public async getV1PoolHistory({
     id,
     count = 100,
@@ -248,11 +255,46 @@ export class MaestroAdapter implements Adapter {
     };
   }
 
-  // TODO
-  getV2Pools(
-    params: GetPoolsParams,
-  ): Promise<{ pools: PoolV2.State[]; errors: unknown[] }> {
-    throw new Error('Method not implemented.');
+  public async getV2Pools({
+    cursor,
+    count = 100,
+    order = 'asc',
+  }: GetPoolsParams): Promise<{ pools: PoolV2.State[]; errors: unknown[] }> {
+    const v2Config = DexV2Constant.CONFIG[this.networkId];
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      v2Config.poolScriptHashBech32,
+      {
+        asset: v2Config.poolAuthenAsset,
+        cursor,
+        count,
+        order,
+      },
+    );
+    const utxosData = utxos.data;
+
+    const pools: PoolV2.State[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxosData) {
+      try {
+        if (!utxo.datum) {
+          throw new Error(`Cannot find datum of Pool V2, tx: ${utxo.tx_hash}`);
+        }
+        const pool = new PoolV2.State(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.index },
+          this.mapMaestroAssetToValue(utxo.assets),
+          utxo.datum.hash,
+        );
+        pools.push(pool);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      pools: pools,
+      errors: errors,
+    };
   }
 
   public async getV2PoolByPair(
@@ -280,9 +322,10 @@ export class MaestroAdapter implements Adapter {
     );
   }
 
-  // TODO
-  getV2PoolHistory(params: GetV2PoolHistoryParams): Promise<PoolV2.State[]> {
-    throw new Error('Method not implemented.');
+  public async getV2PoolHistory(
+    _params: GetV2PoolHistoryParams,
+  ): Promise<PoolV2.State[]> {
+    throw Error('Not supported yet. Please use MinswapAdapter');
   }
 
   public async getV2PoolPrice({
@@ -307,12 +350,44 @@ export class MaestroAdapter implements Adapter {
     return [priceAB, priceBA];
   }
 
-  // TODO
-  getAllFactoriesV2(): Promise<{
+  public async getAllFactoriesV2(): Promise<{
     factories: FactoryV2.State[];
     errors: unknown[];
   }> {
-    throw new Error('Method not implemented.');
+    const v2Config = DexV2Constant.CONFIG[this.networkId];
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      v2Config.factoryScriptHashBech32,
+      {
+        asset: v2Config.factoryAsset,
+      },
+    );
+    const utxosData = utxos.data;
+
+    const factories: FactoryV2.State[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxosData) {
+      try {
+        if (!utxo.datum) {
+          throw new Error(
+            `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`,
+          );
+        }
+        const factory = new FactoryV2.State(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.index },
+          this.mapMaestroAssetToValue(utxo.assets),
+          utxo.datum.hash,
+        );
+        factories.push(factory);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      factories: factories,
+      errors: errors,
+    };
   }
 
   public async getFactoryV2ByPair(
@@ -333,121 +408,440 @@ export class MaestroAdapter implements Adapter {
     return null;
   }
 
-  // TODO
-  getAllStablePools(): Promise<{
+  private async parseStablePoolState(
+    utxo: UtxoWithSlot,
+  ): Promise<StablePool.State> {
+    let datum: string;
+    if (utxo.datum?.hash) {
+      datum = utxo.datum.hash;
+    } else if (utxo.datum?.hash) {
+      datum = await this.getDatumByDatumHash(utxo.datum.hash);
+    } else {
+      throw new Error('Cannot find datum of Stable Pool');
+    }
+    const pool = new StablePool.State(
+      this.networkId,
+      utxo.address,
+      { txHash: utxo.tx_hash, index: utxo.index },
+      this.mapMaestroAssetToValue(utxo.assets),
+      datum,
+    );
+    return pool;
+  }
+
+  public async getAllStablePools(): Promise<{
     pools: StablePool.State[];
     errors: unknown[];
   }> {
-    throw new Error('Method not implemented.');
+    const poolAddresses = StableswapConstant.CONFIG[this.networkId].map(
+      (cfg) => cfg.poolAddress,
+    );
+    const pools: StablePool.State[] = [];
+    const errors: unknown[] = [];
+    for (const poolAddr of poolAddresses) {
+      const utxos = await this.maestroClient.addresses.utxosByAddress(poolAddr);
+      const utxosData = utxos.data;
+      try {
+        for (const utxo of utxosData) {
+          const pool = await this.parseStablePoolState(utxo);
+          pools.push(pool);
+        }
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+
+    return {
+      pools: pools,
+      errors: errors,
+    };
   }
 
-  // TODO
-  getStablePoolByLpAsset(lpAsset: Asset): Promise<StablePool.State | null> {
-    throw new Error('Method not implemented.');
+  public async getStablePoolByLpAsset(
+    lpAsset: Asset,
+  ): Promise<StablePool.State | null> {
+    const config = StableswapConstant.CONFIG[this.networkId].find(
+      (cfg) => cfg.lpAsset === Asset.toString(lpAsset),
+    );
+    invariant(
+      config,
+      `getStablePoolByLpAsset: Can not find stableswap config by LP Asset ${Asset.toString(
+        lpAsset,
+      )}`,
+    );
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      config.poolAddress,
+      {
+        asset: config.nftAsset,
+      },
+    );
+    const utxosData = utxos.data;
+
+    if (utxosData.length === 1) {
+      const poolUtxo = utxosData[0];
+      return await this.parseStablePoolState(poolUtxo);
+    }
+    return null;
   }
 
-  // TODO
-  getStablePoolByNFT(nft: Asset): Promise<StablePool.State | null> {
-    throw new Error('Method not implemented.');
+  public async getStablePoolByNFT(
+    nft: Asset,
+  ): Promise<StablePool.State | null> {
+    const poolAddress = StableswapConstant.CONFIG[this.networkId].find(
+      (cfg) => cfg.nftAsset === Asset.toString(nft),
+    )?.poolAddress;
+    if (!poolAddress) {
+      throw new Error(
+        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`,
+      );
+    }
+
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      poolAddress,
+      {
+        asset: Asset.toString(nft),
+      },
+    );
+    const utxosData = utxos.data;
+
+    if (utxosData.length === 1) {
+      const poolUtxo = utxosData[0];
+      return await this.parseStablePoolState(poolUtxo);
+    }
+    return null;
   }
 
-  // TODO
   getStablePoolHistory(
-    params: GetStablePoolHistoryParams,
+    _params: GetStablePoolHistoryParams,
   ): Promise<StablePool.State[]> {
-    throw new Error('Method not implemented.');
+    throw Error('Not supported yet. Please use MinswapAdapter');
   }
 
-  // TODO
-  getStablePoolPrice(params: GetStablePoolPriceParams): Big {
-    throw new Error('Method not implemented.');
+  public getStablePoolPrice({
+    pool,
+    assetAIndex,
+    assetBIndex,
+  }: GetStablePoolPriceParams): Big {
+    const config = pool.config;
+    const [priceNum, priceDen] = StableswapCalculation.getPrice(
+      pool.datum.balances,
+      config.multiples,
+      pool.amp,
+      assetAIndex,
+      assetBIndex,
+    );
+
+    return Big(priceNum.toString()).div(priceDen.toString());
   }
 
-  // TODO
-  getAllLbeV2Factories(): Promise<{
+  public async getAllLbeV2Factories(): Promise<{
     factories: LbeV2Types.FactoryState[];
     errors: unknown[];
   }> {
-    throw new Error('Method not implemented.');
+    const config = LbeV2Constant.CONFIG[this.networkId];
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      config.factoryHashBech32,
+      {
+        asset: config.factoryAsset,
+      },
+    );
+    const utxosData = utxos.data;
+
+    const factories: LbeV2Types.FactoryState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxosData) {
+      try {
+        if (!utxo.datum) {
+          throw new Error(
+            `Cannot find datum of LBE V2 Factory, tx: ${utxo.tx_hash}`,
+          );
+        }
+
+        const factory = new LbeV2Types.FactoryState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.index },
+          this.mapMaestroAssetToValue(utxo.assets),
+          utxo.datum.hash,
+        );
+        factories.push(factory);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      factories: factories,
+      errors: errors,
+    };
   }
 
-  // TODO
-  getLbeV2Factory(
+  public async getLbeV2Factory(
     baseAsset: Asset,
     raiseAsset: Asset,
   ): Promise<LbeV2Types.FactoryState | null> {
-    throw new Error('Method not implemented.');
+    const factoryIdent = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
+    const { factories: allFactories } = await this.getAllLbeV2Factories();
+    for (const factory of allFactories) {
+      if (
+        StringUtils.compare(factory.head, factoryIdent) < 0 &&
+        StringUtils.compare(factoryIdent, factory.tail) < 0
+      ) {
+        return factory;
+      }
+    }
+
+    return null;
   }
 
-  // TODO
-  getLbeV2HeadAndTailFactory(lbeId: string): Promise<{
+  public async getLbeV2HeadAndTailFactory(lbeId: string): Promise<{
     head: LbeV2Types.FactoryState;
     tail: LbeV2Types.FactoryState;
   } | null> {
-    throw new Error('Method not implemented.');
+    const { factories: allFactories } = await this.getAllLbeV2Factories();
+    let head: LbeV2Types.FactoryState | undefined = undefined;
+    let tail: LbeV2Types.FactoryState | undefined = undefined;
+    for (const factory of allFactories) {
+      if (factory.head === lbeId) {
+        tail = factory;
+      }
+      if (factory.tail === lbeId) {
+        head = factory;
+      }
+    }
+    if (head === undefined || tail === undefined) {
+      return null;
+    }
+    return { head, tail };
   }
 
-  // TODO
-  getAllLbeV2Treasuries(): Promise<{
+  public async getAllLbeV2Treasuries(): Promise<{
     treasuries: LbeV2Types.TreasuryState[];
     errors: unknown[];
   }> {
-    throw new Error('Method not implemented.');
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      config.treasuryHashBech32,
+      {
+        asset: config.treasuryAsset,
+      },
+    );
+    const utxosData = utxos.data;
+
+    const treasuries: LbeV2Types.TreasuryState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxosData) {
+      try {
+        if (!utxo.datum) {
+          throw new Error(
+            `Cannot find datum of LBE V2 Treasury, tx: ${utxo.tx_hash}`,
+          );
+        }
+
+        const treasury = new LbeV2Types.TreasuryState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.index },
+          this.mapMaestroAssetToValue(utxo.assets),
+          utxo.datum.hash,
+        );
+        treasuries.push(treasury);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      treasuries: treasuries,
+      errors: errors,
+    };
   }
 
-  // TODO
-  getLbeV2TreasuryByLbeId(
+  public async getLbeV2TreasuryByLbeId(
     lbeId: string,
   ): Promise<LbeV2Types.TreasuryState | null> {
-    throw new Error('Method not implemented.');
+    const { treasuries: allTreasuries } = await this.getAllLbeV2Treasuries();
+    for (const treasury of allTreasuries) {
+      if (treasury.lbeId === lbeId) {
+        return treasury;
+      }
+    }
+    return null;
   }
 
-  // TODO
-  getAllLbeV2Managers(): Promise<{
+  public async getAllLbeV2Managers(): Promise<{
     managers: LbeV2Types.ManagerState[];
     errors: unknown[];
   }> {
-    throw new Error('Method not implemented.');
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      config.managerHashBech32,
+      {
+        asset: config.managerAsset,
+      },
+    );
+    const utxosData = utxos.data;
+
+    const managers: LbeV2Types.ManagerState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxosData) {
+      try {
+        if (!utxo.datum) {
+          throw new Error(
+            `Cannot find datum of Lbe V2 Manager, tx: ${utxo.tx_hash}`,
+          );
+        }
+
+        const manager = new LbeV2Types.ManagerState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.index },
+          this.mapMaestroAssetToValue(utxo.assets),
+          utxo.datum.hash,
+        );
+        managers.push(manager);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      managers: managers,
+      errors: errors,
+    };
   }
 
-  // TODO
-  getLbeV2ManagerByLbeId(
+  public async getLbeV2ManagerByLbeId(
     lbeId: string,
   ): Promise<LbeV2Types.ManagerState | null> {
-    throw new Error('Method not implemented.');
+    const { managers } = await this.getAllLbeV2Managers();
+    for (const manager of managers) {
+      if (manager.lbeId === lbeId) {
+        return manager;
+      }
+    }
+    return null;
   }
 
-  // TODO
-  getAllLbeV2Sellers(): Promise<{
+  public async getAllLbeV2Sellers(): Promise<{
     sellers: LbeV2Types.SellerState[];
     errors: unknown[];
   }> {
-    throw new Error('Method not implemented.');
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      config.sellerHashBech32,
+      {
+        asset: config.sellerAsset,
+      },
+    );
+    const utxosData = utxos.data;
+
+    const sellers: LbeV2Types.SellerState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxosData) {
+      try {
+        if (!utxo.datum) {
+          throw new Error(
+            `Cannot find datum of Lbe V2 Seller, tx: ${utxo.tx_hash}`,
+          );
+        }
+
+        const seller = new LbeV2Types.SellerState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.index },
+          this.mapMaestroAssetToValue(utxo.assets),
+          utxo.datum.hash,
+        );
+        sellers.push(seller);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      sellers: sellers,
+      errors: errors,
+    };
   }
 
-  // TODO
-  getLbeV2SellerByLbeId(lbeId: string): Promise<LbeV2Types.SellerState | null> {
-    throw new Error('Method not implemented.');
+  public async getLbeV2SellerByLbeId(
+    lbeId: string,
+  ): Promise<LbeV2Types.SellerState | null> {
+    const { sellers } = await this.getAllLbeV2Sellers();
+    for (const seller of sellers) {
+      if (seller.lbeId === lbeId) {
+        return seller;
+      }
+    }
+    return null;
   }
 
-  // TODO
-  getAllLbeV2Orders(): Promise<{
+  public async getAllLbeV2Orders(): Promise<{
     orders: LbeV2Types.OrderState[];
     errors: unknown[];
   }> {
-    throw new Error('Method not implemented.');
+    const config = LbeV2Constant.CONFIG[this.networkId];
+
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      config.orderHashBech32,
+      {
+        asset: config.orderAsset,
+      },
+    );
+    const utxosData = utxos.data;
+
+    const orders: LbeV2Types.OrderState[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxosData) {
+      try {
+        if (!utxo.datum) {
+          throw new Error(
+            `Cannot find datum of Lbe V2 Order, tx: ${utxo.tx_hash}`,
+          );
+        }
+
+        const order = new LbeV2Types.OrderState(
+          this.networkId,
+          utxo.address,
+          { txHash: utxo.tx_hash, index: utxo.index },
+          this.mapMaestroAssetToValue(utxo.assets),
+          utxo.datum.hash,
+        );
+        orders.push(order);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      orders: orders,
+      errors: errors,
+    };
   }
 
-  // TODO
-  getLbeV2OrdersByLbeId(lbeId: string): Promise<LbeV2Types.OrderState[]> {
-    throw new Error('Method not implemented.');
+  public async getLbeV2OrdersByLbeId(
+    lbeId: string,
+  ): Promise<LbeV2Types.OrderState[]> {
+    const { orders: allOrders } = await this.getAllLbeV2Orders();
+    const orders: LbeV2Types.OrderState[] = [];
+    for (const order of allOrders) {
+      if (order.lbeId === lbeId) {
+        orders.push(order);
+      }
+    }
+    return orders;
   }
 
-  // TODO
-  getLbeV2OrdersByLbeIdAndOwner(
+  public async getLbeV2OrdersByLbeIdAndOwner(
     lbeId: string,
     owner: Address,
   ): Promise<LbeV2Types.OrderState[]> {
-    throw new Error('Method not implemented.');
+    const { orders: allOrders } = await this.getAllLbeV2Orders();
+    const orders: LbeV2Types.OrderState[] = [];
+    for (const order of allOrders) {
+      if (order.lbeId === lbeId && order.owner === owner) {
+        orders.push(order);
+      }
+    }
+    return orders;
   }
 }

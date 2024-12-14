@@ -1,11 +1,11 @@
-import { UTxO } from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
-import Big from "big.js";
-import { zipWith } from "remeda";
+import { UTxO } from '@minswap/lucid-cardano';
+import invariant from '@minswap/tiny-invariant';
+import Big from 'big.js';
+import { zipWith } from 'remeda';
 
-import { OrderV2 } from "./types/order";
-import { PoolV2 } from "./types/pool";
-import { sqrt } from "./utils/sqrt.internal";
+import { OrderV2 } from './types/order';
+import { PoolV2 } from './types/pool';
+import { sqrt } from './utils/sqrt.internal';
 
 /**
  * Options to calculate Amount Out & Price Impact while swapping exact in
@@ -191,7 +191,7 @@ export function calculateZapIn(options: CalculateZapInOptions): bigint {
   const { amountIn, reserveIn, reserveOut, totalLiquidity } = options;
   const swapAmountIn =
     (sqrt(
-      1997n ** 2n * reserveIn ** 2n + 4n * 997n * 1000n * amountIn * reserveIn
+      1997n ** 2n * reserveIn ** 2n + 4n * 997n * 1000n * amountIn * reserveIn,
     ) -
       1997n * reserveIn) /
     (2n * 997n);
@@ -321,7 +321,7 @@ export namespace DexV2Calculation {
     tradingFeeNumerator,
   }: CalculateAmountInOptions): bigint {
     if (amountOut >= reserveOut) {
-      throw new Error("Amount Out must be less than Reserve Out");
+      throw new Error('Amount Out must be less than Reserve Out');
     }
     const diff = PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator;
     const numerator =
@@ -406,7 +406,7 @@ export namespace DexV2Calculation {
     const a =
       bigIntPow(x) *
         bigIntPow(
-          2n * PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator
+          2n * PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR - tradingFeeNumerator,
         ) -
       y *
         PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR *
@@ -481,7 +481,7 @@ export namespace StableswapCalculation {
   export function getD(mulBalances: bigint[], amp: bigint): bigint {
     const sumMulBalances = mulBalances.reduce(
       (sum, balance) => sum + balance,
-      0n
+      0n,
     );
     if (sumMulBalances === 0n) {
       return 0n;
@@ -519,11 +519,11 @@ export namespace StableswapCalculation {
     j: number,
     x: bigint,
     xp: bigint[],
-    amp: bigint
+    amp: bigint,
   ): bigint {
     if (i === j || i < 0 || j < 0 || i >= xp.length || j >= xp.length) {
       throw Error(
-        `getY failed: i and j must be different and less than length of xp`
+        `getY failed: i and j must be different and less than length of xp`,
       );
     }
     const length = BigInt(xp.length);
@@ -569,12 +569,12 @@ export namespace StableswapCalculation {
     i: number,
     xp: bigint[],
     amp: bigint,
-    d: bigint
+    d: bigint,
   ): bigint {
     const length = BigInt(xp.length);
     invariant(
       0 <= i && i < xp.length,
-      `getYD failed: i must be less than length of xp`
+      `getYD failed: i must be less than length of xp`,
     );
     let c = d;
     let s = 0n;
@@ -613,7 +613,7 @@ export namespace StableswapCalculation {
   export function getDMem(
     balances: bigint[],
     multiples: bigint[],
-    amp: bigint
+    amp: bigint,
   ): bigint {
     const mulBalances = zipWith(balances, multiples, (a, b) => a * b);
     return getD(mulBalances, amp);
@@ -652,7 +652,7 @@ export namespace StableswapCalculation {
 
   export type StableswapCalculateWithdrawOptions = Omit<
     CommonStableswapCalculationOptions,
-    "amp" | "fee" | "adminFee" | "feeDenominator"
+    'amp' | 'fee' | 'adminFee' | 'feeDenominator'
   > & {
     withdrawalLPAmount: bigint;
     totalLiquidity: bigint;
@@ -697,19 +697,19 @@ export namespace StableswapCalculation {
     const length = multiples.length;
     invariant(
       amountIn > 0,
-      `calculateExchange error: amountIn ${amountIn} must be positive.`
+      `calculateExchange error: amountIn ${amountIn} must be positive.`,
     );
     invariant(
       0 <= inIndex && inIndex < length,
       `calculateExchange error: inIndex ${inIndex} is not valid, must be within 0-${
         length - 1
-      }`
+      }`,
     );
     invariant(
       0 <= outIndex && outIndex < length,
       `calculateExchange error: outIndex ${outIndex} is not valid, must be within 0-${
         length - 1
-      }`
+      }`,
     );
     invariant(inIndex !== outIndex, `inIndex must be different from outIndex`);
     const mulBalances = zipWith(tempDatumBalances, multiples, (a, b) => a * b);
@@ -726,11 +726,11 @@ export namespace StableswapCalculation {
 
     invariant(
       amountOut > 0,
-      `calculateExchange error: amountIn is too small, amountOut (${amountOut}) must be positive.`
+      `calculateExchange error: amountIn is too small, amountOut (${amountOut}) must be positive.`,
     );
     invariant(
       newDatumBalanceOut > 0,
-      `calculateExchange error: newDatumBalanceOut (${newDatumBalanceOut}) must be positive.`
+      `calculateExchange error: newDatumBalanceOut (${newDatumBalanceOut}) must be positive.`,
     );
     return amountOut;
   }
@@ -753,7 +753,7 @@ export namespace StableswapCalculation {
     const length = multiples.length;
     invariant(
       amountIns.length === length,
-      `calculateDeposit error: amountIns's length ${amountIns.length} is invalid, amountIns's length must be ${length}`
+      `calculateDeposit error: amountIns's length ${amountIns.length} is invalid, amountIns's length must be ${length}`,
     );
 
     let newDatumBalances: bigint[] = [];
@@ -762,14 +762,14 @@ export namespace StableswapCalculation {
       for (let i = 0; i < length; ++i) {
         invariant(
           amountIns[i] > 0n,
-          `calculateDeposit error: amount index ${i} must be positive in case totalLiquidity = 0`
+          `calculateDeposit error: amount index ${i} must be positive in case totalLiquidity = 0`,
         );
       }
       newDatumBalances = zipWith(tempDatumBalances, amountIns, (a, b) => a + b);
       const d1 = getDMem(newDatumBalances, multiples, amp);
       invariant(
         d1 > 0,
-        `calculateDeposit: d1 must be greater than 0 in case totalLiquidity = 0`
+        `calculateDeposit: d1 must be greater than 0 in case totalLiquidity = 0`,
       );
       lpAmount = d1;
     } else {
@@ -778,20 +778,20 @@ export namespace StableswapCalculation {
         if (amountIns[i] < 0n) {
           invariant(
             amountIns[i] > 0n,
-            `calculateDeposit error: amountIns index ${i} must be non-negative`
+            `calculateDeposit error: amountIns index ${i} must be non-negative`,
           );
         }
         sumIns += amountIns[i];
       }
       invariant(
         sumIns > 0,
-        `calculateDeposit error: sum of amountIns must be positive`
+        `calculateDeposit error: sum of amountIns must be positive`,
       );
 
       const newDatumBalanceWithoutFee = zipWith(
         tempDatumBalances,
         amountIns,
-        (a, b) => a + b
+        (a, b) => a + b,
       );
 
       const d0 = getDMem(tempDatumBalances, multiples, amp);
@@ -799,7 +799,7 @@ export namespace StableswapCalculation {
 
       invariant(
         d1 > d0,
-        `calculateDeposit: d1 must be greater than d0 in case totalLiquidity > 0, d1: ${d1}, d0: ${d0}`
+        `calculateDeposit: d1 must be greater than d0 in case totalLiquidity > 0, d1: ${d1}, d0: ${d0}`,
       );
 
       const specialFee = (fee * BigInt(length)) / (4n * (BigInt(length) - 1n));
@@ -825,7 +825,7 @@ export namespace StableswapCalculation {
       for (let i = 0; i < length; ++i) {
         invariant(
           newDatBalancesWithTradingFee[i] > 0,
-          `calculateDeposit error: deposit amount is too small, newDatBalancesWithTradingFee must be positive`
+          `calculateDeposit error: deposit amount is too small, newDatBalancesWithTradingFee must be positive`,
         );
       }
       const d2 = getDMem(newDatBalancesWithTradingFee, multiples, amp);
@@ -834,7 +834,7 @@ export namespace StableswapCalculation {
 
     invariant(
       lpAmount > 0,
-      `calculateDeposit error: deposit amount is too small, lpAmountOut ${lpAmount} must be positive`
+      `calculateDeposit error: deposit amount is too small, lpAmountOut ${lpAmount} must be positive`,
     );
     return lpAmount;
   }
@@ -853,22 +853,22 @@ export namespace StableswapCalculation {
     const length = multiples.length;
     invariant(
       withdrawalLPAmount > 0,
-      `calculateWithdraw error: withdrawalLPAmount must be positive`
+      `calculateWithdraw error: withdrawalLPAmount must be positive`,
     );
     const amountOuts = tempDatumBalances.map(
-      (balance) => (balance * withdrawalLPAmount) / totalLiquidity
+      (balance) => (balance * withdrawalLPAmount) / totalLiquidity,
     );
     let sumOuts = 0n;
     for (let i = 0; i < length; ++i) {
       invariant(
         amountOuts[i] >= 0n,
-        `calculateWithdraw error: amountOuts must be non-negative`
+        `calculateWithdraw error: amountOuts must be non-negative`,
       );
       sumOuts += amountOuts[i];
     }
     invariant(
       sumOuts > 0n,
-      `calculateWithdraw error: sum of amountOuts must be positive`
+      `calculateWithdraw error: sum of amountOuts must be positive`,
     );
 
     return amountOuts;
@@ -892,21 +892,21 @@ export namespace StableswapCalculation {
 
     invariant(
       withdrawAmounts.length === length,
-      `calculateWithdrawImbalance error: withdrawAmounts's length ${withdrawAmounts.length} is invalid, withdrawAmounts's length must be ${length}`
+      `calculateWithdrawImbalance error: withdrawAmounts's length ${withdrawAmounts.length} is invalid, withdrawAmounts's length must be ${length}`,
     );
 
     let sumOuts = 0n;
     for (let i = 0; i < length; ++i) {
       invariant(
         withdrawAmounts[i] >= 0n,
-        `calculateDeposit error: amountIns must be non-negative`
+        `calculateDeposit error: amountIns must be non-negative`,
       );
 
       sumOuts += withdrawAmounts[i];
     }
     invariant(
       sumOuts > 0n,
-      `calculateWithdrawImbalance error: sum of withdrawAmounts must be positive`
+      `calculateWithdrawImbalance error: sum of withdrawAmounts must be positive`,
     );
 
     const specialFee = (fee * BigInt(length)) / (4n * (BigInt(length) - 1n));
@@ -914,12 +914,12 @@ export namespace StableswapCalculation {
     const newDatBalancesWithoutFee = zipWith(
       tempDatumBalances,
       withdrawAmounts,
-      (a, b) => a - b
+      (a, b) => a - b,
     );
     for (let i = 0; i < length; ++i) {
       invariant(
         newDatBalancesWithoutFee[i] > 0n,
-        `calculateWithdrawImbalance error: not enough asset index ${i}`
+        `calculateWithdrawImbalance error: not enough asset index ${i}`,
       );
     }
     const d0 = getDMem(tempDatumBalances, multiples, amp);
@@ -936,13 +936,13 @@ export namespace StableswapCalculation {
       }
       const tradingFeeAmount = (specialFee * different) / feeDenominator;
       newDatBalancesWithTradingFee.push(
-        newDatBalancesWithoutFee[i] - tradingFeeAmount
+        newDatBalancesWithoutFee[i] - tradingFeeAmount,
       );
     }
     for (let i = 0; i < length; ++i) {
       invariant(
         newDatBalancesWithTradingFee[i] > 0n,
-        `calculateWithdrawImbalance error: not enough asset index ${i}`
+        `calculateWithdrawImbalance error: not enough asset index ${i}`,
       );
     }
 
@@ -951,7 +951,7 @@ export namespace StableswapCalculation {
 
     invariant(
       lpAmount > 0n,
-      `calculateWithdrawImbalance error: required lpAmount ${lpAmount} must be positive`
+      `calculateWithdrawImbalance error: required lpAmount ${lpAmount} must be positive`,
     );
 
     lpAmount += 1n;
@@ -977,14 +977,14 @@ export namespace StableswapCalculation {
     const length = multiples.length;
     invariant(
       amountLpIn > 0,
-      `calculateZapOut error: amountLpIn ${amountLpIn} must be positive.`
+      `calculateZapOut error: amountLpIn ${amountLpIn} must be positive.`,
     );
 
     invariant(
       0 <= outIndex && outIndex < length,
       `calculateZapOut error: outIndex ${outIndex} is not valid, must be within 0-${
         length - 1
-      }`
+      }`,
     );
 
     const mulBalances = zipWith(tempDatumBalances, multiples, (a, b) => a * b);
@@ -1018,7 +1018,7 @@ export namespace StableswapCalculation {
     multiples: bigint[],
     amp: bigint,
     assetAIndex: number,
-    assetBIndex: number
+    assetBIndex: number,
   ): [bigint, bigint] {
     const mulBalances = zipWith(balances, multiples, (a, b) => a * b);
     const length = BigInt(mulBalances.length);

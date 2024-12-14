@@ -6,8 +6,8 @@ import {
   Lucid,
   TxComplete,
   UTxO,
-} from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
+} from '@minswap/lucid-cardano';
+import invariant from '@minswap/tiny-invariant';
 
 import {
   FIXED_DEPOSIT_ADA,
@@ -15,13 +15,13 @@ import {
   StableOrder,
   StableswapConstant,
   V1AndStableswapCustomReceiver,
-} from ".";
-import { BatcherFee } from "./batcher-fee-reduction/calculate";
-import { DexVersion } from "./batcher-fee-reduction/configs.internal";
-import { Asset } from "./types/asset";
-import { NetworkEnvironment, NetworkId } from "./types/network";
-import { lucidToNetworkEnv } from "./utils/network.internal";
-import { buildUtxoToStoreDatum } from "./utils/tx.internal";
+} from '.';
+import { BatcherFee } from './batcher-fee-reduction/calculate';
+import { DexVersion } from './batcher-fee-reduction/configs.internal';
+import { Asset } from './types/asset';
+import { NetworkEnvironment, NetworkId } from './types/network';
+import { lucidToNetworkEnv } from './utils/network.internal';
+import { buildUtxoToStoreDatum } from './utils/tx.internal';
 
 /**
  * @property {bigint} assetInIndex - Index of asset you want to swap in config assets
@@ -94,7 +94,7 @@ export class Stableswap {
   constructor(lucid: Lucid) {
     this.lucid = lucid;
     this.networkId =
-      lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
+      lucid.network === 'Mainnet' ? NetworkId.MAINNET : NetworkId.TESTNET;
     this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
@@ -106,33 +106,33 @@ export class Stableswap {
         const { minimumLPReceived, assetsAmount, totalLiquidity } = option;
         invariant(
           minimumLPReceived > 0n,
-          "minimum LP received must be non-negative"
+          'minimum LP received must be non-negative',
         );
         let sumAmount = 0n;
         for (const [asset, amount] of assetsAmount) {
           if (totalLiquidity === 0n) {
             invariant(
               amount > 0n,
-              "amount must be positive when total liquidity = 0"
+              'amount must be positive when total liquidity = 0',
             );
           } else {
-            invariant(amount >= 0n, "amount must be non-negative");
+            invariant(amount >= 0n, 'amount must be non-negative');
           }
           if (amount > 0n) {
             orderAssets[Asset.toString(asset)] = amount;
           }
           sumAmount += amount;
         }
-        invariant(sumAmount > 0n, "sum of amount must be positive");
+        invariant(sumAmount > 0n, 'sum of amount must be positive');
         break;
       }
       case StableOrder.StepType.SWAP: {
         const { assetInAmount, assetInIndex, lpAsset } = option;
         const poolConfig = StableswapConstant.getConfigByLpAsset(
           lpAsset,
-          this.networkId
+          this.networkId,
         );
-        invariant(assetInAmount > 0n, "asset in amount must be positive");
+        invariant(assetInAmount > 0n, 'asset in amount must be positive');
         orderAssets[poolConfig.assets[Number(assetInIndex)]] = assetInAmount;
         break;
       }
@@ -140,16 +140,16 @@ export class Stableswap {
       case StableOrder.StepType.WITHDRAW_IMBALANCE:
       case StableOrder.StepType.ZAP_OUT: {
         const { lpAmount, lpAsset } = option;
-        invariant(lpAmount > 0n, "Lp amount must be positive number");
+        invariant(lpAmount > 0n, 'Lp amount must be positive number');
         orderAssets[Asset.toString(lpAsset)] = lpAmount;
         break;
       }
     }
 
-    if ("lovelace" in orderAssets) {
-      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA;
+    if ('lovelace' in orderAssets) {
+      orderAssets['lovelace'] += FIXED_DEPOSIT_ADA;
     } else {
-      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA;
+      orderAssets['lovelace'] = FIXED_DEPOSIT_ADA;
     }
     return orderAssets;
   }
@@ -160,7 +160,7 @@ export class Stableswap {
         const { minimumLPReceived } = option;
         invariant(
           minimumLPReceived > 0n,
-          "minimum LP received must be non-negative"
+          'minimum LP received must be non-negative',
         );
         return {
           type: StableOrder.StepType.DEPOSIT,
@@ -171,10 +171,10 @@ export class Stableswap {
         const { minimumAmounts } = option;
         let sumAmount = 0n;
         for (const amount of minimumAmounts) {
-          invariant(amount >= 0n, "minimum amount must be non-negative");
+          invariant(amount >= 0n, 'minimum amount must be non-negative');
           sumAmount += amount;
         }
-        invariant(sumAmount > 0n, "sum of withdaw amount must be positive");
+        invariant(sumAmount > 0n, 'sum of withdaw amount must be positive');
         return {
           type: StableOrder.StepType.WITHDRAW,
           minimumAmounts: minimumAmounts,
@@ -185,28 +185,28 @@ export class Stableswap {
           option;
         const poolConfig = StableswapConstant.getConfigByLpAsset(
           lpAsset,
-          this.networkId
+          this.networkId,
         );
         invariant(
           poolConfig,
-          `Not found Stableswap config matching with LP Asset ${lpAsset.toString()}`
+          `Not found Stableswap config matching with LP Asset ${lpAsset.toString()}`,
         );
         const assetLength = BigInt(poolConfig.assets.length);
         invariant(
           assetInIndex >= 0n && assetInIndex < assetLength,
-          `Invalid amountInIndex, must be between 0-${assetLength - 1n}`
+          `Invalid amountInIndex, must be between 0-${assetLength - 1n}`,
         );
         invariant(
           assetOutIndex >= 0n && assetOutIndex < assetLength,
-          `Invalid assetOutIndex, must be between 0-${assetLength - 1n}`
+          `Invalid assetOutIndex, must be between 0-${assetLength - 1n}`,
         );
         invariant(
           assetInIndex !== assetOutIndex,
-          `assetOutIndex and amountInIndex must be different`
+          `assetOutIndex and amountInIndex must be different`,
         );
         invariant(
           minimumAssetOut > 0n,
-          "minimum asset out amount must be positive"
+          'minimum asset out amount must be positive',
         );
         return {
           type: StableOrder.StepType.SWAP,
@@ -219,10 +219,10 @@ export class Stableswap {
         const { withdrawAmounts } = option;
         let sum = 0n;
         for (const amount of withdrawAmounts) {
-          invariant(amount >= 0n, "withdraw amount must be unsigned number");
+          invariant(amount >= 0n, 'withdraw amount must be unsigned number');
           sum += amount;
         }
-        invariant(sum > 0n, "sum of withdraw amount must be positive");
+        invariant(sum > 0n, 'sum of withdraw amount must be positive');
         return {
           type: StableOrder.StepType.WITHDRAW_IMBALANCE,
           withdrawAmounts: withdrawAmounts,
@@ -232,20 +232,20 @@ export class Stableswap {
         const { assetOutIndex, minimumAssetOut, lpAsset } = option;
         const poolConfig = StableswapConstant.getConfigByLpAsset(
           lpAsset,
-          this.networkId
+          this.networkId,
         );
         invariant(
           poolConfig,
-          `Not found Stableswap config matching with LP Asset ${lpAsset.toString()}`
+          `Not found Stableswap config matching with LP Asset ${lpAsset.toString()}`,
         );
         const assetLength = BigInt(poolConfig.assets.length);
         invariant(
           minimumAssetOut > 0n,
-          "Minimum amount out must be positive number"
+          'Minimum amount out must be positive number',
         );
         invariant(
           assetOutIndex >= 0n && assetOutIndex < assetLength,
-          `Invalid assetOutIndex, must be between 0-${assetLength - 1n}`
+          `Invalid assetOutIndex, must be between 0-${assetLength - 1n}`,
         );
         return {
           type: StableOrder.StepType.ZAP_OUT,
@@ -291,7 +291,7 @@ export class Stableswap {
 
     invariant(
       orderOptions.length > 0,
-      "Stableswap.buildCreateTx: Need at least 1 order to build"
+      'Stableswap.buildCreateTx: Need at least 1 order to build',
     );
     // calculate total order value
     const totalOrderAssets: Record<string, bigint> = {};
@@ -319,15 +319,15 @@ export class Stableswap {
     for (const orderOption of orderOptions) {
       const config = StableswapConstant.getConfigByLpAsset(
         orderOption.lpAsset,
-        this.networkId
+        this.networkId,
       );
       const { customReceiver } = orderOption;
       const orderAssets = this.buildOrderValue(orderOption);
       const step = this.buildOrderStep(orderOption);
-      if ("lovelace" in orderAssets) {
-        orderAssets["lovelace"] += batcherFee;
+      if ('lovelace' in orderAssets) {
+        orderAssets['lovelace'] += batcherFee;
       } else {
-        orderAssets["lovelace"] = batcherFee;
+        orderAssets['lovelace'] = batcherFee;
       }
       const datum: StableOrder.Datum = {
         sender: sender,
@@ -342,7 +342,7 @@ export class Stableswap {
         {
           inline: Data.to(StableOrder.Datum.toPlutusData(datum)),
         },
-        orderAssets
+        orderAssets,
       );
 
       if (customReceiver && customReceiver.receiverDatum) {
@@ -350,13 +350,13 @@ export class Stableswap {
           this.lucid,
           sender,
           customReceiver.receiver,
-          customReceiver.receiverDatum.datum
+          customReceiver.receiverDatum.datum,
         );
         if (utxoForStoringDatum) {
           tx.payToAddressWithData(
             utxoForStoringDatum.address,
             utxoForStoringDatum.outputData,
-            utxoForStoringDatum.assets
+            utxoForStoringDatum.assets,
           );
         }
       }
@@ -375,7 +375,7 @@ export class Stableswap {
   }
 
   async buildCancelOrdersTx(
-    options: BuildCancelOrderOptions
+    options: BuildCancelOrderOptions,
   ): Promise<TxComplete> {
     const tx = this.lucid.newTx();
 
@@ -383,28 +383,28 @@ export class Stableswap {
     for (const utxo of options.orderUtxos) {
       const config = StableswapConstant.getConfigFromStableswapOrderAddress(
         utxo.address,
-        this.networkId
+        this.networkId,
       );
       const referencesScript = StableswapConstant.getStableswapReferencesScript(
         Asset.fromString(config.nftAsset),
-        this.networkId
+        this.networkId,
       );
       let datum: StableOrder.Datum;
       if (utxo.datum) {
         const rawDatum = utxo.datum;
         datum = StableOrder.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum)
+          Data.from(rawDatum),
         );
       } else if (utxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(utxo);
         datum = StableOrder.Datum.fromPlutusData(
           this.networkId,
-          rawDatum as Constr<Data>
+          rawDatum as Constr<Data>,
         );
       } else {
         throw new Error(
-          "Utxo without Datum Hash or Inline Datum can not be spent"
+          'Utxo without Datum Hash or Inline Datum can not be spent',
         );
       }
 
@@ -413,7 +413,7 @@ export class Stableswap {
       ]);
       invariant(
         orderRefs.length === 1,
-        "cannot find deployed script for V2 Order"
+        'cannot find deployed script for V2 Order',
       );
 
       const orderRef = orderRefs[0];
