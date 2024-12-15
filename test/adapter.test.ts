@@ -1,4 +1,4 @@
-import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
+import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 
 import {
   ADA,
@@ -6,7 +6,7 @@ import {
   BlockfrostAdapter,
   NetworkId,
   StableswapConstant,
-} from '../src';
+} from "../src";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];
@@ -17,13 +17,13 @@ function mustGetEnv(key: string): string {
 }
 
 const MIN_TESTNET =
-  'e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e';
+  "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e";
 const MIN_MAINNET =
-  '29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c64d494e';
+  "29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c64d494e";
 const MIN_ADA_POOL_V1_ID_TESTNET =
-  '3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d';
+  "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 const MIN_ADA_POOL_V1_ID_MAINNET =
-  '6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2';
+  "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
 
 let adapterTestnet: BlockfrostAdapter;
 let adapterMainnet: BlockfrostAdapter;
@@ -32,23 +32,23 @@ beforeAll(() => {
   adapterTestnet = new BlockfrostAdapter(
     NetworkId.TESTNET,
     new BlockFrostAPI({
-      projectId: mustGetEnv('BLOCKFROST_PROJECT_ID_TESTNET'),
-      network: 'preprod',
-    }),
+      projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_TESTNET"),
+      network: "preprod",
+    })
   );
   adapterMainnet = new BlockfrostAdapter(
     NetworkId.MAINNET,
     new BlockFrostAPI({
-      projectId: mustGetEnv('BLOCKFROST_PROJECT_ID_MAINNET'),
-      network: 'mainnet',
-    }),
+      projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
+      network: "mainnet",
+    })
   );
 });
 
-test('getAssetDecimals', async () => {
-  expect(await adapterTestnet.getAssetDecimals('lovelace')).toBe(6);
+test("getAssetDecimals", async () => {
+  expect(await adapterTestnet.getAssetDecimals("lovelace")).toBe(6);
   expect(await adapterTestnet.getAssetDecimals(MIN_TESTNET)).toBe(0);
-  expect(await adapterMainnet.getAssetDecimals('lovelace')).toBe(6);
+  expect(await adapterMainnet.getAssetDecimals("lovelace")).toBe(6);
   expect(await adapterMainnet.getAssetDecimals(MIN_MAINNET)).toBe(6);
 });
 
@@ -65,35 +65,35 @@ async function testPoolPrice(adapter: BlockfrostAdapter): Promise<void> {
     // product of 2 prices must be approximately equal to 1
     // abs(priceAB * priceBA - 1) <= epsilon
     expect(priceAB.mul(priceBA).sub(1).abs().toNumber()).toBeLessThanOrEqual(
-      1e-6,
+      1e-6
     );
   }
 }
 
-test('getPoolPrice', async () => {
+test("getPoolPrice", async () => {
   await testPoolPrice(adapterTestnet);
   await testPoolPrice(adapterMainnet);
 }, 10000);
 
-test('getV1PoolById', async () => {
+test("getV1PoolById", async () => {
   const adaMINTestnet = await adapterTestnet.getV1PoolById({
     id: MIN_ADA_POOL_V1_ID_TESTNET,
   });
   expect(adaMINTestnet).not.toBeNull();
-  expect(adaMINTestnet?.assetA).toEqual('lovelace');
+  expect(adaMINTestnet?.assetA).toEqual("lovelace");
   expect(adaMINTestnet?.assetB).toEqual(MIN_TESTNET);
 
   const adaMINMainnet = await adapterMainnet.getV1PoolById({
     id: MIN_ADA_POOL_V1_ID_MAINNET,
   });
   expect(adaMINMainnet).not.toBeNull();
-  expect(adaMINMainnet?.assetA).toEqual('lovelace');
+  expect(adaMINMainnet?.assetA).toEqual("lovelace");
   expect(adaMINMainnet?.assetB).toEqual(MIN_MAINNET);
 });
 
 async function testPriceHistory(
   adapter: BlockfrostAdapter,
-  id: string,
+  id: string
 ): Promise<void> {
   const history = await adapter.getV1PoolHistory({ id: id });
   for (let i = 0; i < Math.min(5, history.length); i++) {
@@ -102,34 +102,34 @@ async function testPriceHistory(
   }
 }
 
-test('get prices of last 5 states of MIN/ADA pool', async () => {
+test("get prices of last 5 states of MIN/ADA pool", async () => {
   await testPriceHistory(adapterTestnet, MIN_ADA_POOL_V1_ID_TESTNET);
   await testPriceHistory(adapterMainnet, MIN_ADA_POOL_V1_ID_MAINNET);
 });
 
-test('getV2PoolByPair', async () => {
+test("getV2PoolByPair", async () => {
   const pool = await adapterTestnet.getV2PoolByPair(ADA, {
-    policyId: 'e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72',
-    tokenName: '4d494e',
+    policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+    tokenName: "4d494e",
   });
   expect(pool).not.toBeNull();
-  expect(pool?.assetA).toEqual('lovelace');
+  expect(pool?.assetA).toEqual("lovelace");
   expect(pool?.assetB).toEqual(MIN_TESTNET);
 });
 
-test('getAllV2Pools', async () => {
+test("getAllV2Pools", async () => {
   const { pools } = await adapterTestnet.getAllV2Pools();
   expect(pools.length > 0);
 });
 
-test('getV2Pools', async () => {
+test("getV2Pools", async () => {
   const { pools } = await adapterTestnet.getV2Pools({
     page: 1,
   });
   expect(pools.length > 0);
 });
 
-test('getAllStablePools', async () => {
+test("getAllStablePools", async () => {
   const numberOfStablePoolsTestnet =
     StableswapConstant.CONFIG[NetworkId.TESTNET].length;
   const numberOfStablePoolsMainnet =
@@ -141,13 +141,13 @@ test('getAllStablePools', async () => {
   expect(mainnetPools.length === numberOfStablePoolsMainnet);
 });
 
-test('getStablePoolByLPAsset', async () => {
+test("getStablePoolByLPAsset", async () => {
   const testnetCfgs = StableswapConstant.CONFIG[NetworkId.TESTNET];
   const mainnetCfgs = StableswapConstant.CONFIG[NetworkId.MAINNET];
 
   for (const cfg of testnetCfgs) {
     const pool = await adapterTestnet.getStablePoolByLpAsset(
-      Asset.fromString(cfg.lpAsset),
+      Asset.fromString(cfg.lpAsset)
     );
     expect(pool).not.toBeNull();
     expect(pool?.nft).toEqual(cfg.nftAsset);
@@ -156,7 +156,7 @@ test('getStablePoolByLPAsset', async () => {
 
   for (const cfg of mainnetCfgs) {
     const pool = await adapterMainnet.getStablePoolByLpAsset(
-      Asset.fromString(cfg.lpAsset),
+      Asset.fromString(cfg.lpAsset)
     );
     expect(pool).not.toBeNull();
     expect(pool?.nft).toEqual(cfg.nftAsset);
@@ -164,13 +164,13 @@ test('getStablePoolByLPAsset', async () => {
   }
 });
 
-test('getStablePoolByNFT', async () => {
+test("getStablePoolByNFT", async () => {
   const testnetCfgs = StableswapConstant.CONFIG[NetworkId.TESTNET];
   const mainnetCfgs = StableswapConstant.CONFIG[NetworkId.MAINNET];
 
   for (const cfg of testnetCfgs) {
     const pool = await adapterTestnet.getStablePoolByNFT(
-      Asset.fromString(cfg.nftAsset),
+      Asset.fromString(cfg.nftAsset)
     );
     expect(pool).not.toBeNull();
     expect(pool?.nft).toEqual(cfg.nftAsset);
@@ -179,7 +179,7 @@ test('getStablePoolByNFT', async () => {
 
   for (const cfg of mainnetCfgs) {
     const pool = await adapterMainnet.getStablePoolByNFT(
-      Asset.fromString(cfg.nftAsset),
+      Asset.fromString(cfg.nftAsset)
     );
     expect(pool).not.toBeNull();
     expect(pool?.nft).toEqual(cfg.nftAsset);

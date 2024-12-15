@@ -1,7 +1,7 @@
-import { Lucid } from '@minswap/lucid-cardano';
+import { Lucid } from "@minswap/lucid-cardano";
 
-import { BlockfrostAdapter, DexV2, DexV2Constant, OrderV2 } from '.';
-import { runRecurringJob } from './utils/job';
+import { BlockfrostAdapter, DexV2, DexV2Constant, OrderV2 } from ".";
+import { runRecurringJob } from "./utils/job";
 
 type DexV2WorkerConstructor = {
   lucid: Lucid;
@@ -26,14 +26,14 @@ export class ExpiredOrderMonitor {
 
   async start(): Promise<void> {
     await runRecurringJob({
-      name: 'lbe v2 batcher',
+      name: "lbe v2 batcher",
       interval: 1000 * 30, // 30s
       job: () => this.runWorker(),
     });
   }
 
   async runWorker(): Promise<void> {
-    console.info('start run dex v2 worker');
+    console.info("start run dex v2 worker");
     const { orders: allOrders } = await this.blockfrostAdapter.getAllV2Orders();
     const currentSlot = await this.blockfrostAdapter.currentSlot();
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
@@ -61,7 +61,7 @@ export class ExpiredOrderMonitor {
       ) {
         try {
           rawDatum = await this.blockfrostAdapter.getDatumByDatumHash(
-            receiverDatum.hash,
+            receiverDatum.hash
           );
           mapDatum[receiverDatum.hash] = rawDatum;
           // eslint-disable-next-line unused-imports/no-unused-vars
@@ -88,7 +88,7 @@ export class ExpiredOrderMonitor {
       orders.map((order) => ({
         txHash: order.txIn.txHash,
         outputIndex: order.txIn.index,
-      })),
+      }))
     );
     if (orderUtxos.length === 0) {
       console.info(`SKIP | Can not find any order utxos.`);
@@ -97,7 +97,7 @@ export class ExpiredOrderMonitor {
     try {
       const txComplete = await new DexV2(
         this.lucid,
-        this.blockfrostAdapter,
+        this.blockfrostAdapter
       ).cancelExpiredOrders({
         orderUtxos: orderUtxos,
         currentSlot,
@@ -111,8 +111,8 @@ export class ExpiredOrderMonitor {
       console.info(`Transaction submitted successfully: ${txId}`);
     } catch (_err) {
       console.error(
-        `Error when the worker runs: orders ${orders.map((order) => `${order.txIn.txHash}#${order.txIn.index}`).join(', ')}`,
-        _err,
+        `Error when the worker runs: orders ${orders.map((order) => `${order.txIn.txHash}#${order.txIn.index}`).join(", ")}`,
+        _err
       );
     }
   }

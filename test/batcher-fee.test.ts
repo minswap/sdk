@@ -1,11 +1,11 @@
-import invariant from '@minswap/tiny-invariant';
-import { NetworkEnvironment } from '../src';
-import { BatcherFee } from '../src/batcher-fee-reduction/calculate';
+import invariant from "@minswap/tiny-invariant";
+import { NetworkEnvironment } from "../src";
+import { BatcherFee } from "../src/batcher-fee-reduction/calculate";
 import {
   BatcherFeeConfig,
   DexVersion,
-} from '../src/batcher-fee-reduction/configs.internal';
-import { Assets } from '@minswap/lucid-cardano';
+} from "../src/batcher-fee-reduction/configs.internal";
+import { Assets } from "@minswap/lucid-cardano";
 
 function compareAssets(a1: Assets, a2: Assets): boolean {
   if (Object.keys(a1).length !== Object.keys(a2).length) {
@@ -27,9 +27,9 @@ function compareAssets(a1: Assets, a2: Assets): boolean {
   return isEqual;
 }
 
-test('Batcher Fee reduction test', () => {
+test("Batcher Fee reduction test", () => {
   for (const [networkEnvStr, batcherFeeMap] of Object.entries(
-    BatcherFeeConfig.CONFIG,
+    BatcherFeeConfig.CONFIG
   )) {
     let networkEnv: NetworkEnvironment;
     switch (networkEnvStr) {
@@ -46,11 +46,11 @@ test('Batcher Fee reduction test', () => {
         break;
       }
       default: {
-        throw new Error('Unexpected Network');
+        throw new Error("Unexpected Network");
       }
     }
     for (const [dexVersionStr, batcherFeeConfig] of Object.entries(
-      batcherFeeMap,
+      batcherFeeMap
     )) {
       let dexVersion: DexVersion;
       switch (dexVersionStr) {
@@ -61,7 +61,7 @@ test('Batcher Fee reduction test', () => {
           break;
         }
         default: {
-          throw new Error('Unexpected DEX version');
+          throw new Error("Unexpected DEX version");
         }
       }
       for (const reduction of batcherFeeConfig.reduction) {
@@ -86,10 +86,10 @@ test('Batcher Fee reduction test', () => {
             utxos: [
               {
                 txHash:
-                  '73fe9271c8e2b11430d76bfe4b0dad4816c326d08e63439130c863b0a1932649',
+                  "73fe9271c8e2b11430d76bfe4b0dad4816c326d08e63439130c863b0a1932649",
                 outputIndex: 0,
                 address:
-                  'addr_test1qz09ls06gtsnws8dhquh273tnzj0avf8fumakgmdc40cwazvh204krl8rn5cvnepdzn5zj55wk4uy8nnzwklhzcvtyws67g5de',
+                  "addr_test1qz09ls06gtsnws8dhquh273tnzj0avf8fumakgmdc40cwazvh204krl8rn5cvnepdzn5zj55wk4uy8nnzwklhzcvtyws67g5de",
                 assets: {
                   lovelace: 10_000000n,
                   [asset]: maximumAmount,
@@ -106,10 +106,10 @@ test('Batcher Fee reduction test', () => {
             utxos: [
               {
                 txHash:
-                  '73fe9271c8e2b11430d76bfe4b0dad4816c326d08e63439130c863b0a1932649',
+                  "73fe9271c8e2b11430d76bfe4b0dad4816c326d08e63439130c863b0a1932649",
                 outputIndex: 0,
                 address:
-                  'addr_test1qz09ls06gtsnws8dhquh273tnzj0avf8fumakgmdc40cwazvh204krl8rn5cvnepdzn5zj55wk4uy8nnzwklhzcvtyws67g5de',
+                  "addr_test1qz09ls06gtsnws8dhquh273tnzj0avf8fumakgmdc40cwazvh204krl8rn5cvnepdzn5zj55wk4uy8nnzwklhzcvtyws67g5de",
                 assets: {
                   lovelace: 10_000000n,
                   [asset]: maximumAmount * 2n,
@@ -126,12 +126,12 @@ test('Batcher Fee reduction test', () => {
           invariant(
             compareAssets(discountFee1.reductionAssets, {
               [asset]: maximumAmount,
-            }),
+            })
           );
           invariant(
             compareAssets(discountFee2.reductionAssets, {
               [asset]: maximumAmount,
-            }),
+            })
           );
         }
 
@@ -144,10 +144,10 @@ test('Batcher Fee reduction test', () => {
             utxos: [
               {
                 txHash:
-                  '73fe9271c8e2b11430d76bfe4b0dad4816c326d08e63439130c863b0a1932649',
+                  "73fe9271c8e2b11430d76bfe4b0dad4816c326d08e63439130c863b0a1932649",
                 outputIndex: 0,
                 address:
-                  'addr_test1qz09ls06gtsnws8dhquh273tnzj0avf8fumakgmdc40cwazvh204krl8rn5cvnepdzn5zj55wk4uy8nnzwklhzcvtyws67g5de',
+                  "addr_test1qz09ls06gtsnws8dhquh273tnzj0avf8fumakgmdc40cwazvh204krl8rn5cvnepdzn5zj55wk4uy8nnzwklhzcvtyws67g5de",
                 assets: {
                   lovelace: 10_000000n,
                   [asset]: maximumAmount / 2n,
@@ -163,10 +163,10 @@ test('Batcher Fee reduction test', () => {
             utxos: [
               {
                 txHash:
-                  '73fe9271c8e2b11430d76bfe4b0dad4816c326d08e63439130c863b0a1932649',
+                  "73fe9271c8e2b11430d76bfe4b0dad4816c326d08e63439130c863b0a1932649",
                 outputIndex: 0,
                 address:
-                  'addr_test1qz09ls06gtsnws8dhquh273tnzj0avf8fumakgmdc40cwazvh204krl8rn5cvnepdzn5zj55wk4uy8nnzwklhzcvtyws67g5de',
+                  "addr_test1qz09ls06gtsnws8dhquh273tnzj0avf8fumakgmdc40cwazvh204krl8rn5cvnepdzn5zj55wk4uy8nnzwklhzcvtyws67g5de",
                 assets: {
                   lovelace: 10_000000n,
                   [asset]: maximumAmount,
@@ -186,12 +186,12 @@ test('Batcher Fee reduction test', () => {
           invariant(
             compareAssets(discountFee1.reductionAssets, {
               [asset]: maximumAmount / 2n,
-            }),
+            })
           );
           invariant(
             compareAssets(discountFee2.reductionAssets, {
               [asset]: maximumAmount / 2n,
-            }),
+            })
           );
         }
       }

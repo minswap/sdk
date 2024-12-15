@@ -7,21 +7,21 @@ import {
   SpendingValidator,
   TxComplete,
   UTxO,
-} from '@minswap/lucid-cardano';
-import invariant from '@minswap/tiny-invariant';
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
 
-import { BatcherFee } from './batcher-fee-reduction/calculate';
-import { DexVersion } from './batcher-fee-reduction/configs.internal';
-import { Asset } from './types/asset';
+import { BatcherFee } from "./batcher-fee-reduction/calculate";
+import { DexVersion } from "./batcher-fee-reduction/configs.internal";
+import { Asset } from "./types/asset";
 import {
   DexV1Constant,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
-} from './types/constants';
-import { NetworkEnvironment, NetworkId } from './types/network';
-import { OrderV1 } from './types/order';
-import { lucidToNetworkEnv } from './utils/network.internal';
-import { buildUtxoToStoreDatum } from './utils/tx.internal';
+} from "./types/constants";
+import { NetworkEnvironment, NetworkId } from "./types/network";
+import { OrderV1 } from "./types/order";
+import { lucidToNetworkEnv } from "./utils/network.internal";
+import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
 export type V1AndStableswapCustomReceiver = {
   receiver: Address;
@@ -135,12 +135,12 @@ export class Dex {
   constructor(lucid: Lucid) {
     this.lucid = lucid;
     this.networkId =
-      lucid.network === 'Mainnet' ? NetworkId.MAINNET : NetworkId.TESTNET;
+      lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
     this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
   async buildSwapExactInTx(
-    options: BuildSwapExactInTxOptions,
+    options: BuildSwapExactInTxOptions
   ): Promise<TxComplete> {
     const {
       sender,
@@ -152,8 +152,8 @@ export class Dex {
       isLimitOrder,
       availableUtxos,
     } = options;
-    invariant(amountIn > 0n, 'amount in must be positive');
-    invariant(minimumAmountOut > 0n, 'minimum amount out must be positive');
+    invariant(amountIn > 0n, "amount in must be positive");
+    invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
     const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
       utxos: availableUtxos,
@@ -162,10 +162,10 @@ export class Dex {
       networkEnv: this.networkEnv,
       dexVersion: this.dexVersion,
     });
-    if (orderAssets['lovelace']) {
-      orderAssets['lovelace'] += FIXED_DEPOSIT_ADA + batcherFee;
+    if (orderAssets["lovelace"]) {
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
-      orderAssets['lovelace'] = FIXED_DEPOSIT_ADA + batcherFee;
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderV1.Datum = {
       sender: sender,
@@ -184,7 +184,7 @@ export class Dex {
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
         Data.to(OrderV1.Datum.toPlutusData(datum)),
-        orderAssets,
+        orderAssets
       )
       .addSigner(sender);
     if (Object.keys(reductionAssets).length !== 0) {
@@ -202,13 +202,13 @@ export class Dex {
         this.lucid,
         sender,
         customReceiver.receiver,
-        customReceiver.receiverDatum.datum,
+        customReceiver.receiverDatum.datum
       );
       if (utxoForStoringDatum) {
         tx.payToAddressWithData(
           utxoForStoringDatum.address,
           utxoForStoringDatum.outputData,
-          utxoForStoringDatum.assets,
+          utxoForStoringDatum.assets
         );
       }
     }
@@ -216,7 +216,7 @@ export class Dex {
   }
 
   async buildSwapExactOutTx(
-    options: BuildSwapExactOutTxOptions,
+    options: BuildSwapExactOutTxOptions
   ): Promise<TxComplete> {
     const {
       sender,
@@ -229,7 +229,7 @@ export class Dex {
     } = options;
     invariant(
       maximumAmountIn > 0n && expectedAmountOut > 0n,
-      'amount in and out must be positive',
+      "amount in and out must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(assetIn)]: maximumAmountIn };
     const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
@@ -239,10 +239,10 @@ export class Dex {
       dexVersion: this.dexVersion,
       currentDate: new Date(),
     });
-    if (orderAssets['lovelace']) {
-      orderAssets['lovelace'] += FIXED_DEPOSIT_ADA + batcherFee;
+    if (orderAssets["lovelace"]) {
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
-      orderAssets['lovelace'] = FIXED_DEPOSIT_ADA + batcherFee;
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderV1.Datum = {
       sender: sender,
@@ -262,7 +262,7 @@ export class Dex {
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
         Data.to(OrderV1.Datum.toPlutusData(datum)),
-        orderAssets,
+        orderAssets
       )
       .payToAddress(sender, reductionAssets)
       .addSigner(sender)
@@ -273,13 +273,13 @@ export class Dex {
         this.lucid,
         sender,
         customReceiver.receiver,
-        customReceiver.receiverDatum.datum,
+        customReceiver.receiverDatum.datum
       );
       if (utxoForStoringDatum) {
         tx.payToAddressWithData(
           utxoForStoringDatum.address,
           utxoForStoringDatum.outputData,
-          utxoForStoringDatum.assets,
+          utxoForStoringDatum.assets
         );
       }
     }
@@ -296,10 +296,10 @@ export class Dex {
       minimumAssetBReceived,
       availableUtxos,
     } = options;
-    invariant(lpAmount > 0n, 'LP amount must be positive');
+    invariant(lpAmount > 0n, "LP amount must be positive");
     invariant(
       minimumAssetAReceived > 0n && minimumAssetBReceived > 0n,
-      'minimum asset received must be positive',
+      "minimum asset received must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(lpAsset)]: lpAmount };
     const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
@@ -309,10 +309,10 @@ export class Dex {
       dexVersion: this.dexVersion,
       currentDate: new Date(),
     });
-    if (orderAssets['lovelace']) {
-      orderAssets['lovelace'] += FIXED_DEPOSIT_ADA + batcherFee;
+    if (orderAssets["lovelace"]) {
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
-      orderAssets['lovelace'] = FIXED_DEPOSIT_ADA + batcherFee;
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderV1.Datum = {
       sender: sender,
@@ -331,7 +331,7 @@ export class Dex {
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
         Data.to(OrderV1.Datum.toPlutusData(datum)),
-        orderAssets,
+        orderAssets
       )
       .payToAddress(sender, reductionAssets)
       .addSigner(sender)
@@ -348,8 +348,8 @@ export class Dex {
       minimumLPReceived,
       availableUtxos,
     } = options;
-    invariant(amountIn > 0n, 'amount in must be positive');
-    invariant(minimumLPReceived > 0n, 'minimum LP received must be positive');
+    invariant(amountIn > 0n, "amount in must be positive");
+    invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
     const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
       utxos: availableUtxos,
@@ -358,10 +358,10 @@ export class Dex {
       dexVersion: this.dexVersion,
       currentDate: new Date(),
     });
-    if (orderAssets['lovelace']) {
-      orderAssets['lovelace'] += FIXED_DEPOSIT_ADA + batcherFee;
+    if (orderAssets["lovelace"]) {
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
-      orderAssets['lovelace'] = FIXED_DEPOSIT_ADA + batcherFee;
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderV1.Datum = {
       sender: sender,
@@ -381,7 +381,7 @@ export class Dex {
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
         Data.to(OrderV1.Datum.toPlutusData(datum)),
-        orderAssets,
+        orderAssets
       )
       .payToAddress(sender, reductionAssets)
       .addSigner(sender)
@@ -399,8 +399,8 @@ export class Dex {
       minimumLPReceived,
       availableUtxos,
     } = options;
-    invariant(amountA > 0n && amountB > 0n, 'amount must be positive');
-    invariant(minimumLPReceived > 0n, 'minimum LP received must be positive');
+    invariant(amountA > 0n && amountB > 0n, "amount must be positive");
+    invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
     const orderAssets = {
       [Asset.toString(assetA)]: amountA,
       [Asset.toString(assetB)]: amountB,
@@ -412,10 +412,10 @@ export class Dex {
       dexVersion: this.dexVersion,
       currentDate: new Date(),
     });
-    if (orderAssets['lovelace']) {
-      orderAssets['lovelace'] += FIXED_DEPOSIT_ADA + batcherFee;
+    if (orderAssets["lovelace"]) {
+      orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
-      orderAssets['lovelace'] = FIXED_DEPOSIT_ADA + batcherFee;
+      orderAssets["lovelace"] = FIXED_DEPOSIT_ADA + batcherFee;
     }
     const datum: OrderV1.Datum = {
       sender: sender,
@@ -433,7 +433,7 @@ export class Dex {
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
         Data.to(OrderV1.Datum.toPlutusData(datum)),
-        orderAssets,
+        orderAssets
       )
       .payToAddress(sender, reductionAssets)
       .addSigner(sender)
@@ -442,18 +442,18 @@ export class Dex {
   }
 
   async buildCancelOrder(
-    options: BuildCancelOrderOptions,
+    options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
     const { orderUtxo } = options;
     const redeemer = Data.to(new Constr(OrderV1.Redeemer.CANCEL_ORDER, []));
     const rawDatum = orderUtxo.datum;
     invariant(
       rawDatum,
-      `Cancel Order requires Order UTxOs along with its CBOR Datum`,
+      `Cancel Order requires Order UTxOs along with its CBOR Datum`
     );
     const orderDatum = OrderV1.Datum.fromPlutusData(
       this.networkId,
-      Data.from(rawDatum) as Constr<Data>,
+      Data.from(rawDatum) as Constr<Data>
     );
     return await this.lucid
       .newTx()
