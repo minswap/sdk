@@ -15,7 +15,6 @@ import invariant from "@minswap/tiny-invariant";
 
 import {
   Asset,
-  BlockfrostAdapter,
   compareUtxo,
   DexV2Calculation,
   DexV2Constant,
@@ -24,6 +23,7 @@ import {
   OrderV2,
   PoolV2,
 } from ".";
+import { BlockfrostAdapter } from "./adapters/blockfrost";
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
 import { FactoryV2 } from "./types/factory";
