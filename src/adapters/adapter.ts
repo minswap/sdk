@@ -1,23 +1,39 @@
-import { Address } from '@minswap/lucid-cardano';
-import Big from 'big.js';
+import Big from "big.js";
+import { Address } from "@minswap/lucid-cardano";
 
-import { Asset } from '../types/asset';
-import { FactoryV2 } from '../types/factory';
-import { LbeV2Types } from '../types/lbe-v2';
-import { PoolV1, PoolV2, StablePool } from '../types/pool';
-import { TxHistory } from '../types/tx.internal';
-
-export type GetPoolInTxParams = {
-  txHash: string;
-};
+import { Asset } from "../types/asset";
+import { FactoryV2 } from "../types/factory";
+import { LbeV2Types } from "../types/lbe-v2";
+import { PoolV1, PoolV2, StablePool } from "../types/pool";
+import { TxHistory } from "../types/tx.internal";
 
 export type GetPoolByIdParams = {
   id: string;
 };
 
+export type GetPoolInTxParams = {
+  txHash: string;
+};
+
+export type GetPoolPriceParams = {
+  pool: PoolV1.State;
+  decimalsA?: number;
+  decimalsB?: number;
+};
+
 export type GetPoolsParams = {
   page?: number;
   cursor?: string;
+};
+
+export type GetStablePoolHistoryParams = {
+  lpAsset: Asset;
+};
+
+export type GetStablePoolPriceParams = {
+  pool: StablePool.State;
+  assetAIndex: number;
+  assetBIndex: number;
 };
 
 export type GetV1PoolHistoryParams = {
@@ -33,26 +49,10 @@ export type GetV2PoolHistoryParams =
       lpAsset: Asset;
     };
 
-export type GetPoolPriceParams = {
-  pool: PoolV1.State;
-  decimalsA?: number;
-  decimalsB?: number;
-};
-
 export type GetV2PoolPriceParams = {
   pool: PoolV2.State;
   decimalsA?: number;
   decimalsB?: number;
-};
-
-export type GetStablePoolHistoryParams = {
-  lpAsset: Asset;
-};
-
-export type GetStablePoolPriceParams = {
-  pool: StablePool.State;
-  assetAIndex: number;
-  assetBIndex: number;
 };
 
 export interface Adapter {
@@ -98,7 +98,7 @@ export interface Adapter {
   getAllV2Pools(): Promise<{ pools: PoolV2.State[]; errors: unknown[] }>;
 
   getV2Pools(
-    params: GetPoolsParams,
+    params: GetPoolsParams
   ): Promise<{ pools: PoolV2.State[]; errors: unknown[] }>;
 
   getV2PoolByPair(assetA: Asset, assetB: Asset): Promise<PoolV2.State | null>;
@@ -124,7 +124,7 @@ export interface Adapter {
 
   getFactoryV2ByPair(
     assetA: Asset,
-    assetB: Asset,
+    assetB: Asset
   ): Promise<FactoryV2.State | null>;
 
   getAllStablePools(): Promise<{
@@ -137,7 +137,7 @@ export interface Adapter {
   getStablePoolByNFT(nft: Asset): Promise<StablePool.State | null>;
 
   getStablePoolHistory(
-    params: GetStablePoolHistoryParams,
+    params: GetStablePoolHistoryParams
   ): Promise<StablePool.State[]>;
 
   /**
@@ -159,7 +159,7 @@ export interface Adapter {
 
   getLbeV2Factory(
     baseAsset: Asset,
-    raiseAsset: Asset,
+    raiseAsset: Asset
   ): Promise<LbeV2Types.FactoryState | null>;
 
   getLbeV2HeadAndTailFactory(lbeId: string): Promise<{
@@ -173,7 +173,7 @@ export interface Adapter {
   }>;
 
   getLbeV2TreasuryByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.TreasuryState | null>;
 
   getAllLbeV2Managers(): Promise<{
@@ -182,7 +182,7 @@ export interface Adapter {
   }>;
 
   getLbeV2ManagerByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.ManagerState | null>;
 
   getAllLbeV2Sellers(): Promise<{
@@ -201,6 +201,6 @@ export interface Adapter {
 
   getLbeV2OrdersByLbeIdAndOwner(
     lbeId: string,
-    owner: Address,
+    owner: Address
   ): Promise<LbeV2Types.OrderState[]>;
 }

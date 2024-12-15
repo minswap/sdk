@@ -2,43 +2,43 @@ import {
   BlockFrostAPI,
   BlockfrostServerError,
   Responses,
-} from '@blockfrost/blockfrost-js';
-import { PaginationOptions } from '@blockfrost/blockfrost-js/lib/types';
+} from "@blockfrost/blockfrost-js";
+import { PaginationOptions } from "@blockfrost/blockfrost-js/lib/types";
 import {
   Address,
   C,
   fromHex,
   SLOT_CONFIG_NETWORK,
   slotToBeginUnixTime,
-} from '@minswap/lucid-cardano';
-import invariant from '@minswap/tiny-invariant';
-import * as Prisma from '@prisma/client';
-import Big from 'big.js';
-import JSONBig from 'json-bigint';
+} from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
+import * as Prisma from "@prisma/client";
+import Big from "big.js";
+import JSONBig from "json-bigint";
 
-import { StableswapCalculation } from '../calculate';
-import { PostgresRepositoryReader } from '../syncer/repository/postgres-repository';
-import { Asset } from '../types/asset';
+import { StableswapCalculation } from "../calculate";
+import { PostgresRepositoryReader } from "../syncer/repository/postgres-repository";
+import { Asset } from "../types/asset";
 import {
   DexV1Constant,
   DexV2Constant,
   LbeV2Constant,
   StableswapConstant,
-} from '../types/constants';
-import { FactoryV2 } from '../types/factory';
-import { LbeV2Types } from '../types/lbe-v2';
-import { NetworkEnvironment, NetworkId } from '../types/network';
-import { OrderV2 } from '../types/order';
-import { PoolV1, PoolV2, StablePool } from '../types/pool';
+} from "../types/constants";
+import { FactoryV2 } from "../types/factory";
+import { LbeV2Types } from "../types/lbe-v2";
+import { NetworkEnvironment, NetworkId } from "../types/network";
+import { OrderV2 } from "../types/order";
+import { PoolV1, PoolV2, StablePool } from "../types/pool";
 import {
   checkValidPoolOutput,
   isValidPoolOutput,
   normalizeAssets,
-} from '../types/pool.internal';
-import { StringUtils } from '../types/string';
-import { TxHistory, TxIn, Value } from '../types/tx.internal';
-import { getScriptHashFromAddress } from '../utils/address-utils.internal';
-import { networkEnvToLucidNetwork } from '../utils/network.internal';
+} from "../types/pool.internal";
+import { StringUtils } from "../types/string";
+import { TxHistory, TxIn, Value } from "../types/tx.internal";
+import { getScriptHashFromAddress } from "../utils/address-utils.internal";
+import { networkEnvToLucidNetwork } from "../utils/network.internal";
 import {
   Adapter,
   GetPoolByIdParams,
@@ -46,9 +46,9 @@ import {
   GetPoolPriceParams,
   GetStablePoolPriceParams,
   GetV2PoolPriceParams,
-} from './adapter';
+} from "./adapter";
 
-export type GetPoolsParams = Omit<PaginationOptions, 'page'> & {
+export type GetPoolsParams = Omit<PaginationOptions, "page"> & {
   page: number;
 };
 
@@ -81,7 +81,7 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   public async getAssetDecimals(asset: string): Promise<number> {
-    if (asset === 'lovelace') {
+    if (asset === "lovelace") {
       return 6;
     }
     try {
@@ -112,7 +112,7 @@ export class BlockfrostAdapter implements Adapter {
     const poolTx = await this.blockFrostApi.txsUtxos(txHash);
     const poolUtxo = poolTx.outputs.find(
       (o: (typeof poolTx.outputs)[number]) =>
-        getScriptHashFromAddress(o.address) === DexV1Constant.POOL_SCRIPT_HASH,
+        getScriptHashFromAddress(o.address) === DexV1Constant.POOL_SCRIPT_HASH
     );
     if (!poolUtxo) {
       return null;
@@ -121,7 +121,7 @@ export class BlockfrostAdapter implements Adapter {
     checkValidPoolOutput(poolUtxo.address, poolUtxo.amount, poolUtxo.data_hash);
     invariant(
       poolUtxo.data_hash,
-      `expect pool to have datum hash, got ${poolUtxo.data_hash}`,
+      `expect pool to have datum hash, got ${poolUtxo.data_hash}`
     );
 
     const txIn: TxIn = { txHash: txHash, index: poolUtxo.output_index };
@@ -129,7 +129,7 @@ export class BlockfrostAdapter implements Adapter {
       poolUtxo.address,
       txIn,
       poolUtxo.amount,
-      poolUtxo.data_hash,
+      poolUtxo.data_hash
     );
   }
 
@@ -140,7 +140,7 @@ export class BlockfrostAdapter implements Adapter {
     const nftTxs = await this.blockFrostApi.assetsTransactions(nft, {
       count: 1,
       page: 1,
-      order: 'desc',
+      order: "desc",
     });
     if (nftTxs.length === 0) {
       return null;
@@ -151,20 +151,20 @@ export class BlockfrostAdapter implements Adapter {
   public async getV1Pools({
     page,
     count = 100,
-    order = 'asc',
+    order = "asc",
   }: GetPoolsParams): Promise<PoolV1.State[]> {
     const utxos = await this.blockFrostApi.addressesUtxos(
       DexV1Constant.POOL_SCRIPT_HASH,
-      { count, order, page },
+      { count, order, page }
     );
     return utxos
       .filter((utxo: (typeof utxos)[number]) =>
-        isValidPoolOutput(utxo.address, utxo.amount, utxo.data_hash),
+        isValidPoolOutput(utxo.address, utxo.amount, utxo.data_hash)
       )
       .map((utxo: (typeof utxos)[number]) => {
         invariant(
           utxo.data_hash,
-          `expect pool to have datum hash, got ${utxo.data_hash}`,
+          `expect pool to have datum hash, got ${utxo.data_hash}`
         );
         const txIn: TxIn = {
           txHash: utxo.tx_hash,
@@ -174,7 +174,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           txIn,
           utxo.amount,
-          utxo.data_hash,
+          utxo.data_hash
         );
       });
   }
@@ -183,7 +183,7 @@ export class BlockfrostAdapter implements Adapter {
     id,
     page = 1,
     count = 100,
-    order = 'desc',
+    order = "desc",
   }: GetV1PoolHistoryParams): Promise<TxHistory[]> {
     const nft = `${DexV1Constant.POOL_NFT_POLICY_ID}${id}`;
     const nftTxs = await this.blockFrostApi.assetsTransactions(nft, {
@@ -197,7 +197,7 @@ export class BlockfrostAdapter implements Adapter {
         txIndex: tx.tx_index,
         blockHeight: tx.block_height,
         time: new Date(Number(tx.block_time) * 1000),
-      }),
+      })
     );
   }
 
@@ -213,10 +213,10 @@ export class BlockfrostAdapter implements Adapter {
       decimalsB = await this.getAssetDecimals(pool.assetB);
     }
     const adjustedReserveA = Big(pool.reserveA.toString()).div(
-      Big(10).pow(decimalsA),
+      Big(10).pow(decimalsA)
     );
     const adjustedReserveB = Big(pool.reserveB.toString()).div(
-      Big(10).pow(decimalsB),
+      Big(10).pow(decimalsB)
     );
     const priceAB = adjustedReserveA.div(adjustedReserveB);
     const priceBA = adjustedReserveB.div(adjustedReserveA);
@@ -231,7 +231,7 @@ export class BlockfrostAdapter implements Adapter {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       v2Config.poolScriptHashBech32,
-      v2Config.poolAuthenAsset,
+      v2Config.poolAuthenAsset
     );
 
     const pools: PoolV2.State[] = [];
@@ -246,7 +246,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
-          utxo.inline_datum,
+          utxo.inline_datum
         );
         pools.push(pool);
       } catch (err) {
@@ -262,7 +262,7 @@ export class BlockfrostAdapter implements Adapter {
   public async getV2Pools({
     page,
     count = 100,
-    order = 'asc',
+    order = "asc",
   }: GetPoolsParams): Promise<{
     pools: PoolV2.State[];
     errors: unknown[];
@@ -271,7 +271,7 @@ export class BlockfrostAdapter implements Adapter {
     const utxos = await this.blockFrostApi.addressesUtxosAsset(
       v2Config.poolScriptHashBech32,
       v2Config.poolAuthenAsset,
-      { count, order, page },
+      { count, order, page }
     );
 
     const pools: PoolV2.State[] = [];
@@ -286,7 +286,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
-          utxo.inline_datum,
+          utxo.inline_datum
         );
         pools.push(pool);
       } catch (err) {
@@ -301,17 +301,17 @@ export class BlockfrostAdapter implements Adapter {
 
   public async getV2PoolByPair(
     assetA: Asset,
-    assetB: Asset,
+    assetB: Asset
   ): Promise<PoolV2.State | null> {
     const [normalizedAssetA, normalizedAssetB] = normalizeAssets(
       Asset.toString(assetA),
-      Asset.toString(assetB),
+      Asset.toString(assetB)
     );
     const { pools: allPools } = await this.getAllV2Pools();
     return (
       allPools.find(
         (pool) =>
-          pool.assetA === normalizedAssetA && pool.assetB === normalizedAssetB,
+          pool.assetA === normalizedAssetA && pool.assetB === normalizedAssetB
       ) ?? null
     );
   }
@@ -325,9 +325,9 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   public async getV2PoolHistory(
-    _params: GetV2PoolHistoryParams,
+    _params: GetV2PoolHistoryParams
   ): Promise<PoolV2.State[]> {
-    throw Error('Not supported yet. Please use MinswapAdapter');
+    throw Error("Not supported yet. Please use MinswapAdapter");
   }
 
   public async getV2PoolPrice({
@@ -342,10 +342,10 @@ export class BlockfrostAdapter implements Adapter {
       decimalsB = await this.getAssetDecimals(pool.assetB);
     }
     const adjustedReserveA = Big(pool.reserveA.toString()).div(
-      Big(10).pow(decimalsA),
+      Big(10).pow(decimalsA)
     );
     const adjustedReserveB = Big(pool.reserveB.toString()).div(
-      Big(10).pow(decimalsB),
+      Big(10).pow(decimalsB)
     );
     const priceAB = adjustedReserveA.div(adjustedReserveB);
     const priceBA = adjustedReserveB.div(adjustedReserveA);
@@ -359,7 +359,7 @@ export class BlockfrostAdapter implements Adapter {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       v2Config.factoryScriptHashBech32,
-      v2Config.factoryAsset,
+      v2Config.factoryAsset
     );
 
     const factories: FactoryV2.State[] = [];
@@ -368,7 +368,7 @@ export class BlockfrostAdapter implements Adapter {
       try {
         if (!utxo.inline_datum) {
           throw new Error(
-            `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`
           );
         }
         const factory = new FactoryV2.State(
@@ -376,7 +376,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
-          utxo.inline_datum,
+          utxo.inline_datum
         );
         factories.push(factory);
       } catch (err) {
@@ -391,7 +391,7 @@ export class BlockfrostAdapter implements Adapter {
 
   public async getFactoryV2ByPair(
     assetA: Asset,
-    assetB: Asset,
+    assetB: Asset
   ): Promise<FactoryV2.State | null> {
     const factoryIdent = PoolV2.computeLPAssetName(assetA, assetB);
     const { factories: allFactories } = await this.getAllFactoriesV2();
@@ -413,7 +413,7 @@ export class BlockfrostAdapter implements Adapter {
   }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAll(
-      v2Config.orderScriptHashBech32,
+      v2Config.orderScriptHashBech32
     );
 
     const orders: OrderV2.State[] = [];
@@ -427,18 +427,18 @@ export class BlockfrostAdapter implements Adapter {
             utxo.address,
             { txHash: utxo.tx_hash, index: utxo.output_index },
             utxo.amount,
-            utxo.inline_datum,
+            utxo.inline_datum
           );
         } else if (utxo.data_hash !== null) {
           const orderDatum = await this.blockFrostApi.scriptsDatumCbor(
-            utxo.data_hash,
+            utxo.data_hash
           );
           order = new OrderV2.State(
             this.networkId,
             utxo.address,
             { txHash: utxo.tx_hash, index: utxo.output_index },
             utxo.amount,
-            orderDatum.cbor,
+            orderDatum.cbor
           );
         }
 
@@ -459,7 +459,7 @@ export class BlockfrostAdapter implements Adapter {
 
   // MARK: STABLESWAP
   private async parseStablePoolState(
-    utxo: Responses['address_utxo_content'][0],
+    utxo: Responses["address_utxo_content"][0]
   ): Promise<StablePool.State> {
     let datum: string;
     if (utxo.inline_datum) {
@@ -467,14 +467,14 @@ export class BlockfrostAdapter implements Adapter {
     } else if (utxo.data_hash) {
       datum = await this.getDatumByDatumHash(utxo.data_hash);
     } else {
-      throw new Error('Cannot find datum of Stable Pool');
+      throw new Error("Cannot find datum of Stable Pool");
     }
     const pool = new StablePool.State(
       this.networkId,
       utxo.address,
       { txHash: utxo.tx_hash, index: utxo.output_index },
       utxo.amount,
-      datum,
+      datum
     );
     return pool;
   }
@@ -484,7 +484,7 @@ export class BlockfrostAdapter implements Adapter {
     errors: unknown[];
   }> {
     const poolAddresses = StableswapConstant.CONFIG[this.networkId].map(
-      (cfg) => cfg.poolAddress,
+      (cfg) => cfg.poolAddress
     );
     const pools: StablePool.State[] = [];
     const errors: unknown[] = [];
@@ -507,20 +507,20 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   public async getStablePoolByLpAsset(
-    lpAsset: Asset,
+    lpAsset: Asset
   ): Promise<StablePool.State | null> {
     const config = StableswapConstant.CONFIG[this.networkId].find(
-      (cfg) => cfg.lpAsset === Asset.toString(lpAsset),
+      (cfg) => cfg.lpAsset === Asset.toString(lpAsset)
     );
     invariant(
       config,
       `getStablePoolByLpAsset: Can not find stableswap config by LP Asset ${Asset.toString(
-        lpAsset,
-      )}`,
+        lpAsset
+      )}`
     );
     const poolUtxos = await this.blockFrostApi.addressesUtxosAssetAll(
       config.poolAddress,
-      config.nftAsset,
+      config.nftAsset
     );
     if (poolUtxos.length === 1) {
       const poolUtxo = poolUtxos[0];
@@ -530,19 +530,19 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   public async getStablePoolByNFT(
-    nft: Asset,
+    nft: Asset
   ): Promise<StablePool.State | null> {
     const poolAddress = StableswapConstant.CONFIG[this.networkId].find(
-      (cfg) => cfg.nftAsset === Asset.toString(nft),
+      (cfg) => cfg.nftAsset === Asset.toString(nft)
     )?.poolAddress;
     if (!poolAddress) {
       throw new Error(
-        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`,
+        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`
       );
     }
     const poolUtxos = await this.blockFrostApi.addressesUtxosAssetAll(
       poolAddress,
-      Asset.toString(nft),
+      Asset.toString(nft)
     );
     if (poolUtxos.length === 1) {
       const poolUtxo = poolUtxos[0];
@@ -552,9 +552,9 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   getStablePoolHistory(
-    _params: GetStablePoolHistoryParams,
+    _params: GetStablePoolHistoryParams
   ): Promise<StablePool.State[]> {
-    throw Error('Not supported yet. Please use MinswapAdapter');
+    throw Error("Not supported yet. Please use MinswapAdapter");
   }
 
   public getStablePoolPrice({
@@ -568,7 +568,7 @@ export class BlockfrostAdapter implements Adapter {
       config.multiples,
       pool.amp,
       assetAIndex,
-      assetBIndex,
+      assetBIndex
     );
 
     return Big(priceNum.toString()).div(priceDen.toString());
@@ -582,7 +582,7 @@ export class BlockfrostAdapter implements Adapter {
     const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       config.factoryHashBech32,
-      config.factoryAsset,
+      config.factoryAsset
     );
 
     const factories: LbeV2Types.FactoryState[] = [];
@@ -591,7 +591,7 @@ export class BlockfrostAdapter implements Adapter {
       try {
         if (!utxo.inline_datum) {
           throw new Error(
-            `Cannot find datum of LBE V2 Factory, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of LBE V2 Factory, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -600,7 +600,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
-          utxo.inline_datum,
+          utxo.inline_datum
         );
         factories.push(factory);
       } catch (err) {
@@ -615,7 +615,7 @@ export class BlockfrostAdapter implements Adapter {
 
   public async getLbeV2Factory(
     baseAsset: Asset,
-    raiseAsset: Asset,
+    raiseAsset: Asset
   ): Promise<LbeV2Types.FactoryState | null> {
     const factoryIdent = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
     const { factories: allFactories } = await this.getAllLbeV2Factories();
@@ -659,7 +659,7 @@ export class BlockfrostAdapter implements Adapter {
     const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       config.treasuryHashBech32,
-      config.treasuryAsset,
+      config.treasuryAsset
     );
 
     const treasuries: LbeV2Types.TreasuryState[] = [];
@@ -668,7 +668,7 @@ export class BlockfrostAdapter implements Adapter {
       try {
         if (!utxo.inline_datum) {
           throw new Error(
-            `Cannot find datum of LBE V2 Treasury, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of LBE V2 Treasury, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -677,7 +677,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
-          utxo.inline_datum,
+          utxo.inline_datum
         );
         treasuries.push(treasury);
       } catch (err) {
@@ -691,7 +691,7 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   public async getLbeV2TreasuryByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.TreasuryState | null> {
     const { treasuries: allTreasuries } = await this.getAllLbeV2Treasuries();
     for (const treasury of allTreasuries) {
@@ -709,7 +709,7 @@ export class BlockfrostAdapter implements Adapter {
     const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       config.managerHashBech32,
-      config.managerAsset,
+      config.managerAsset
     );
 
     const managers: LbeV2Types.ManagerState[] = [];
@@ -718,7 +718,7 @@ export class BlockfrostAdapter implements Adapter {
       try {
         if (!utxo.inline_datum) {
           throw new Error(
-            `Cannot find datum of Lbe V2 Manager, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of Lbe V2 Manager, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -727,7 +727,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
-          utxo.inline_datum,
+          utxo.inline_datum
         );
         managers.push(manager);
       } catch (err) {
@@ -741,7 +741,7 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   public async getLbeV2ManagerByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.ManagerState | null> {
     const { managers } = await this.getAllLbeV2Managers();
     for (const manager of managers) {
@@ -759,7 +759,7 @@ export class BlockfrostAdapter implements Adapter {
     const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       config.sellerHashBech32,
-      config.sellerAsset,
+      config.sellerAsset
     );
 
     const sellers: LbeV2Types.SellerState[] = [];
@@ -768,7 +768,7 @@ export class BlockfrostAdapter implements Adapter {
       try {
         if (!utxo.inline_datum) {
           throw new Error(
-            `Cannot find datum of Lbe V2 Seller, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of Lbe V2 Seller, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -777,7 +777,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
-          utxo.inline_datum,
+          utxo.inline_datum
         );
         sellers.push(seller);
       } catch (err) {
@@ -791,7 +791,7 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   public async getLbeV2SellerByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.SellerState | null> {
     const { sellers } = await this.getAllLbeV2Sellers();
     for (const seller of sellers) {
@@ -809,7 +809,7 @@ export class BlockfrostAdapter implements Adapter {
     const config = LbeV2Constant.CONFIG[this.networkId];
     const utxos = await this.blockFrostApi.addressesUtxosAssetAll(
       config.orderHashBech32,
-      config.orderAsset,
+      config.orderAsset
     );
     const orders: LbeV2Types.OrderState[] = [];
     const errors: unknown[] = [];
@@ -817,7 +817,7 @@ export class BlockfrostAdapter implements Adapter {
       try {
         if (!utxo.inline_datum) {
           throw new Error(
-            `Cannot find datum of Lbe V2 Order, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of Lbe V2 Order, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -826,7 +826,7 @@ export class BlockfrostAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.output_index },
           utxo.amount,
-          utxo.inline_datum,
+          utxo.inline_datum
         );
         orders.push(order);
       } catch (err) {
@@ -840,7 +840,7 @@ export class BlockfrostAdapter implements Adapter {
   }
 
   public async getLbeV2OrdersByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.OrderState[]> {
     const { orders: allOrders } = await this.getAllLbeV2Orders();
     const orders: LbeV2Types.OrderState[] = [];
@@ -854,7 +854,7 @@ export class BlockfrostAdapter implements Adapter {
 
   public async getLbeV2OrdersByLbeIdAndOwner(
     lbeId: string,
-    owner: Address,
+    owner: Address
   ): Promise<LbeV2Types.OrderState[]> {
     const { orders: allOrders } = await this.getAllLbeV2Orders();
     const orders: LbeV2Types.OrderState[] = [];
@@ -900,7 +900,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
       useNativeBigInt: true,
     }).parse(prismaPool.value);
     const datumHash = C.hash_plutus_data(
-      C.PlutusData.from_bytes(fromHex(prismaPool.raw_datum)),
+      C.PlutusData.from_bytes(fromHex(prismaPool.raw_datum))
     ).to_hex();
     return new PoolV1.State(address, txIn, value, datumHash);
   }
@@ -929,12 +929,12 @@ export class MinswapAdapter extends BlockfrostAdapter {
   override async getV1Pools({
     page,
     count = 100,
-    order = 'asc',
+    order = "asc",
   }: GetPoolsParams): Promise<PoolV1.State[]> {
     const prismaPools = await this.repository.getLastPoolV1State(
       page - 1,
       count,
-      order,
+      order
     );
     if (prismaPools.length === 0) {
       return [];
@@ -946,14 +946,14 @@ export class MinswapAdapter extends BlockfrostAdapter {
     id,
     page = 1,
     count = 100,
-    order = 'desc',
+    order = "desc",
   }: GetV1PoolHistoryParams): Promise<TxHistory[]> {
     const lpAsset = `${DexV1Constant.LP_POLICY_ID}${id}`;
     const prismaPools = await this.repository.getHistoricalPoolV1ByLpAsset(
       lpAsset,
       page - 1,
       count,
-      order,
+      order
     );
     if (prismaPools.length === 0) {
       return [];
@@ -968,10 +968,10 @@ export class MinswapAdapter extends BlockfrostAdapter {
         time: new Date(
           slotToBeginUnixTime(
             Number(prismaPool.slot),
-            SLOT_CONFIG_NETWORK[network],
-          ),
+            SLOT_CONFIG_NETWORK[network]
+          )
         ),
-      }),
+      })
     );
   }
 
@@ -989,7 +989,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
       prismaPool.pool_address,
       txIn,
       value,
-      prismaPool.raw_datum,
+      prismaPool.raw_datum
     );
   }
 
@@ -1007,7 +1007,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
   override async getV2Pools({
     page,
     count = 100,
-    order = 'asc',
+    order = "asc",
   }: GetPoolsParams): Promise<{
     pools: PoolV2.State[];
     errors: unknown[];
@@ -1015,7 +1015,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
     const prismaPools = await this.repository.getLastPoolV2State(
       page - 1,
       count,
-      order,
+      order
     );
     return {
       pools: prismaPools.map((pool) => this.prismaPoolV2ToPoolV2State(pool)),
@@ -1025,7 +1025,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
 
   override async getV2PoolByPair(
     assetA: Asset,
-    assetB: Asset,
+    assetB: Asset
   ): Promise<PoolV2.State | null> {
     const prismaPool = await this.repository.getPoolV2ByPair(assetA, assetB);
     if (!prismaPool) {
@@ -1043,11 +1043,11 @@ export class MinswapAdapter extends BlockfrostAdapter {
   }
 
   override async getV2PoolHistory(
-    options: GetV2PoolHistoryParams,
+    options: GetV2PoolHistoryParams
   ): Promise<PoolV2.State[]> {
-    const { page = 1, count = 100, order = 'desc' } = options;
+    const { page = 1, count = 100, order = "desc" } = options;
     let lpAsset: string;
-    if ('lpAsset' in options) {
+    if ("lpAsset" in options) {
       lpAsset = Asset.toString(options.lpAsset);
     } else {
       lpAsset = PoolV2.computeLPAssetName(options.assetA, options.assetB);
@@ -1056,7 +1056,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
       lpAsset,
       page - 1,
       count,
-      order,
+      order
     );
     if (prismaPools.length === 0) {
       return [];
@@ -1066,7 +1066,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
   }
 
   private prismaStablePoolToStablePoolState(
-    prismaPool: Prisma.StablePool,
+    prismaPool: Prisma.StablePool
   ): StablePool.State {
     const txIn: TxIn = {
       txHash: prismaPool.created_tx_id,
@@ -1081,7 +1081,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
       prismaPool.pool_address,
       txIn,
       value,
-      prismaPool.raw_datum,
+      prismaPool.raw_datum
     );
   }
 
@@ -1092,26 +1092,26 @@ export class MinswapAdapter extends BlockfrostAdapter {
     const prismaPools = await this.repository.getAllLastStablePoolState();
     return {
       pools: prismaPools.map((pool) =>
-        this.prismaStablePoolToStablePoolState(pool),
+        this.prismaStablePoolToStablePoolState(pool)
       ),
       errors: [],
     };
   }
 
   override async getStablePoolByNFT(
-    nft: Asset,
+    nft: Asset
   ): Promise<StablePool.State | null> {
     const config = StableswapConstant.CONFIG[this.networkId].find(
-      (cfg) => cfg.nftAsset === Asset.toString(nft),
+      (cfg) => cfg.nftAsset === Asset.toString(nft)
     );
     if (!config) {
       throw new Error(
-        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`,
+        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`
       );
     }
 
     const prismaStablePool = await this.repository.getStablePoolByLpAsset(
-      config.lpAsset,
+      config.lpAsset
     );
     if (!prismaStablePool) {
       return null;
@@ -1120,19 +1120,19 @@ export class MinswapAdapter extends BlockfrostAdapter {
   }
 
   override async getStablePoolByLpAsset(
-    lpAsset: Asset,
+    lpAsset: Asset
   ): Promise<StablePool.State | null> {
     const config = StableswapConstant.CONFIG[this.networkId].find(
-      (cfg) => cfg.lpAsset === Asset.toString(lpAsset),
+      (cfg) => cfg.lpAsset === Asset.toString(lpAsset)
     );
     if (!config) {
       throw new Error(
-        `Cannot find Stable Pool having NFT ${Asset.toString(lpAsset)}`,
+        `Cannot find Stable Pool having NFT ${Asset.toString(lpAsset)}`
       );
     }
 
     const prismaStablePool = await this.repository.getStablePoolByLpAsset(
-      config.lpAsset,
+      config.lpAsset
     );
     if (!prismaStablePool) {
       return null;
@@ -1144,20 +1144,20 @@ export class MinswapAdapter extends BlockfrostAdapter {
     lpAsset,
     page = 1,
     count = 100,
-    order = 'desc',
+    order = "desc",
   }: GetStablePoolHistoryParams): Promise<StablePool.State[]> {
     const prismaPools = await this.repository.getHistoricalStablePoolsByLpAsset(
       Asset.toString(lpAsset),
       page - 1,
       count,
-      order,
+      order
     );
     if (prismaPools.length === 0) {
       return [];
     }
 
     return prismaPools.map((pool) =>
-      this.prismaStablePoolToStablePoolState(pool),
+      this.prismaStablePoolToStablePoolState(pool)
     );
   }
 }

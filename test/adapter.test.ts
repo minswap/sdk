@@ -1,12 +1,8 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 
-import {
-  ADA,
-  Asset,
-  BlockfrostAdapter,
-  NetworkId,
-  StableswapConstant,
-} from "../src";
+import { ADA, Asset, NetworkId, StableswapConstant } from "../src";
+
+import { BlockfrostAdapter } from "../src/adapters/blockfrost";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];
