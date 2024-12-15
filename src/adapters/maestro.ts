@@ -2,31 +2,32 @@ import {
   Asset as MaestroUtxoAsset,
   MaestroClient,
   UtxoWithSlot,
-} from '@maestro-org/typescript-sdk';
-import { Address } from '@minswap/lucid-cardano';
-import invariant from '@minswap/tiny-invariant';
-import Big from 'big.js';
+} from "@maestro-org/typescript-sdk";
+import { Address } from "@minswap/lucid-cardano";
+import invariant from "@minswap/tiny-invariant";
+import Big from "big.js";
 
-import { PoolV1, PoolV2, StablePool } from '..';
-import { StableswapCalculation } from '../calculate';
-import { Asset } from '../types/asset';
+import { PoolV1, PoolV2, StablePool } from "..";
+import { StableswapCalculation } from "../calculate";
+import { Asset } from "../types/asset";
 import {
   DexV1Constant,
   DexV2Constant,
   LbeV2Constant,
   StableswapConstant,
-} from '../types/constants';
-import { FactoryV2 } from '../types/factory';
-import { LbeV2Types } from '../types/lbe-v2';
-import { NetworkId } from '../types/network';
+} from "../types/constants";
+import { FactoryV2 } from "../types/factory";
+import { LbeV2Types } from "../types/lbe-v2";
+import { NetworkId } from "../types/network";
+import { OrderV2 } from "../types/order";
 import {
   checkValidPoolOutput,
   isValidPoolOutput,
   normalizeAssets,
-} from '../types/pool.internal';
-import { StringUtils } from '../types/string';
-import { TxHistory, TxIn, Value } from '../types/tx.internal';
-import { getScriptHashFromAddress } from '../utils/address-utils.internal';
+} from "../types/pool.internal";
+import { StringUtils } from "../types/string";
+import { TxHistory, TxIn, Value } from "../types/tx.internal";
+import { getScriptHashFromAddress } from "../utils/address-utils.internal";
 import {
   Adapter,
   GetPoolByIdParams,
@@ -36,7 +37,7 @@ import {
   GetStablePoolPriceParams,
   GetV2PoolHistoryParams,
   GetV2PoolPriceParams,
-} from './adapter';
+} from "./adapter";
 
 export declare class MaestroServerError {
   code: number;
@@ -47,10 +48,10 @@ export declare class MaestroServerError {
 export type MaestroPaginationOptions = {
   count?: number;
   cursor?: string;
-  order?: 'asc' | 'desc';
+  order?: "asc" | "desc";
 };
 
-export type GetPoolsParams = Omit<MaestroPaginationOptions, 'cursor'> & {
+export type GetPoolsParams = Omit<MaestroPaginationOptions, "cursor"> & {
   cursor: string;
 };
 
@@ -75,7 +76,7 @@ export class MaestroAdapter implements Adapter {
   }
 
   public async getAssetDecimals(asset: string): Promise<number> {
-    if (asset === 'lovelace') {
+    if (asset === "lovelace") {
       return 6;
     }
     try {
@@ -106,19 +107,19 @@ export class MaestroAdapter implements Adapter {
     const poolTx = await this.maestroClient.transactions.txInfo(txHash);
     const poolUtxo = poolTx.data.outputs.find(
       (o: (typeof poolTx.data.outputs)[number]) =>
-        getScriptHashFromAddress(o.address) === DexV1Constant.POOL_SCRIPT_HASH,
+        getScriptHashFromAddress(o.address) === DexV1Constant.POOL_SCRIPT_HASH
     );
     if (!poolUtxo) {
       return null;
     }
 
     const poolUtxoAmount = this.mapMaestroAssetToValue(poolUtxo.assets);
-    const poolUtxoDatumHash = poolUtxo.datum?.hash ?? '';
+    const poolUtxoDatumHash = poolUtxo.datum?.hash ?? "";
 
     checkValidPoolOutput(poolUtxo.address, poolUtxoAmount, poolUtxoDatumHash);
     invariant(
       poolUtxoDatumHash,
-      `expect pool to have datum hash, got ${poolUtxoDatumHash}`,
+      `expect pool to have datum hash, got ${poolUtxoDatumHash}`
     );
 
     const txIn: TxIn = { txHash: txHash, index: poolUtxo.index };
@@ -126,7 +127,7 @@ export class MaestroAdapter implements Adapter {
       poolUtxo.address,
       txIn,
       poolUtxoAmount,
-      poolUtxoDatumHash,
+      poolUtxoDatumHash
     );
   }
 
@@ -136,7 +137,7 @@ export class MaestroAdapter implements Adapter {
     const nft = `${DexV1Constant.POOL_NFT_POLICY_ID}${id}`;
     const nftTxs = await this.maestroClient.assets.assetTxs(nft, {
       count: 1,
-      order: 'desc',
+      order: "desc",
     });
     if (nftTxs.data.length === 0) {
       return null;
@@ -147,11 +148,11 @@ export class MaestroAdapter implements Adapter {
   public async getV1Pools({
     cursor,
     count = 100,
-    order = 'asc',
+    order = "asc",
   }: GetPoolsParams): Promise<PoolV1.State[]> {
     const utxosResponse = await this.maestroClient.addresses.utxosByAddress(
       DexV1Constant.POOL_SCRIPT_HASH,
-      { cursor, count, order },
+      { cursor, count, order }
     );
     const utxos = utxosResponse.data;
     return utxos
@@ -159,20 +160,20 @@ export class MaestroAdapter implements Adapter {
         isValidPoolOutput(
           utxo.address,
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum?.hash ?? '',
-        ),
+          utxo.datum?.hash ?? ""
+        )
       )
       .map((utxo: (typeof utxos)[number]) => {
         invariant(
           utxo.datum?.hash,
-          `expect pool to have datum hash, got ${utxo.datum?.hash}`,
+          `expect pool to have datum hash, got ${utxo.datum?.hash}`
         );
         const txIn: TxIn = { txHash: utxo.tx_hash, index: utxo.index };
         return new PoolV1.State(
           utxo.address,
           txIn,
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum?.hash,
+          utxo.datum?.hash
         );
       });
   }
@@ -180,7 +181,7 @@ export class MaestroAdapter implements Adapter {
   public async getV1PoolHistory({
     id,
     count = 100,
-    order = 'desc',
+    order = "desc",
   }: GetV1PoolHistoryParams): Promise<TxHistory[]> {
     const nft = `${DexV1Constant.POOL_NFT_POLICY_ID}${id}`;
     const nftTxs = await this.maestroClient.assets.assetTxs(nft, {
@@ -194,7 +195,7 @@ export class MaestroAdapter implements Adapter {
         txIndex: 0, // TBD if this works: Maestro Asset Txs doesn't return index
         blockHeight: tx.slot,
         time: new Date(tx.timestamp),
-      }),
+      })
     );
   }
 
@@ -210,10 +211,10 @@ export class MaestroAdapter implements Adapter {
       decimalsB = await this.getAssetDecimals(pool.assetB);
     }
     const adjustedReserveA = Big(pool.reserveA.toString()).div(
-      Big(10).pow(decimalsA),
+      Big(10).pow(decimalsA)
     );
     const adjustedReserveB = Big(pool.reserveB.toString()).div(
-      Big(10).pow(decimalsB),
+      Big(10).pow(decimalsB)
     );
     const priceAB = adjustedReserveA.div(adjustedReserveB);
     const priceBA = adjustedReserveB.div(adjustedReserveA);
@@ -226,7 +227,7 @@ export class MaestroAdapter implements Adapter {
   }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
     const utxos = await this.maestroClient.addresses.utxosByAddress(
-      v2Config.poolScriptHashBech32,
+      v2Config.poolScriptHashBech32
     );
     const utxosData = utxos.data;
 
@@ -234,7 +235,7 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (!utxo.datum) {
+        if (utxo.datum?.type != "inline") {
           throw new Error(`Cannot find datum of Pool V2, tx: ${utxo.tx_hash}`);
         }
         const pool = new PoolV2.State(
@@ -242,7 +243,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash,
+          utxo.datum.hash
         );
         pools.push(pool);
       } catch (err) {
@@ -258,7 +259,7 @@ export class MaestroAdapter implements Adapter {
   public async getV2Pools({
     cursor,
     count = 100,
-    order = 'asc',
+    order = "asc",
   }: GetPoolsParams): Promise<{ pools: PoolV2.State[]; errors: unknown[] }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
     const utxos = await this.maestroClient.addresses.utxosByAddress(
@@ -268,7 +269,7 @@ export class MaestroAdapter implements Adapter {
         cursor,
         count,
         order,
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -276,7 +277,7 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (!utxo.datum) {
+        if (utxo.datum?.type != "inline") {
           throw new Error(`Cannot find datum of Pool V2, tx: ${utxo.tx_hash}`);
         }
         const pool = new PoolV2.State(
@@ -284,7 +285,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash,
+          utxo.datum.hash
         );
         pools.push(pool);
       } catch (err) {
@@ -299,17 +300,17 @@ export class MaestroAdapter implements Adapter {
 
   public async getV2PoolByPair(
     assetA: Asset,
-    assetB: Asset,
+    assetB: Asset
   ): Promise<PoolV2.State | null> {
     const [normalizedAssetA, normalizedAssetB] = normalizeAssets(
       Asset.toString(assetA),
-      Asset.toString(assetB),
+      Asset.toString(assetB)
     );
     const { pools: allPools } = await this.getAllV2Pools();
     return (
       allPools.find(
         (pool) =>
-          pool.assetA === normalizedAssetA && pool.assetB === normalizedAssetB,
+          pool.assetA === normalizedAssetA && pool.assetB === normalizedAssetB
       ) ?? null
     );
   }
@@ -323,9 +324,9 @@ export class MaestroAdapter implements Adapter {
   }
 
   public async getV2PoolHistory(
-    _params: GetV2PoolHistoryParams,
+    _params: GetV2PoolHistoryParams
   ): Promise<PoolV2.State[]> {
-    throw Error('Not supported yet. Please use MinswapAdapter');
+    throw Error("Not supported yet. Please use MinswapAdapter");
   }
 
   public async getV2PoolPrice({
@@ -340,10 +341,10 @@ export class MaestroAdapter implements Adapter {
       decimalsB = await this.getAssetDecimals(pool.assetB);
     }
     const adjustedReserveA = Big(pool.reserveA.toString()).div(
-      Big(10).pow(decimalsA),
+      Big(10).pow(decimalsA)
     );
     const adjustedReserveB = Big(pool.reserveB.toString()).div(
-      Big(10).pow(decimalsB),
+      Big(10).pow(decimalsB)
     );
     const priceAB = adjustedReserveA.div(adjustedReserveB);
     const priceBA = adjustedReserveB.div(adjustedReserveA);
@@ -359,7 +360,7 @@ export class MaestroAdapter implements Adapter {
       v2Config.factoryScriptHashBech32,
       {
         asset: v2Config.factoryAsset,
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -367,9 +368,9 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (!utxo.datum) {
+        if (utxo.datum?.type != "inline") {
           throw new Error(
-            `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`
           );
         }
         const factory = new FactoryV2.State(
@@ -377,7 +378,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash,
+          utxo.datum.hash
         );
         factories.push(factory);
       } catch (err) {
@@ -392,7 +393,7 @@ export class MaestroAdapter implements Adapter {
 
   public async getFactoryV2ByPair(
     assetA: Asset,
-    assetB: Asset,
+    assetB: Asset
   ): Promise<FactoryV2.State | null> {
     const factoryIdent = PoolV2.computeLPAssetName(assetA, assetB);
     const { factories: allFactories } = await this.getAllFactoriesV2();
@@ -408,23 +409,74 @@ export class MaestroAdapter implements Adapter {
     return null;
   }
 
+  public async getAllV2Orders(): Promise<{
+    orders: OrderV2.State[];
+    errors: unknown[];
+  }> {
+    const v2Config = DexV2Constant.CONFIG[this.networkId];
+    const utxos = await this.maestroClient.addresses.utxosByAddress(
+      v2Config.orderScriptHashBech32
+    );
+
+    const utxosData = utxos.data;
+    const orders: OrderV2.State[] = [];
+    const errors: unknown[] = [];
+    for (const utxo of utxosData) {
+      try {
+        let order: OrderV2.State | undefined = undefined;
+        if (utxo.datum?.type === "inline") {
+          order = new OrderV2.State(
+            this.networkId,
+            utxo.address,
+            { txHash: utxo.tx_hash, index: utxo.index },
+            this.mapMaestroAssetToValue(utxo.assets),
+            utxo.datum.hash
+          );
+        } else if (utxo.datum?.hash !== null) {
+          const orderDatumHash = utxo.datum?.hash ?? "";
+          const orderDatum =
+            await this.maestroClient.datum.lookupDatum(orderDatumHash);
+          order = new OrderV2.State(
+            this.networkId,
+            utxo.address,
+            { txHash: utxo.tx_hash, index: utxo.index },
+            this.mapMaestroAssetToValue(utxo.assets),
+            orderDatum.data.bytes
+          );
+        }
+
+        if (order === undefined) {
+          throw new Error(`Cannot find datum of Order V2, tx: ${utxo.tx_hash}`);
+        }
+
+        orders.push(order);
+      } catch (err) {
+        errors.push(err);
+      }
+    }
+    return {
+      orders: orders,
+      errors: errors,
+    };
+  }
+
   private async parseStablePoolState(
-    utxo: UtxoWithSlot,
+    utxo: UtxoWithSlot
   ): Promise<StablePool.State> {
     let datum: string;
-    if (utxo.datum?.hash) {
+    if (utxo.datum?.type === "inline") {
       datum = utxo.datum.hash;
     } else if (utxo.datum?.hash) {
       datum = await this.getDatumByDatumHash(utxo.datum.hash);
     } else {
-      throw new Error('Cannot find datum of Stable Pool');
+      throw new Error("Cannot find datum of Stable Pool");
     }
     const pool = new StablePool.State(
       this.networkId,
       utxo.address,
       { txHash: utxo.tx_hash, index: utxo.index },
       this.mapMaestroAssetToValue(utxo.assets),
-      datum,
+      datum
     );
     return pool;
   }
@@ -434,7 +486,7 @@ export class MaestroAdapter implements Adapter {
     errors: unknown[];
   }> {
     const poolAddresses = StableswapConstant.CONFIG[this.networkId].map(
-      (cfg) => cfg.poolAddress,
+      (cfg) => cfg.poolAddress
     );
     const pools: StablePool.State[] = [];
     const errors: unknown[] = [];
@@ -458,22 +510,22 @@ export class MaestroAdapter implements Adapter {
   }
 
   public async getStablePoolByLpAsset(
-    lpAsset: Asset,
+    lpAsset: Asset
   ): Promise<StablePool.State | null> {
     const config = StableswapConstant.CONFIG[this.networkId].find(
-      (cfg) => cfg.lpAsset === Asset.toString(lpAsset),
+      (cfg) => cfg.lpAsset === Asset.toString(lpAsset)
     );
     invariant(
       config,
       `getStablePoolByLpAsset: Can not find stableswap config by LP Asset ${Asset.toString(
-        lpAsset,
-      )}`,
+        lpAsset
+      )}`
     );
     const utxos = await this.maestroClient.addresses.utxosByAddress(
       config.poolAddress,
       {
         asset: config.nftAsset,
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -485,14 +537,14 @@ export class MaestroAdapter implements Adapter {
   }
 
   public async getStablePoolByNFT(
-    nft: Asset,
+    nft: Asset
   ): Promise<StablePool.State | null> {
     const poolAddress = StableswapConstant.CONFIG[this.networkId].find(
-      (cfg) => cfg.nftAsset === Asset.toString(nft),
+      (cfg) => cfg.nftAsset === Asset.toString(nft)
     )?.poolAddress;
     if (!poolAddress) {
       throw new Error(
-        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`,
+        `Cannot find Stable Pool having NFT ${Asset.toString(nft)}`
       );
     }
 
@@ -500,7 +552,7 @@ export class MaestroAdapter implements Adapter {
       poolAddress,
       {
         asset: Asset.toString(nft),
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -512,9 +564,9 @@ export class MaestroAdapter implements Adapter {
   }
 
   getStablePoolHistory(
-    _params: GetStablePoolHistoryParams,
+    _params: GetStablePoolHistoryParams
   ): Promise<StablePool.State[]> {
-    throw Error('Not supported yet. Please use MinswapAdapter');
+    throw Error("Not supported yet. Please use MinswapAdapter");
   }
 
   public getStablePoolPrice({
@@ -528,7 +580,7 @@ export class MaestroAdapter implements Adapter {
       config.multiples,
       pool.amp,
       assetAIndex,
-      assetBIndex,
+      assetBIndex
     );
 
     return Big(priceNum.toString()).div(priceDen.toString());
@@ -543,7 +595,7 @@ export class MaestroAdapter implements Adapter {
       config.factoryHashBech32,
       {
         asset: config.factoryAsset,
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -551,9 +603,9 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (!utxo.datum) {
+        if (utxo.datum?.type != "inline") {
           throw new Error(
-            `Cannot find datum of LBE V2 Factory, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of LBE V2 Factory, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -562,7 +614,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash,
+          utxo.datum.hash
         );
         factories.push(factory);
       } catch (err) {
@@ -577,7 +629,7 @@ export class MaestroAdapter implements Adapter {
 
   public async getLbeV2Factory(
     baseAsset: Asset,
-    raiseAsset: Asset,
+    raiseAsset: Asset
   ): Promise<LbeV2Types.FactoryState | null> {
     const factoryIdent = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
     const { factories: allFactories } = await this.getAllLbeV2Factories();
@@ -624,7 +676,7 @@ export class MaestroAdapter implements Adapter {
       config.treasuryHashBech32,
       {
         asset: config.treasuryAsset,
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -632,9 +684,9 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (!utxo.datum) {
+        if (utxo.datum?.type != "inline") {
           throw new Error(
-            `Cannot find datum of LBE V2 Treasury, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of LBE V2 Treasury, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -643,7 +695,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash,
+          utxo.datum.hash
         );
         treasuries.push(treasury);
       } catch (err) {
@@ -657,7 +709,7 @@ export class MaestroAdapter implements Adapter {
   }
 
   public async getLbeV2TreasuryByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.TreasuryState | null> {
     const { treasuries: allTreasuries } = await this.getAllLbeV2Treasuries();
     for (const treasury of allTreasuries) {
@@ -678,7 +730,7 @@ export class MaestroAdapter implements Adapter {
       config.managerHashBech32,
       {
         asset: config.managerAsset,
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -686,9 +738,9 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (!utxo.datum) {
+        if (utxo.datum?.type != "inline") {
           throw new Error(
-            `Cannot find datum of Lbe V2 Manager, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of Lbe V2 Manager, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -697,7 +749,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash,
+          utxo.datum.hash
         );
         managers.push(manager);
       } catch (err) {
@@ -711,7 +763,7 @@ export class MaestroAdapter implements Adapter {
   }
 
   public async getLbeV2ManagerByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.ManagerState | null> {
     const { managers } = await this.getAllLbeV2Managers();
     for (const manager of managers) {
@@ -732,7 +784,7 @@ export class MaestroAdapter implements Adapter {
       config.sellerHashBech32,
       {
         asset: config.sellerAsset,
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -740,9 +792,9 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (!utxo.datum) {
+        if (utxo.datum?.type != "inline") {
           throw new Error(
-            `Cannot find datum of Lbe V2 Seller, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of Lbe V2 Seller, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -751,7 +803,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash,
+          utxo.datum.hash
         );
         sellers.push(seller);
       } catch (err) {
@@ -765,7 +817,7 @@ export class MaestroAdapter implements Adapter {
   }
 
   public async getLbeV2SellerByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.SellerState | null> {
     const { sellers } = await this.getAllLbeV2Sellers();
     for (const seller of sellers) {
@@ -786,7 +838,7 @@ export class MaestroAdapter implements Adapter {
       config.orderHashBech32,
       {
         asset: config.orderAsset,
-      },
+      }
     );
     const utxosData = utxos.data;
 
@@ -794,9 +846,9 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (!utxo.datum) {
+        if (utxo.datum?.type != "inline") {
           throw new Error(
-            `Cannot find datum of Lbe V2 Order, tx: ${utxo.tx_hash}`,
+            `Cannot find datum of Lbe V2 Order, tx: ${utxo.tx_hash}`
           );
         }
 
@@ -805,7 +857,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash,
+          utxo.datum.hash
         );
         orders.push(order);
       } catch (err) {
@@ -819,7 +871,7 @@ export class MaestroAdapter implements Adapter {
   }
 
   public async getLbeV2OrdersByLbeId(
-    lbeId: string,
+    lbeId: string
   ): Promise<LbeV2Types.OrderState[]> {
     const { orders: allOrders } = await this.getAllLbeV2Orders();
     const orders: LbeV2Types.OrderState[] = [];
@@ -833,7 +885,7 @@ export class MaestroAdapter implements Adapter {
 
   public async getLbeV2OrdersByLbeIdAndOwner(
     lbeId: string,
-    owner: Address,
+    owner: Address
   ): Promise<LbeV2Types.OrderState[]> {
     const { orders: allOrders } = await this.getAllLbeV2Orders();
     const orders: LbeV2Types.OrderState[] = [];
