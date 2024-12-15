@@ -16,7 +16,6 @@ import BigNumber from "bignumber.js";
 import {
   ADA,
   Asset,
-  BlockfrostAdapter,
   calculateDeposit,
   calculateSwapExactIn,
   calculateSwapExactOut,
@@ -33,6 +32,8 @@ import {
   StableswapCalculation,
   StableswapConstant,
 } from "../src";
+
+import { BlockfrostAdapter } from "../src/adapters/blockfrost";
 import { LbeV2 } from "../src/lbe-v2/lbe-v2";
 import { Stableswap } from "../src/stableswap";
 import { LbeV2Types } from "../src/types/lbe-v2";
