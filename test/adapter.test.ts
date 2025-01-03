@@ -1,5 +1,5 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { ADA, Asset, NetworkId, StableswapConstant } from "../src";
+import { ADA, Adapter, Asset, NetworkId, StableswapConstant } from "../src";
 import { BlockfrostAdapter } from "../src/adapters/blockfrost";
 import { MaestroAdapter } from "../src/adapters/maestro";
 import { MaestroClient, Configuration } from "@maestro-org/typescript-sdk";
@@ -47,7 +47,7 @@ beforeAll(() => {
     NetworkId.TESTNET,
     new MaestroClient(
       new Configuration({
-        apiKey: "MAESTRO_API_KEY_TESTNET",
+        apiKey: mustGetEnv("MAESTRO_API_KEY_TESTNET"),
         network: cardanoNetworkPreprod,
       })
     )
@@ -57,14 +57,14 @@ beforeAll(() => {
     NetworkId.MAINNET,
     new MaestroClient(
       new Configuration({
-        apiKey: "MAESTRO_API_KEY_MAINNET",
+        apiKey: mustGetEnv("MAESTRO_API_KEY_MAINNET"),
         network: cardanoNetworkMainnet,
       })
     )
   );
 });
 
-async function runTests(adapterTestnet: any, adapterMainnet: any) {
+async function runTests(adapterTestnet: Adapter, adapterMainnet: Adapter) {
   test("getAssetDecimals", async () => {
     expect(await adapterTestnet.getAssetDecimals("lovelace")).toBe(6);
     expect(await adapterTestnet.getAssetDecimals(MIN_TESTNET)).toBe(0);
@@ -72,7 +72,7 @@ async function runTests(adapterTestnet: any, adapterMainnet: any) {
     expect(await adapterMainnet.getAssetDecimals(MIN_MAINNET)).toBe(6);
   });
 
-  async function testPoolPrice(adapter: any): Promise<void> {
+  async function testPoolPrice(adapter: Adapter): Promise<void> {
     const pools = await adapter.getV1Pools({ page: 1 });
     expect(pools.length).toBeGreaterThan(0);
     for (let i = 0; i < 5; i++) {

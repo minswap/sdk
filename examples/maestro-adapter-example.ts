@@ -1,6 +1,6 @@
 import { Address, Lucid, Network, TxComplete } from "@minswap/lucid-cardano";
 import { Asset, NetworkId, PoolV2 } from "../src";
-import { getBackendMasestroLucidInstance } from "../src/utils/lucid";
+import { getBackendMaestroLucidInstance } from "../src/utils/lucid";
 import { LbeV2 } from "../src/lbe-v2/lbe-v2";
 import { MaestroAdapter } from "../src/adapters/maestro";
 import { MaestroClient, Configuration } from "@maestro-org/typescript-sdk";
@@ -13,7 +13,7 @@ async function main(): Promise<void> {
   const address =
     "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
 
-  const lucid = await getBackendMasestroLucidInstance(
+  const lucid = await getBackendMaestroLucidInstance(
     cardanoNetwork,
     maestroApiKey,
     address

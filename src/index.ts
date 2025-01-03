@@ -1,4 +1,4 @@
-export * from "./adapters/adapter";
+export * from "./adapters";
 export * from "./calculate";
 export * from "./dex";
 export * from "./dex-v2";

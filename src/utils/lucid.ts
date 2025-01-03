@@ -36,7 +36,7 @@ export async function getBackendLucidInstance(
  * @param address Your own address
  * @returns
  */
-export async function getBackendMasestroLucidInstance(
+export async function getBackendMaestroLucidInstance(
   network: MaestroSupportedNetworks,
   apiKey: string,
   address: Address,
