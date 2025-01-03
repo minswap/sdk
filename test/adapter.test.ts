@@ -47,7 +47,7 @@ beforeAll(() => {
     NetworkId.TESTNET,
     new MaestroClient(
       new Configuration({
-        apiKey: "MAESTRO_API_KEY_TESTNET",
+        apiKey: mustGetEnv("MAESTRO_API_KEY_TESTNET"),
         network: cardanoNetworkPreprod,
       })
     )
@@ -57,7 +57,7 @@ beforeAll(() => {
     NetworkId.MAINNET,
     new MaestroClient(
       new Configuration({
-        apiKey: "MAESTRO_API_KEY_MAINNET",
+        apiKey: mustGetEnv("MAESTRO_API_KEY_MAINNET"),
         network: cardanoNetworkMainnet,
       })
     )

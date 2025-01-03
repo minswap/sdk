@@ -13,16 +13,15 @@ import {
 } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
 
+import { Asset } from "./types/asset";
+import { OrderV2 } from "./types/order";
+import { PoolV2 } from "./types/pool";
+import { compareUtxo, DexV2Calculation } from "./calculate";
 import {
-  Asset,
-  compareUtxo,
-  DexV2Calculation,
   DexV2Constant,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
-  OrderV2,
-  PoolV2,
-} from ".";
+} from "./types/constants";
 import { BlockfrostAdapter } from "./adapters/blockfrost";
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
