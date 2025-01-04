@@ -75,10 +75,13 @@ async function runTests(adapterTestnet: Adapter, adapterMainnet: Adapter) {
   async function testPoolPrice(adapter: Adapter): Promise<void> {
     const pools = await adapter.getV1Pools({ page: 1 });
     expect(pools.length).toBeGreaterThan(0);
+    // check random 5 pools
     for (let i = 0; i < 5; i++) {
       const idx = Math.floor(Math.random() * pools.length);
       const pool = pools[idx];
       const [priceAB, priceBA] = await adapter.getV1PoolPrice({ pool });
+      // product of 2 prices must be approximately equal to 1
+      // abs(priceAB * priceBA - 1) <= epsilon
       expect(priceAB.mul(priceBA).sub(1).abs().toNumber()).toBeLessThanOrEqual(
         1e-6
       );
