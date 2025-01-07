@@ -8,11 +8,11 @@ import { getBackendLucidInstance } from "../src/utils/lucid";
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+  const blockfrostProjectId = process.env["BLOCKFROST_PROJECT_ID_TESTNET"] || "";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
-    "addr_test1vrd9v47japxwp8540vsrh4grz4u9urfpfawwy7sf6r0vxqgm7wdxh";
+    "addr_test1vr9fc7ytkrhmvrm0hmpj90ywmnytyexxr5vv3hzgpg2a4wg74yn6t";
   const lucid = await getBackendLucidInstance(
     network,
     blockfrostProjectId,
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
     networkId: NetworkId.TESTNET,
     lucid,
     blockfrostAdapter,
-    privateKey: "<YOUR_PRIVATE_KEY>",
+    privateKey: "ed25519_sk1d3k9a79r6ne4c3zghfmz372wv8k09unezqqmwezdtpv43fsau92sqshtsz",
   });
 
   await worker.start();

@@ -46,11 +46,11 @@ const MIN: Asset = {
 
 async function main(): Promise<void> {
   const network: Network = "Preprod";
-  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+  const blockfrostProjectId = process.env["BLOCKFROST_PROJECT_ID_TESTNET"] || "";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
-    "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
+    "addr_test1vr9fc7ytkrhmvrm0hmpj90ywmnytyexxr5vv3hzgpg2a4wg74yn6t";
   const lucid = await getBackendLucidInstance(
     network,
     blockfrostProjectId,
@@ -66,13 +66,11 @@ async function main(): Promise<void> {
     })
   );
 
-  const txComplete = await _lbeV2DepositOrderExample(
-    lucid,
-    address,
-    blockfrostAdapter
-  );
+  // const txComplete = await _swapStableExample(lucid, blockfrostAdapter, address, await lucid.utxosAt(address))
+  const txComplete = await _swapExactInV2TxExample(lucid, blockfrostAdapter, address, await lucid.utxosAt(address))
+  // const txComplete = await _createLbeV2EventExample(lucid, address, blockfrostAdapter)
   const signedTx = await txComplete
-    .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+    .signWithPrivateKey("ed25519_sk1d3k9a79r6ne4c3zghfmz372wv8k09unezqqmwezdtpv43fsau92sqshtsz")
     .complete();
 
   const txId = await signedTx.submit();
@@ -1157,7 +1155,7 @@ async function _createLbeV2EventExample(
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
   const baseAsset = Asset.fromString(
-    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
+    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e"
   );
   const curSlot = lucid.currentSlot();
   const curDate = lucid.utils.slotToUnixTime(curSlot);
