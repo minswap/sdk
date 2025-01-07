@@ -1,7 +1,8 @@
 import { Data, Lucid, UnixTime, UTxO } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
 
-import { BlockfrostAdapter, LbeV2Constant, PoolV2 } from "..";
+import { LbeV2Constant, PoolV2 } from "..";
+import { BlockfrostAdapter } from "../adapters/blockfrost";
 import { LbeV2 } from "../lbe-v2/lbe-v2";
 import { LbeV2Types } from "../types/lbe-v2";
 import { NetworkEnvironment, NetworkId } from "../types/network";

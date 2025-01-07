@@ -1,9 +1,13 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { ADA, Adapter, Asset, NetworkId, StableswapConstant } from "../src";
+import { Configuration, MaestroClient } from "@maestro-org/typescript-sdk";
+import { Network } from "@minswap/lucid-cardano";
+
+import { Adapter } from "../src/adapters";
 import { BlockfrostAdapter } from "../src/adapters/blockfrost";
 import { MaestroAdapter } from "../src/adapters/maestro";
-import { MaestroClient, Configuration } from "@maestro-org/typescript-sdk";
-import { Network } from "@minswap/lucid-cardano";
+import { ADA, Asset } from "../src/types/asset";
+import { StableswapConstant } from "../src/types/constants";
+import { NetworkId } from "../src/types/network";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];
@@ -22,49 +26,14 @@ const MIN_ADA_POOL_V1_ID_TESTNET =
 const MIN_ADA_POOL_V1_ID_MAINNET =
   "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
 
-let blockfrostAdapterTestnet: BlockfrostAdapter;
-let blockfrostAdapterMainnet: BlockfrostAdapter;
-let maestroAdapterTestnet: MaestroAdapter;
-let maestroAdapterMainnet: MaestroAdapter;
+async function runTests(getAdapters: () => [Adapter, Adapter]) {
+  let adapterTestnet: Adapter;
+  let adapterMainnet: Adapter;
 
-beforeAll(() => {
-  blockfrostAdapterTestnet = new BlockfrostAdapter(
-    NetworkId.TESTNET,
-    new BlockFrostAPI({
-      projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_TESTNET"),
-      network: "preprod",
-    })
-  );
-  blockfrostAdapterMainnet = new BlockfrostAdapter(
-    NetworkId.MAINNET,
-    new BlockFrostAPI({
-      projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
-      network: "mainnet",
-    })
-  );
-  const cardanoNetworkPreprod: Network = "Preprod";
-  maestroAdapterTestnet = new MaestroAdapter(
-    NetworkId.TESTNET,
-    new MaestroClient(
-      new Configuration({
-        apiKey: mustGetEnv("MAESTRO_API_KEY_TESTNET"),
-        network: cardanoNetworkPreprod,
-      })
-    )
-  );
-  const cardanoNetworkMainnet: Network = "Mainnet";
-  maestroAdapterMainnet = new MaestroAdapter(
-    NetworkId.MAINNET,
-    new MaestroClient(
-      new Configuration({
-        apiKey: mustGetEnv("MAESTRO_API_KEY_MAINNET"),
-        network: cardanoNetworkMainnet,
-      })
-    )
-  );
-});
+  beforeAll(() => {
+    [adapterTestnet, adapterMainnet] = getAdapters();
+  });
 
-async function runTests(adapterTestnet: Adapter, adapterMainnet: Adapter) {
   test("getAssetDecimals", async () => {
     expect(await adapterTestnet.getAssetDecimals("lovelace")).toBe(6);
     expect(await adapterTestnet.getAssetDecimals(MIN_TESTNET)).toBe(0);
@@ -202,9 +171,47 @@ async function runTests(adapterTestnet: Adapter, adapterMainnet: Adapter) {
 }
 
 describe("BlockfrostAdapter Tests", () => {
-  runTests(blockfrostAdapterTestnet, blockfrostAdapterMainnet);
+  runTests(() => {
+    const blockfrostAdapterTestnet = new BlockfrostAdapter(
+      NetworkId.TESTNET,
+      new BlockFrostAPI({
+        projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_TESTNET"),
+        network: "preprod",
+      })
+    );
+    const blockfrostAdapterMainnet = new BlockfrostAdapter(
+      NetworkId.MAINNET,
+      new BlockFrostAPI({
+        projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
+        network: "mainnet",
+      })
+    );
+    return [blockfrostAdapterTestnet, blockfrostAdapterMainnet];
+  });
 });
 
 describe("MaestroAdapter Tests", () => {
-  runTests(maestroAdapterTestnet, maestroAdapterMainnet);
+  runTests(() => {
+    const cardanoNetworkPreprod: Network = "Preprod";
+    const maestroAdapterTestnet = new MaestroAdapter(
+      NetworkId.TESTNET,
+      new MaestroClient(
+        new Configuration({
+          apiKey: mustGetEnv("MAESTRO_API_KEY_TESTNET"),
+          network: cardanoNetworkPreprod,
+        })
+      )
+    );
+    const cardanoNetworkMainnet: Network = "Mainnet";
+    const maestroAdapterMainnet = new MaestroAdapter(
+      NetworkId.MAINNET,
+      new MaestroClient(
+        new Configuration({
+          apiKey: mustGetEnv("MAESTRO_API_KEY_MAINNET"),
+          network: cardanoNetworkMainnet,
+        })
+      )
+    );
+    return [maestroAdapterTestnet, maestroAdapterMainnet];
+  });
 });

@@ -1,6 +1,7 @@
 import { Lucid } from "@minswap/lucid-cardano";
 
-import { BlockfrostAdapter, DexV2, DexV2Constant, OrderV2 } from ".";
+import { DexV2, DexV2Constant, OrderV2 } from ".";
+import { BlockfrostAdapter } from "./adapters/blockfrost";
 import { runRecurringJob } from "./utils/job";
 
 type DexV2WorkerConstructor = {
