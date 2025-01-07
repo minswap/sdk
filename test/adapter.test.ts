@@ -26,14 +26,52 @@ const MIN_ADA_POOL_V1_ID_TESTNET =
 const MIN_ADA_POOL_V1_ID_MAINNET =
   "6aa2153e1ae896a95539c9d62f76cedcdabdcdf144e564b8955f609d660cf6a2";
 
-async function runTests(getAdapters: () => [Adapter, Adapter]) {
-  let adapterTestnet: Adapter;
-  let adapterMainnet: Adapter;
+function getBlockfrostAdapters(): [Adapter, Adapter] {
+  const blockfrostAdapterTestnet = new BlockfrostAdapter(
+    NetworkId.TESTNET,
+    new BlockFrostAPI({
+      projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_TESTNET"),
+      network: "preprod",
+    })
+  );
+  const blockfrostAdapterMainnet = new BlockfrostAdapter(
+    NetworkId.MAINNET,
+    new BlockFrostAPI({
+      projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
+      network: "mainnet",
+    })
+  );
+  return [blockfrostAdapterTestnet, blockfrostAdapterMainnet];
+}
 
-  beforeAll(() => {
-    [adapterTestnet, adapterMainnet] = getAdapters();
-  });
+function getMaestroAdapters(): [Adapter, Adapter] {
+  const cardanoNetworkPreprod: Network = "Preprod";
+  const maestroAdapterTestnet = new MaestroAdapter(
+    NetworkId.TESTNET,
+    new MaestroClient(
+      new Configuration({
+        apiKey: mustGetEnv("MAESTRO_API_KEY_TESTNET"),
+        network: cardanoNetworkPreprod,
+      })
+    )
+  );
+  const cardanoNetworkMainnet: Network = "Mainnet";
+  const maestroAdapterMainnet = new MaestroAdapter(
+    NetworkId.MAINNET,
+    new MaestroClient(
+      new Configuration({
+        apiKey: mustGetEnv("MAESTRO_API_KEY_MAINNET"),
+        network: cardanoNetworkMainnet,
+      })
+    )
+  );
+  return [maestroAdapterTestnet, maestroAdapterMainnet];
+}
 
+describe.each([
+  ["Blockfrost", ...getBlockfrostAdapters()],
+  ["Maestro", ...getMaestroAdapters()],
+])("Run test with %s adapter", (_name, adapterTestnet, adapterMainnet) => {
   test("getAssetDecimals", async () => {
     expect(await adapterTestnet.getAssetDecimals("lovelace")).toBe(6);
     expect(await adapterTestnet.getAssetDecimals(MIN_TESTNET)).toBe(0);
@@ -167,51 +205,5 @@ async function runTests(getAdapters: () => [Adapter, Adapter]) {
       expect(pool?.nft).toEqual(cfg.nftAsset);
       expect(pool?.assets).toEqual(cfg.assets);
     }
-  });
-}
-
-describe("BlockfrostAdapter Tests", () => {
-  runTests(() => {
-    const blockfrostAdapterTestnet = new BlockfrostAdapter(
-      NetworkId.TESTNET,
-      new BlockFrostAPI({
-        projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_TESTNET"),
-        network: "preprod",
-      })
-    );
-    const blockfrostAdapterMainnet = new BlockfrostAdapter(
-      NetworkId.MAINNET,
-      new BlockFrostAPI({
-        projectId: mustGetEnv("BLOCKFROST_PROJECT_ID_MAINNET"),
-        network: "mainnet",
-      })
-    );
-    return [blockfrostAdapterTestnet, blockfrostAdapterMainnet];
-  });
-});
-
-describe("MaestroAdapter Tests", () => {
-  runTests(() => {
-    const cardanoNetworkPreprod: Network = "Preprod";
-    const maestroAdapterTestnet = new MaestroAdapter(
-      NetworkId.TESTNET,
-      new MaestroClient(
-        new Configuration({
-          apiKey: mustGetEnv("MAESTRO_API_KEY_TESTNET"),
-          network: cardanoNetworkPreprod,
-        })
-      )
-    );
-    const cardanoNetworkMainnet: Network = "Mainnet";
-    const maestroAdapterMainnet = new MaestroAdapter(
-      NetworkId.MAINNET,
-      new MaestroClient(
-        new Configuration({
-          apiKey: mustGetEnv("MAESTRO_API_KEY_MAINNET"),
-          network: cardanoNetworkMainnet,
-        })
-      )
-    );
-    return [maestroAdapterTestnet, maestroAdapterMainnet];
   });
 });
