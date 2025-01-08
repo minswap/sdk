@@ -82,7 +82,7 @@ export class MaestroAdapter implements Adapter {
     try {
       const assetAInfo = await this.maestroClient.assets.assetInfo(asset);
       return assetAInfo.data.token_registry_metadata?.decimals ?? 0;
-    } catch (err) {
+    } catch {
       return 0;
     }
   }
