@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "build": "rimraf build && rollup -c rollup.config.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest && tsc",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles",
     "lint": "eslint src",
     "format": "prettier --write **/*.ts && eslint src --fix",
     "check-format": "prettier --check **/*.ts && eslint src",
