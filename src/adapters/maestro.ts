@@ -70,8 +70,8 @@ export class MaestroAdapter implements Adapter {
 
   private mapMaestroAssetToValue(assets: MaestroUtxoAsset[]): Value {
     return assets.map((asset) => ({
-      unit: asset.unit,
-      quantity: asset.amount,
+      unit: asset.unit.toString(),
+      quantity: asset.amount.toString(),
     }));
   }
 
@@ -83,10 +83,7 @@ export class MaestroAdapter implements Adapter {
       const assetAInfo = await this.maestroClient.assets.assetInfo(asset);
       return assetAInfo.data.token_registry_metadata?.decimals ?? 0;
     } catch (err) {
-      if (err instanceof MaestroServerError && err.code === 400) {
-        return 0;
-      }
-      throw err;
+      return 0;
     }
   }
 
@@ -150,7 +147,7 @@ export class MaestroAdapter implements Adapter {
     count = 100,
     order = "asc",
   }: GetPoolsParams): Promise<PoolV1.State[]> {
-    const utxosResponse = await this.maestroClient.addresses.utxosByAddress(
+    const utxosResponse = await this.maestroClient.addresses.utxosByPaymentCred(
       DexV1Constant.POOL_SCRIPT_HASH,
       { cursor, count, order }
     );
@@ -226,16 +223,34 @@ export class MaestroAdapter implements Adapter {
     errors: unknown[];
   }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
-    const utxos = await this.maestroClient.addresses.utxosByAddress(
-      v2Config.poolScriptHashBech32
+    const utxos = await this.maestroClient.addresses.utxosByPaymentCred(
+      v2Config.poolScriptHashBech32,
+      {
+        asset: v2Config.poolAuthenAsset,
+      }
     );
-    const utxosData = utxos.data;
+
+    let utxosData: UtxoWithSlot[] = utxos.data;
+    let nextCursor: string | null = utxos.next_cursor ?? null;
+
+    while (nextCursor) {
+      const utxosResponse =
+        await this.maestroClient.addresses.utxosByPaymentCred(
+          v2Config.poolScriptHashBech32,
+          {
+            asset: v2Config.poolAuthenAsset,
+            cursor: nextCursor,
+          }
+        );
+      utxosData = utxosData.concat(utxosResponse.data);
+      nextCursor = utxosResponse.next_cursor ?? null;
+    }
 
     const pools: PoolV2.State[] = [];
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (utxo.datum?.type != "inline") {
+        if (utxo.datum?.type) {
           throw new Error(`Cannot find datum of Pool V2, tx: ${utxo.tx_hash}`);
         }
         const pool = new PoolV2.State(
@@ -243,7 +258,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash
+          utxo.datum?.bytes ?? ""
         );
         pools.push(pool);
       } catch (err) {
@@ -262,7 +277,7 @@ export class MaestroAdapter implements Adapter {
     order = "asc",
   }: GetPoolsParams): Promise<{ pools: PoolV2.State[]; errors: unknown[] }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
-    const utxos = await this.maestroClient.addresses.utxosByAddress(
+    const utxos = await this.maestroClient.addresses.utxosByPaymentCred(
       v2Config.poolScriptHashBech32,
       {
         asset: v2Config.poolAuthenAsset,
@@ -464,8 +479,8 @@ export class MaestroAdapter implements Adapter {
     utxo: UtxoWithSlot
   ): Promise<StablePool.State> {
     let datum: string;
-    if (utxo.datum?.type === "inline") {
-      datum = utxo.datum.hash;
+    if (utxo.datum?.type) {
+      datum = utxo.datum.bytes ?? "";
     } else if (utxo.datum?.hash) {
       datum = await this.getDatumByDatumHash(utxo.datum.hash);
     } else {

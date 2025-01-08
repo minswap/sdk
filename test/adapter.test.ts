@@ -80,7 +80,7 @@ describe.each([
   });
 
   async function testPoolPrice(adapter: Adapter): Promise<void> {
-    const pools = await adapter.getV1Pools({ page: 1 });
+    const pools = await adapter.getV1Pools({});
     expect(pools.length).toBeGreaterThan(0);
     // check random 5 pools
     for (let i = 0; i < 5; i++) {
