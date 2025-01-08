@@ -250,7 +250,7 @@ export class MaestroAdapter implements Adapter {
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (utxo.datum?.type) {
+        if (!utxo.datum?.type) {
           throw new Error(`Cannot find datum of Pool V2, tx: ${utxo.tx_hash}`);
         }
         const pool = new PoolV2.State(
