@@ -13,21 +13,20 @@ import {
 } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
 
+import { BlockfrostAdapter } from "./adapters/blockfrost";
+import { BatcherFee } from "./batcher-fee-reduction/calculate";
+import { DexVersion } from "./batcher-fee-reduction/configs.internal";
+import { compareUtxo, DexV2Calculation } from "./calculate";
+import { Asset } from "./types/asset";
 import {
-  Asset,
-  BlockfrostAdapter,
-  compareUtxo,
-  DexV2Calculation,
   DexV2Constant,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
-  OrderV2,
-  PoolV2,
-} from ".";
-import { BatcherFee } from "./batcher-fee-reduction/calculate";
-import { DexVersion } from "./batcher-fee-reduction/configs.internal";
+} from "./types/constants";
 import { FactoryV2 } from "./types/factory";
 import { NetworkEnvironment, NetworkId } from "./types/network";
+import { OrderV2 } from "./types/order";
+import { PoolV2 } from "./types/pool";
 import { lucidToNetworkEnv } from "./utils/network.internal";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 

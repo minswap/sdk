@@ -1,7 +1,7 @@
 import { Address, OutRef, Script } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
 
-import { Asset } from "..";
+import { Asset } from "./asset";
 import { NetworkEnvironment, NetworkId } from "./network";
 
 export namespace DexV1Constant {

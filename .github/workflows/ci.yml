@@ -30,5 +30,7 @@ jobs:
         env:
           BLOCKFROST_PROJECT_ID_MAINNET: ${{ secrets.BLOCKFROST_PROJECT_ID_MAINNET }}
           BLOCKFROST_PROJECT_ID_TESTNET: ${{ secrets.BLOCKFROST_PROJECT_ID_TESTNET }}
+          MAESTRO_API_KEY_MAINNET: ${{ secrets.MAESTRO_API_KEY_MAINNET }}
+          MAESTRO_API_KEY_TESTNET: ${{ secrets.MAESTRO_API_KEY_TESTNET }}
       - name: Check format & lint
         run: pnpm run check-format

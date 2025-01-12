@@ -1,7 +1,8 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { Network } from "@minswap/lucid-cardano";
 
-import { BlockfrostAdapter, NetworkId } from "../src";
+import { NetworkId } from "../src";
+import { BlockfrostAdapter } from "../src/adapters/blockfrost";
 import { ExpiredOrderMonitor } from "../src/expired-order-monitor";
 import { getBackendLucidInstance } from "../src/utils/lucid";
 
