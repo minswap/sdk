@@ -7,6 +7,20 @@ import { LbeV2Types } from "../types/lbe-v2";
 import { PoolV1, PoolV2, StablePool } from "../types/pool";
 import { TxHistory } from "../types/tx.internal";
 
+export type PaginationByPage = {
+  page?: number
+  count?: number
+  order?: "asc" | "desc"
+}
+
+export type PaginationByCursor = {
+  cursor?: string
+  count?: number
+  order?: "asc" | "desc"
+}
+
+export type Pagination = PaginationByPage | PaginationByCursor
+
 export type GetPoolByIdParams = {
   id: string;
 };
@@ -21,15 +35,6 @@ export type GetPoolPriceParams = {
   decimalsB?: number;
 };
 
-export type GetPoolsParams = {
-  page?: number;
-  cursor?: string;
-};
-
-export type GetStablePoolHistoryParams = {
-  lpAsset: Asset;
-};
-
 export type GetStablePoolPriceParams = {
   pool: StablePool.State;
   assetAIndex: number;
@@ -39,15 +44,6 @@ export type GetStablePoolPriceParams = {
 export type GetV1PoolHistoryParams = {
   id: string;
 };
-
-export type GetV2PoolHistoryParams =
-  | {
-      assetA: Asset;
-      assetB: Asset;
-    }
-  | {
-      lpAsset: Asset;
-    };
 
 export type GetV2PoolPriceParams = {
   pool: PoolV2.State;
@@ -81,9 +77,9 @@ export interface Adapter {
   /**
    * @returns The latest pools or empty array if current page is after last page
    */
-  getV1Pools(params: GetPoolsParams): Promise<PoolV1.State[]>;
+  getV1Pools(pagination: Pagination): Promise<PoolV1.State[]>;
 
-  getV1PoolHistory(params: GetV1PoolHistoryParams): Promise<TxHistory[]>;
+  getV1PoolHistory(pagination: Pagination, params: GetV1PoolHistoryParams): Promise<TxHistory[]>;
 
   /**
    * Get pool price.
@@ -98,14 +94,12 @@ export interface Adapter {
   getAllV2Pools(): Promise<{ pools: PoolV2.State[]; errors: unknown[] }>;
 
   getV2Pools(
-    params: GetPoolsParams
+    pagination: Pagination
   ): Promise<{ pools: PoolV2.State[]; errors: unknown[] }>;
 
   getV2PoolByPair(assetA: Asset, assetB: Asset): Promise<PoolV2.State | null>;
 
   getV2PoolByLp(lpAsset: Asset): Promise<PoolV2.State | null>;
-
-  getV2PoolHistory(params: GetV2PoolHistoryParams): Promise<PoolV2.State[]>;
 
   /**
    * Get pool price.
@@ -135,10 +129,6 @@ export interface Adapter {
   getStablePoolByLpAsset(lpAsset: Asset): Promise<StablePool.State | null>;
 
   getStablePoolByNFT(nft: Asset): Promise<StablePool.State | null>;
-
-  getStablePoolHistory(
-    params: GetStablePoolHistoryParams
-  ): Promise<StablePool.State[]>;
 
   /**
    * Get stable pool price.
