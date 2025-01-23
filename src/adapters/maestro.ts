@@ -33,10 +33,10 @@ import {
   GetPoolByIdParams,
   GetPoolInTxParams,
   GetPoolPriceParams,
-  GetStablePoolHistoryParams,
   GetStablePoolPriceParams,
-  GetV2PoolHistoryParams,
+  GetV1PoolHistoryParams,
   GetV2PoolPriceParams,
+  PaginationByCursor,
 } from "./adapter";
 
 export declare class MaestroServerError {
@@ -44,20 +44,6 @@ export declare class MaestroServerError {
   error: string;
   message: string;
 }
-
-export type MaestroPaginationOptions = {
-  count?: number;
-  cursor?: string;
-  order?: "asc" | "desc";
-};
-
-export type GetPoolsParams = Omit<MaestroPaginationOptions, "cursor"> & {
-  cursor: string;
-};
-
-export type GetV1PoolHistoryParams = MaestroPaginationOptions & {
-  id: string;
-};
 
 export class MaestroAdapter implements Adapter {
   protected readonly networkId: NetworkId;
@@ -146,7 +132,7 @@ export class MaestroAdapter implements Adapter {
     cursor,
     count = 100,
     order = "asc",
-  }: GetPoolsParams): Promise<PoolV1.State[]> {
+  }: PaginationByCursor): Promise<PoolV1.State[]> {
     const utxosResponse = await this.maestroClient.addresses.utxosByPaymentCred(
       DexV1Constant.POOL_SCRIPT_HASH,
       { cursor, count, order }
@@ -175,13 +161,13 @@ export class MaestroAdapter implements Adapter {
       });
   }
 
-  public async getV1PoolHistory({
-    id,
-    count = 100,
-    order = "desc",
-  }: GetV1PoolHistoryParams): Promise<TxHistory[]> {
+  public async getV1PoolHistory(
+    { cursor, count = 100, order = "desc" }: PaginationByCursor,
+    { id }: GetV1PoolHistoryParams
+  ): Promise<TxHistory[]> {
     const nft = `${DexV1Constant.POOL_NFT_POLICY_ID}${id}`;
     const nftTxs = await this.maestroClient.assets.assetTxs(nft, {
+      cursor,
       count,
       order,
     });
@@ -275,7 +261,10 @@ export class MaestroAdapter implements Adapter {
     cursor,
     count = 100,
     order = "asc",
-  }: GetPoolsParams): Promise<{ pools: PoolV2.State[]; errors: unknown[] }> {
+  }: PaginationByCursor): Promise<{
+    pools: PoolV2.State[];
+    errors: unknown[];
+  }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
     const utxos = await this.maestroClient.addresses.utxosByPaymentCred(
       v2Config.poolScriptHashBech32,
@@ -336,12 +325,6 @@ export class MaestroAdapter implements Adapter {
       allPools.find((pool) => Asset.compare(pool.lpAsset, lpAsset) === 0) ??
       null
     );
-  }
-
-  public async getV2PoolHistory(
-    _params: GetV2PoolHistoryParams
-  ): Promise<PoolV2.State[]> {
-    throw Error("Not supported yet. Please use MinswapAdapter");
   }
 
   public async getV2PoolPrice({
@@ -576,12 +559,6 @@ export class MaestroAdapter implements Adapter {
       return await this.parseStablePoolState(poolUtxo);
     }
     return null;
-  }
-
-  getStablePoolHistory(
-    _params: GetStablePoolHistoryParams
-  ): Promise<StablePool.State[]> {
-    throw Error("Not supported yet. Please use MinswapAdapter");
   }
 
   public getStablePoolPrice({

@@ -27,14 +27,14 @@ export class ExpiredOrderMonitor {
 
   async start(): Promise<void> {
     await runRecurringJob({
-      name: "lbe v2 batcher",
+      name: "expired order canceller",
       interval: 1000 * 30, // 30s
       job: () => this.runWorker(),
     });
   }
 
   async runWorker(): Promise<void> {
-    console.info("start run dex v2 worker");
+    console.info("starting expired order canceller");
     const { orders: allOrders } = await this.blockfrostAdapter.getAllV2Orders();
     const currentSlot = await this.blockfrostAdapter.currentSlot();
     const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);

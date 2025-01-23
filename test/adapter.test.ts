@@ -116,8 +116,8 @@ describe.each([
     expect(adaMINMainnet?.assetB).toEqual(MIN_MAINNET);
   });
 
-  async function testPriceHistory(adapter: any, id: string): Promise<void> {
-    const history = await adapter.getV1PoolHistory({ id });
+  async function testPriceHistory(adapter: Adapter, id: string): Promise<void> {
+    const history = await adapter.getV1PoolHistory({}, { id });
     for (let i = 0; i < Math.min(5, history.length); i++) {
       const pool = await adapter.getV1PoolInTx({ txHash: history[i].txHash });
       expect(pool?.txIn.txHash).toEqual(history[i].txHash);
