@@ -11,7 +11,7 @@ async function main(): Promise<void> {
   const maestroApiKey = "<YOUR_MAESTRO_API_KEY";
 
   const address =
-    "addr_test1qpp7a9c3yscyddg404p6xvj9qcck7hrjg4xju4tmxyqdyg86vawulysf5qd3txqvgsyhnd228g2h4zhjchd5vdz4txws25gqml";
+    "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
 
   const lucid = await getBackendMaestroLucidInstance(
     cardanoNetwork,
