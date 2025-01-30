@@ -8,10 +8,10 @@ import invariant from "@minswap/tiny-invariant";
 
 async function main(): Promise<void> {
   const cardanoNetwork: Network = "Preprod";
-  const maestroApiKey = "<YOUR_MAESTRO_API_KEY>";
+  const maestroApiKey = "<YOUR_MAESTRO_API_KEY";
 
   const address =
-    "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
+    "addr_test1qpp7a9c3yscyddg404p6xvj9qcck7hrjg4xju4tmxyqdyg86vawulysf5qd3txqvgsyhnd228g2h4zhjchd5vdz4txws25gqml";
 
   const lucid = await getBackendMaestroLucidInstance(
     cardanoNetwork,
@@ -54,14 +54,14 @@ async function _lbeV2DepositOrderExample(
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
   const treasury = await maestroAdapter.getLbeV2TreasuryByLbeId(lbeId);
-  invariant(treasury !== undefined, `Can not find treasury by lbeId ${lbeId}`);
+  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
   const treasuryUtxos = await lucid.utxosByOutRef([
     { txHash: treasury!.txIn.txHash, outputIndex: treasury!.txIn.index },
   ]);
   invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
 
   const seller = await maestroAdapter.getLbeV2SellerByLbeId(lbeId);
-  invariant(seller !== undefined, `Can not find seller by lbeId ${lbeId}`);
+  invariant(seller !== null, `Can not find seller by lbeId ${lbeId}`);
   const sellerUtxos = await lucid.utxosByOutRef([
     { txHash: seller!.txIn.txHash, outputIndex: seller!.txIn.index },
   ]);
