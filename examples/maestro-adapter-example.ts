@@ -54,16 +54,16 @@ async function _lbeV2DepositOrderExample(
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
   const treasury = await maestroAdapter.getLbeV2TreasuryByLbeId(lbeId);
-  invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
+  invariant(treasury !== undefined, `Can not find treasury by lbeId ${lbeId}`);
   const treasuryUtxos = await lucid.utxosByOutRef([
-    { txHash: treasury.txIn.txHash, outputIndex: treasury.txIn.index },
+    { txHash: treasury!.txIn.txHash, outputIndex: treasury!.txIn.index },
   ]);
   invariant(treasuryUtxos.length === 1, "Can not find treasury Utxo");
 
   const seller = await maestroAdapter.getLbeV2SellerByLbeId(lbeId);
-  invariant(seller !== null, `Can not find seller by lbeId ${lbeId}`);
+  invariant(seller !== undefined, `Can not find seller by lbeId ${lbeId}`);
   const sellerUtxos = await lucid.utxosByOutRef([
-    { txHash: seller.txIn.txHash, outputIndex: seller.txIn.index },
+    { txHash: seller!.txIn.txHash, outputIndex: seller!.txIn.index },
   ]);
   invariant(sellerUtxos.length === 1, "Can not find seller Utxo");
 
