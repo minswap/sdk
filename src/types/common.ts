@@ -1,4 +1,4 @@
-import { Constr, Data } from "@minswap/lucid-cardano";
+import { Constr, Data } from "@spacebudz/lucid/mod";
 
 export namespace Options {
   export function toPlutusData<T>(

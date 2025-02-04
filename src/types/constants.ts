@@ -1,11 +1,11 @@
-import { Address, OutRef, Script } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { OutRef, Script } from "@spacebudz/lucid/mod";
 
 import { Asset } from "./asset";
 import { NetworkEnvironment, NetworkId } from "./network";
 
 export namespace DexV1Constant {
-  export const ORDER_BASE_ADDRESS: Record<number, Address> = {
+  export const ORDER_BASE_ADDRESS: Record<number, string> = {
     [NetworkId.TESTNET]:
       "addr_test1zzn9efv2f6w82hagxqtn62ju4m293tqvw0uhmdl64ch8uwurajt8r8wqtygrfduwgukk73m5gcnplmztc5tl5ngy0upq932hcy",
     [NetworkId.MAINNET]:
@@ -29,8 +29,8 @@ export namespace DexV1Constant {
 
 export namespace StableswapConstant {
   export type Config = {
-    orderAddress: Address;
-    poolAddress: Address;
+    orderAddress: string;
+    poolAddress: string;
     nftAsset: string;
     lpAsset: string;
     assets: string[];
@@ -364,7 +364,7 @@ export namespace StableswapConstant {
   }
 
   export function getConfigFromStableswapOrderAddress(
-    address: Address,
+    address: string,
     networkId: NetworkId
   ): StableswapConstant.Config {
     const config = StableswapConstant.CONFIG[networkId].find((config) => {
@@ -401,7 +401,7 @@ export namespace DexV2Constant {
     orderScriptHashBech32: string;
     poolScriptHash: string;
     poolScriptHashBech32: string;
-    poolCreationAddress: Address;
+    poolCreationAddress: string;
     factoryScriptHashBech32: string;
     factoryScriptHash: string;
     factoryAddress: string;

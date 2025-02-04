@@ -1,5 +1,5 @@
-import { Address, Constr, Data } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Constr, Data } from "@spacebudz/lucid/mod";
 
 import { Asset, LbeV2Constant, NetworkId, PoolV2 } from "..";
 import { AddressPlutusData } from "./address.internal";
@@ -116,8 +116,8 @@ export namespace LbeV2Types {
     raiseAsset: Asset;
     startTime: bigint;
     endTime: bigint;
-    owner: Address;
-    receiver: Address;
+    owner: string;
+    receiver: string;
 
     receiverDatum: ReceiverDatum;
     poolAllocation: bigint;
@@ -366,8 +366,8 @@ export namespace LbeV2Types {
     raiseAsset: Asset;
     startTime: bigint;
     endTime: bigint;
-    owner: Address;
-    receiver: Address;
+    owner: string;
+    receiver: string;
     poolAllocation: bigint;
     minimumOrderRaise?: bigint;
     minimumRaise?: bigint;
@@ -638,7 +638,7 @@ export namespace LbeV2Types {
 
   export type SellerDatum = {
     factoryPolicyId: string;
-    owner: Address;
+    owner: string;
     baseAsset: Asset;
     raiseAsset: Asset;
     amount: bigint;
@@ -740,7 +740,7 @@ export namespace LbeV2Types {
     factoryPolicyId: string;
     baseAsset: Asset;
     raiseAsset: Asset;
-    owner: Address;
+    owner: string;
     amount: bigint;
     isCollected: boolean;
     penaltyAmount: bigint;
@@ -838,7 +838,7 @@ export namespace LbeV2Types {
       );
     }
 
-    get owner(): Address {
+    get owner(): string {
       return this.datum.owner;
     }
   }

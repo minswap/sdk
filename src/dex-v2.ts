@@ -1,17 +1,18 @@
+import invariant from "@minswap/tiny-invariant";
 import {
-  Address,
+  Addresses,
   Assets,
   Constr,
   Credential,
   Data,
+  Hasher,
   Lucid,
   OutRef,
   Tx,
   TxComplete,
-  UnixTime,
-  UTxO,
-} from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
+  Utxo,
+} from "@spacebudz/lucid/mod";
+import { stakeCredentialOf } from "@spacebudz/lucid/src/utils/utils";
 
 import { BlockfrostAdapter } from "./adapters/blockfrost";
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
@@ -31,14 +32,14 @@ import { lucidToNetworkEnv } from "./utils/network.internal";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
 export type V2CustomReceiver = {
-  refundReceiver: Address;
+  refundReceiver: string;
   refundReceiverDatum?: {
     type:
       | OrderV2.ExtraDatumType.DATUM_HASH
       | OrderV2.ExtraDatumType.INLINE_DATUM;
     datum: string;
   };
-  successReceiver: Address;
+  successReceiver: string;
   successReceiverDatum?: {
     type:
       | OrderV2.ExtraDatumType.DATUM_HASH
@@ -68,10 +69,10 @@ export type CreatePoolV2Options = {
 };
 
 export type BulkOrdersOption = {
-  sender: Address;
+  sender: string;
   orderOptions: OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
-  availableUtxos: UTxO[];
+  availableUtxos: Utxo[];
   composeTx?: Tx;
   authorizationMethodType?: OrderV2.AuthorizationMethodType;
 };
@@ -192,8 +193,8 @@ export type CancelBulkOrdersOptions = {
 };
 
 export type CancelExpiredOrderOptions = {
-  orderUtxos: UTxO[];
-  currentSlot: UnixTime;
+  orderUtxos: Utxo[];
+  currentSlot: number;
   extraDatumMap: Record<string, string>;
 };
 
@@ -246,9 +247,9 @@ export class DexV2 {
       policyId: config.lpPolicyId,
       tokenName: lpAssetName,
     };
-    const poolBatchingStakeCredential = this.lucid.utils.getAddressDetails(
+    const poolBatchingStakeCredential = Addresses.inspect(
       config.poolBatchingAddress
-    )?.stakeCredential;
+    )?.delegation;
     invariant(
       poolBatchingStakeCredential,
       `cannot parse Liquidity Pool batching address`
@@ -333,14 +334,14 @@ export class DexV2 {
       .payToContract(
         config.poolCreationAddress,
         {
-          inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
+          Inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
         },
         poolValue
       )
       .payToContract(
         config.factoryAddress,
         {
-          inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
+          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
         },
         {
           [config.factoryAsset]: 1n,
@@ -349,13 +350,13 @@ export class DexV2 {
       .payToContract(
         config.factoryAddress,
         {
-          inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
+          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
         },
         {
           [config.factoryAsset]: 1n,
         }
       )
-      .mintAssets(
+      .mint(
         {
           [Asset.toString(lpAsset)]: PoolV2.MAX_LIQUIDITY,
           [config.factoryAsset]: 1n,
@@ -364,7 +365,7 @@ export class DexV2 {
         Data.to(new Constr(1, []))
       )
       .attachMetadata(674, { msg: [MetadataMessage.CREATE_POOL] })
-      .complete();
+      .commit();
   }
 
   private buildOrderValue(options: OrderOptions): Assets {
@@ -690,7 +691,7 @@ export class DexV2 {
     const orderAddress =
       DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
     const orderAddressPaymentCred =
-      this.lucid.utils.getAddressDetails(orderAddress).paymentCredential;
+      Addresses.inspect(orderAddress).payment;
     invariant(
       orderAddressPaymentCred,
       "order address payment credentials not found"
@@ -777,7 +778,7 @@ export class DexV2 {
     const limitOrders: string[] = [];
     const lucidTx = this.lucid.newTx();
     const necessaryExtraDatums: {
-      receiver: Address;
+      receiver: string;
       datum: string;
     }[] = [];
     for (let i = 0; i < orderOptions.length; i++) {
@@ -801,7 +802,7 @@ export class DexV2 {
       }
 
       const senderPaymentCred =
-        this.lucid.utils.getAddressDetails(sender).paymentCredential;
+        Addresses.inspect(sender).payment;
       invariant(
         senderPaymentCred,
         "sender address payment credentials not found"
@@ -817,11 +818,11 @@ export class DexV2 {
             hash: senderPaymentCred.hash,
           };
 
-      let successReceiver: Address = sender;
+      let successReceiver: string = sender;
       let successReceiverDatum: OrderV2.ExtraDatum = {
         type: OrderV2.ExtraDatumType.NO_DATUM,
       };
-      let refundReceiver: Address = sender;
+      let refundReceiver: string = sender;
       let refundReceiverDatum: OrderV2.ExtraDatum = {
         type: OrderV2.ExtraDatumType.NO_DATUM,
       };
@@ -839,7 +840,7 @@ export class DexV2 {
             type: OrderV2.ExtraDatumType.NO_DATUM,
           };
         } else {
-          const datumHash = this.lucid.utils.datumToHash(
+          const datumHash = Hasher.hashData(
             customSuccessReceiverDatum.datum
           );
           successReceiverDatum = {
@@ -856,7 +857,7 @@ export class DexV2 {
             type: OrderV2.ExtraDatumType.NO_DATUM,
           };
         } else {
-          const datumHash = this.lucid.utils.datumToHash(
+          const datumHash = Hasher.hashData(
             customRefundReceiverDatum.datum
           );
           refundReceiverDatum = {
@@ -882,7 +883,7 @@ export class DexV2 {
       };
       let orderAddress: string;
       try {
-        const senderStakeAddress = this.lucid.utils.stakeCredentialOf(sender);
+        const senderStakeAddress = stakeCredentialOf(sender)
         orderAddress = this.buildOrderAddress(senderStakeAddress);
       } catch {
         // if fails then sender address doesn't have stake credentials
@@ -892,7 +893,7 @@ export class DexV2 {
       lucidTx.payToContract(
         orderAddress,
         {
-          inline: Data.to(OrderV2.Datum.toPlutusData(orderDatum)),
+          Inline: Data.to(OrderV2.Datum.toPlutusData(orderDatum)),
         },
         orderAssets
       );
@@ -909,27 +910,26 @@ export class DexV2 {
       limitOrders: limitOrderMessage,
     });
     if (Object.keys(reductionAssets).length !== 0) {
-      lucidTx.payToAddress(sender, reductionAssets);
+      lucidTx.payTo(sender, reductionAssets);
     }
     if (composeTx) {
       lucidTx.compose(composeTx);
     }
     for (const necessaryExtraDatum of necessaryExtraDatums) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         necessaryExtraDatum.receiver,
         necessaryExtraDatum.datum
       );
       if (utxoForStoringDatum) {
-        lucidTx.payToAddressWithData(
+        lucidTx.payToWithData(
           utxoForStoringDatum.address,
           utxoForStoringDatum.outputData,
           utxoForStoringDatum.assets
         );
       }
     }
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async cancelOrder({
@@ -954,7 +954,7 @@ export class DexV2 {
     for (const utxo of orderUtxos) {
       const orderAddr = utxo.address;
       const orderScriptPaymentCred =
-        this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
+        Addresses.inspect(orderAddr).payment;
       invariant(
         orderScriptPaymentCred?.type === "Script" &&
           orderScriptPaymentCred.hash ===
@@ -989,7 +989,7 @@ export class DexV2 {
     lucidTx.collectFrom(orderUtxos, redeemer);
 
     for (const hash of requiredPubKeyHashSet.keys()) {
-      lucidTx.addSignerKey(hash);
+      lucidTx.addSigner(hash);
     }
     lucidTx.attachMetadata(674, {
       msg: [MetadataMessage.CANCEL_ORDER],
@@ -997,7 +997,7 @@ export class DexV2 {
     if (composeTx) {
       lucidTx.compose(composeTx);
     }
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async cancelExpiredOrders({
@@ -1009,7 +1009,7 @@ export class DexV2 {
       DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].order,
       DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].expiredOrderCancellation,
     ]);
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     invariant(
       refScript.length === 2,
       "cannot find deployed script for V2 Order or Expired Order Cancellation"
@@ -1024,7 +1024,7 @@ export class DexV2 {
     for (const orderUtxo of sortedOrderUtxos) {
       const orderAddr = orderUtxo.address;
       const orderScriptPaymentCred =
-        this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
+        Addresses.inspect(orderAddr).payment;
       invariant(
         orderScriptPaymentCred?.type === "Script" &&
           orderScriptPaymentCred.hash ===
@@ -1064,15 +1064,15 @@ export class DexV2 {
       outAssets["lovelace"] -= expiryOptions.maxCancellationTip;
       switch (refundDatum.type) {
         case OrderV2.ExtraDatumType.NO_DATUM: {
-          lucidTx.payToAddress(datum.refundReceiver, outAssets);
+          lucidTx.payTo(datum.refundReceiver, outAssets);
           break;
         }
         case OrderV2.ExtraDatumType.DATUM_HASH: {
-          lucidTx.payToAddressWithData(
+          lucidTx.payToWithData(
             datum.refundReceiver,
             refundDatum.hash in extraDatumMap
-              ? { asHash: extraDatumMap[refundDatum.hash] }
-              : { hash: refundDatum.hash },
+              ? { AsHash: extraDatumMap[refundDatum.hash] }
+              : { Hash: refundDatum.hash },
             outAssets
           );
           break;
@@ -1082,9 +1082,9 @@ export class DexV2 {
             refundDatum.hash in extraDatumMap,
             `Can not find refund datum of order ${orderUtxo.txHash}#${orderUtxo.outputIndex}`
           );
-          lucidTx.payToAddressWithData(
+          lucidTx.payToWithData(
             datum.refundReceiver,
-            { inline: extraDatumMap[refundDatum.hash] },
+            { Inline: extraDatumMap[refundDatum.hash] },
             outAssets
           );
           break;
@@ -1102,6 +1102,6 @@ export class DexV2 {
       .attachMetadata(674, {
         msg: [MetadataMessage.CANCEL_ORDERS_AUTOMATICALLY],
       });
-    return await lucidTx.complete();
+    return await lucidTx.commit();
   }
 }

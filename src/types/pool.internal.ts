@@ -1,4 +1,4 @@
-import { Address, Constr, Data } from "@minswap/lucid-cardano";
+import { Constr, Data } from "@spacebudz/lucid/mod";
 import invariant from "@minswap/tiny-invariant";
 
 import { getScriptHashFromAddress } from "../utils/address-utils.internal";
@@ -24,7 +24,7 @@ export function normalizeAssets(a: string, b: string): [string, string] {
 }
 
 export type PoolFeeSharing = {
-  feeTo: Address;
+  feeTo: string;
   feeToDatumHash?: string;
 };
 

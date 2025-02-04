@@ -1,5 +1,5 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { Network } from "@minswap/lucid-cardano";
+import { Network } from "@spacebudz/lucid/mod";
 
 import { NetworkId } from "../src";
 import { BlockfrostAdapter } from "../src/adapters/blockfrost";

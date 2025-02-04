@@ -1,4 +1,4 @@
-import { Address, UTxO } from "@minswap/lucid-cardano";
+import { Utxo } from "@spacebudz/lucid/mod";
 
 import { LbeV2Types } from "../types/lbe-v2";
 
@@ -22,28 +22,28 @@ export type LbeV2ProjectDetails = {
 };
 
 export type LbeV2CreateEventOptions = {
-  factoryUtxo: UTxO;
+  factoryUtxo: Utxo;
   lbeV2Parameters: LbeV2Types.LbeV2Parameters;
   currentSlot: number;
-  sellerOwner: Address;
+  sellerOwner: string;
   sellerCount?: number;
   projectDetails?: LbeV2ProjectDetails;
 };
 
 export type LbeV2UpdateEventOptions = {
-  owner: Address;
-  treasuryUtxo: UTxO;
+  owner: string;
+  treasuryUtxo: Utxo;
   lbeV2Parameters: LbeV2Types.LbeV2Parameters;
   currentSlot: number;
   projectDetails?: LbeV2ProjectDetails;
 };
 
 export type LbeV2CancelEventOptions = {
-  treasuryUtxo: UTxO;
+  treasuryUtxo: Utxo;
   cancelData:
-    | { reason: LbeV2Types.CancelReason.BY_OWNER; owner: Address }
+    | { reason: LbeV2Types.CancelReason.BY_OWNER; owner: string }
     | { reason: LbeV2Types.CancelReason.NOT_REACH_MINIMUM }
-    | { reason: LbeV2Types.CancelReason.CREATED_POOL; ammPoolUtxo: UTxO };
+    | { reason: LbeV2Types.CancelReason.CREATED_POOL; ammPoolUtxo: Utxo };
   currentSlot: number;
 };
 
@@ -59,63 +59,63 @@ export type LbeV2ManageOrderAction =
 
 export type LbeV2DepositOrWithdrawOptions = {
   currentSlot: number;
-  existingOrderUtxos: UTxO[];
-  treasuryUtxo: UTxO;
-  sellerUtxo: UTxO;
-  owner: Address;
+  existingOrderUtxos: Utxo[];
+  treasuryUtxo: Utxo;
+  sellerUtxo: Utxo;
+  owner: string;
   action: LbeV2ManageOrderAction;
 };
 
 export type CloseEventOptions = {
-  treasuryUtxo: UTxO;
-  headFactoryUtxo: UTxO;
-  tailFactoryUtxo: UTxO;
+  treasuryUtxo: Utxo;
+  headFactoryUtxo: Utxo;
+  tailFactoryUtxo: Utxo;
   currentSlot: number;
-  owner: Address;
+  owner: string;
 };
 
 export type AddSellersOptions = {
-  treasuryUtxo: UTxO;
-  managerUtxo: UTxO;
+  treasuryUtxo: Utxo;
+  managerUtxo: Utxo;
   addSellerCount: number;
-  sellerOwner: Address;
+  sellerOwner: string;
   currentSlot: number;
 };
 
 export type CountingSellersOptions = {
-  treasuryUtxo: UTxO;
-  managerUtxo: UTxO;
-  sellerUtxos: UTxO[];
+  treasuryUtxo: Utxo;
+  managerUtxo: Utxo;
+  sellerUtxos: Utxo[];
   currentSlot: number;
 };
 
 export type CollectManagerOptions = {
-  treasuryUtxo: UTxO;
-  managerUtxo: UTxO;
+  treasuryUtxo: Utxo;
+  managerUtxo: Utxo;
   currentSlot: number;
 };
 
 export type CollectOrdersOptions = {
-  treasuryUtxo: UTxO;
-  orderUtxos: UTxO[];
+  treasuryUtxo: Utxo;
+  orderUtxos: Utxo[];
   currentSlot: number;
 };
 
 export type RedeemOrdersOptions = {
-  treasuryUtxo: UTxO;
-  orderUtxos: UTxO[];
+  treasuryUtxo: Utxo;
+  orderUtxos: Utxo[];
   currentSlot: number;
 };
 
 export type RefundOrdersOptions = {
-  treasuryUtxo: UTxO;
-  orderUtxos: UTxO[];
+  treasuryUtxo: Utxo;
+  orderUtxos: Utxo[];
   currentSlot: number;
 };
 
 export type CreateAmmPoolTxOptions = {
-  treasuryUtxo: UTxO;
-  ammFactoryUtxo: UTxO;
+  treasuryUtxo: Utxo;
+  ammFactoryUtxo: Utxo;
   currentSlot: number;
 };
 

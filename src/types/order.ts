@@ -1,5 +1,5 @@
-import { Address, Constr, Data } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Constr, Data } from "@spacebudz/lucid/mod";
 
 import { AddressPlutusData } from "./address.internal";
 import { Asset } from "./asset";
@@ -47,8 +47,8 @@ export namespace OrderV1 {
   export type Step = SwapExactIn | SwapExactOut | Deposit | Withdraw | ZapIn;
 
   export type Datum = {
-    sender: Address;
-    receiver: Address;
+    sender: string;
+    receiver: string;
     receiverDatumHash?: string;
     step: Step;
     batcherFee: bigint;
@@ -297,8 +297,8 @@ export namespace StableOrder {
     | ZapOutStep;
 
   export type Datum = {
-    sender: Address;
-    receiver: Address;
+    sender: string;
+    receiver: string;
     receiverDatumHash?: string;
     step: Step;
     batcherFee: bigint;
@@ -1150,9 +1150,9 @@ export namespace OrderV2 {
 
   export type Datum = {
     canceller: AuthorizationMethod;
-    refundReceiver: Address;
+    refundReceiver: string;
     refundReceiverDatum: ExtraDatum;
-    successReceiver: Address;
+    successReceiver: string;
     successReceiverDatum: ExtraDatum;
     lpAsset: Asset;
     step: Step;

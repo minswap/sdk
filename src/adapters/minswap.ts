@@ -1,11 +1,6 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import {
-  C,
-  fromHex,
-  SLOT_CONFIG_NETWORK,
-  slotToBeginUnixTime,
-} from "@minswap/lucid-cardano";
 import * as Prisma from "@prisma/client";
+import { Hasher } from "@spacebudz/lucid/mod";
 import JSONBig from "json-bigint";
 
 import { PostgresRepositoryReader } from "../syncer/repository/postgres-repository";
@@ -68,9 +63,10 @@ export class MinswapAdapter extends BlockfrostAdapter {
       alwaysParseAsBig: true,
       useNativeBigInt: true,
     }).parse(prismaPool.value);
-    const datumHash = C.hash_plutus_data(
-      C.PlutusData.from_bytes(fromHex(prismaPool.raw_datum))
-    ).to_hex();
+    const datumHash = Hasher.hashData(prismaPool.raw_datum) // TODO
+    // const datumHash = C.hash_plutus_data(
+    //   C.PlutusData.from_bytes(fromHex(prismaPool.raw_datum))
+    // ).to_hex();
     return new PoolV1.State(address, txIn, value, datumHash);
   }
 
@@ -125,7 +121,6 @@ export class MinswapAdapter extends BlockfrostAdapter {
     if (prismaPools.length === 0) {
       return [];
     }
-
     const network = networkEnvToLucidNetwork(this.networkEnv);
     return prismaPools.map(
       (prismaPool): TxHistory => ({
@@ -133,9 +128,10 @@ export class MinswapAdapter extends BlockfrostAdapter {
         txIndex: prismaPool.created_tx_index,
         blockHeight: Number(prismaPool.block_id),
         time: new Date(
-          slotToBeginUnixTime(
+          slotToBeginUnixTime( // TODO
             Number(prismaPool.slot),
-            SLOT_CONFIG_NETWORK[network]
+            SLOT_CONFIG_NETWORK[network] // TODO
+
           )
         ),
       })

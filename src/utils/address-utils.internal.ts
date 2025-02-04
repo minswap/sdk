@@ -1,6 +1,6 @@
-import { C } from "@minswap/lucid-cardano";
+import { Utils } from "@spacebudz/lucid/mod";
 
-export function getScriptHashFromAddress(addr: string): string | null {
+export function getScriptHashFromAddress(addr: string): string | null { // TODO
   try {
     const cslAddr = C.Address.from_bech32(addr);
     const specificAddr =

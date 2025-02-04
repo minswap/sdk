@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Address, Data, getAddressDetails } from "@minswap/lucid-cardano";
+import { Addresses, Data } from "@spacebudz/lucid/mod";
 
 import { FIXED_BATCHER_FEE } from "../src/batcher-fee-reduction/configs.internal";
 import { Asset } from "../src/types/asset";
@@ -7,16 +7,16 @@ import { FIXED_DEPOSIT_ADA } from "../src/types/constants";
 import { NetworkId } from "../src/types/network";
 import { OrderV1, OrderV2, StableOrder } from "../src/types/order";
 
-let testSender: Address;
+let testSender: string;
 let testSenderPkh: string;
-let testReceiver: Address;
+let testReceiver: string;
 let testReceiverDatumHash: string;
 let testAsset: Asset;
 let networkId: NetworkId;
 beforeAll(() => {
   testSender =
     "addr_test1qpssc0r090a9u0pyvdr9y76sm2xzx04n6d4j0y5hukcx6rxz4dtgkhfdynadkea0qezv99wljdl076xkg2krm96nn8jszmh3w7";
-  const senderPkh = getAddressDetails(testSender).paymentCredential?.hash;
+  const senderPkh = Addresses.inspect(testSender).payment?.hash;
   invariant(senderPkh);
   testSenderPkh = senderPkh;
   testReceiver =

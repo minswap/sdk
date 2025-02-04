@@ -1,5 +1,5 @@
-import { Data, Lucid, UnixTime, UTxO } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Data, Lucid, Utxo } from "@spacebudz/lucid/mod";
 
 import { LbeV2Constant, PoolV2 } from "..";
 import { BlockfrostAdapter } from "../adapters/blockfrost";
@@ -17,11 +17,11 @@ type LbeV2WorkerConstructor = {
 };
 
 export type LbeV2EventData = {
-  treasuryUtxo: UTxO;
-  managerUtxo?: UTxO;
-  sellerUtxos: UTxO[];
-  collectedOrderUtxos: UTxO[];
-  uncollectedOrderUtxos: UTxO[];
+  treasuryUtxo: Utxo;
+  managerUtxo?: Utxo;
+  sellerUtxos: Utxo[];
+  collectedOrderUtxos: Utxo[];
+  uncollectedOrderUtxos: Utxo[];
 };
 
 export class LbeV2Worker {
@@ -163,7 +163,7 @@ export class LbeV2Worker {
 
   async countingSellers(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, managerUtxo, sellerUtxos } = eventData;
     invariant(managerUtxo, "collectSellers: can not find manager");
@@ -171,12 +171,12 @@ export class LbeV2Worker {
       treasuryUtxo: treasuryUtxo,
       managerUtxo: managerUtxo,
       sellerUtxos: sellerUtxos.slice(0, LbeV2Constant.MINIMUM_SELLER_COLLECTED),
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Counting seller transaction submitted successfully: ${txId}`);
@@ -184,19 +184,19 @@ export class LbeV2Worker {
 
   async collectManager(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, managerUtxo } = eventData;
     invariant(managerUtxo, "collectManager: can not find manager");
     const txComplete = await new LbeV2(this.lucid).collectManager({
       treasuryUtxo: treasuryUtxo,
       managerUtxo: managerUtxo,
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Collect manager transaction submitted successfully: ${txId}`);
@@ -204,18 +204,18 @@ export class LbeV2Worker {
 
   async collectOrders(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, uncollectedOrderUtxos } = eventData;
     const txComplete = await new LbeV2(this.lucid).collectOrders({
       treasuryUtxo: treasuryUtxo,
       orderUtxos: uncollectedOrderUtxos,
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Collect orders transaction submitted successfully: ${txId}`);
@@ -223,7 +223,7 @@ export class LbeV2Worker {
 
   async createAmmPoolOrCancelEvent(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo } = eventData;
     const rawTreasuryDatum = eventData.treasuryUtxo.datum;
@@ -237,12 +237,12 @@ export class LbeV2Worker {
       const txComplete = await new LbeV2(this.lucid).cancelEvent({
         treasuryUtxo: treasuryUtxo,
         cancelData: { reason: LbeV2Types.CancelReason.NOT_REACH_MINIMUM },
-        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+        currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
       });
 
       const signedTx = await txComplete
         .signWithPrivateKey(this.privateKey)
-        .complete();
+        .commit();
 
       const txId = await signedTx.submit();
       console.info(
@@ -273,11 +273,11 @@ export class LbeV2Worker {
           reason: LbeV2Types.CancelReason.CREATED_POOL,
           ammPoolUtxo: ammPoolUtxos[0],
         },
-        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+        currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
       });
       const signedTx = await txComplete
         .signWithPrivateKey(this.privateKey)
-        .complete();
+        .commit();
 
       const txId = await signedTx.submit();
       console.info(
@@ -292,12 +292,12 @@ export class LbeV2Worker {
       const txComplete = await new LbeV2(this.lucid).createAmmPool({
         treasuryUtxo: treasuryUtxo,
         ammFactoryUtxo: ammFactoryUtxos[0],
-        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+        currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
       });
 
       const signedTx = await txComplete
         .signWithPrivateKey(this.privateKey)
-        .complete();
+        .commit();
 
       const txId = await signedTx.submit();
       console.info(
@@ -308,19 +308,19 @@ export class LbeV2Worker {
 
   async redeemOrders(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, collectedOrderUtxos } = eventData;
 
     const txComplete = await new LbeV2(this.lucid).redeemOrders({
       treasuryUtxo: treasuryUtxo,
       orderUtxos: collectedOrderUtxos,
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Redeem Orders transaction submitted successfully: ${txId}`);
@@ -328,19 +328,19 @@ export class LbeV2Worker {
 
   async refundOrders(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, collectedOrderUtxos } = eventData;
 
     const txComplete = await new LbeV2(this.lucid).refundOrders({
       treasuryUtxo: treasuryUtxo,
       orderUtxos: collectedOrderUtxos,
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Refund Orders transaction submitted successfully: ${txId}`);
@@ -348,7 +348,7 @@ export class LbeV2Worker {
 
   async handleEvent(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<"skip" | "success"> {
     // FIND PHASE OF BATCHER
     const checkPhaseAndHandle: {
@@ -358,7 +358,7 @@ export class LbeV2Worker {
       ) => boolean;
       handleFn: (
         eventData: LbeV2EventData,
-        currentTime: UnixTime
+        currentTime: number
       ) => Promise<void>;
     }[] = [
       // COUNTING SELLER
@@ -485,7 +485,7 @@ export class LbeV2Worker {
   async runWorker(): Promise<void> {
     const eventsData = await this.getData();
     const currentSlot = await this.blockfrostAdapter.currentSlot();
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
 
     for (const eventData of eventsData) {
       try {

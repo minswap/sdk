@@ -1,4 +1,3 @@
-import { Address } from "@minswap/lucid-cardano";
 import Big from "big.js";
 
 import { Asset } from "../types/asset";
@@ -191,6 +190,6 @@ export interface Adapter {
 
   getLbeV2OrdersByLbeIdAndOwner(
     lbeId: string,
-    owner: Address
+    owner: string
   ): Promise<LbeV2Types.OrderState[]>;
 }

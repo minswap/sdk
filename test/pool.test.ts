@@ -1,5 +1,5 @@
+import { Data } from "@spacebudz/lucid/mod";
 import JSONBig from "json-bigint";
-import { Data } from "@minswap/lucid-cardano";
 
 import { NetworkId } from "../src";
 import { ADA, Asset } from "../src/types/asset";

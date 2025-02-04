@@ -1,13 +1,12 @@
+import invariant from "@minswap/tiny-invariant";
 import {
-  Address,
   Assets,
   Constr,
   Data,
   Lucid,
   TxComplete,
-  UTxO,
-} from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
+} from "@spacebudz/lucid/mod";
+import { Utxo } from "@spacebudz/lucid/mod";
 
 import {
   FIXED_DEPOSIT_ADA,
@@ -77,12 +76,12 @@ export type OrderOptions = (
 
 export type BulkOrdersOption = {
   options: OrderOptions[];
-  sender: Address;
-  availableUtxos: UTxO[];
+  sender: string;
+  availableUtxos: Utxo[];
 };
 
 export type BuildCancelOrderOptions = {
-  orderUtxos: UTxO[];
+  orderUtxos: Utxo[];
 };
 
 export class Stableswap {
@@ -340,7 +339,7 @@ export class Stableswap {
       tx.payToContract(
         config.orderAddress,
         {
-          inline: Data.to(StableOrder.Datum.toPlutusData(datum)),
+          Inline: Data.to(StableOrder.Datum.toPlutusData(datum)),
         },
         orderAssets
       );
@@ -353,7 +352,7 @@ export class Stableswap {
           customReceiver.receiverDatum.datum
         );
         if (utxoForStoringDatum) {
-          tx.payToAddressWithData(
+          tx.payToWithData(
             utxoForStoringDatum.address,
             utxoForStoringDatum.outputData,
             utxoForStoringDatum.assets
@@ -362,7 +361,7 @@ export class Stableswap {
       }
     }
     if (Object.keys(reductionAssets).length !== 0) {
-      tx.payToAddress(sender, reductionAssets);
+      tx.payTo(sender, reductionAssets);
     }
     tx.attachMetadata(674, {
       msg: [
@@ -371,7 +370,7 @@ export class Stableswap {
           : this.getOrderMetadata(orderOptions[0]),
       ],
     });
-    return await tx.complete();
+    return await tx.commit();
   }
 
   async buildCancelOrdersTx(
@@ -422,6 +421,6 @@ export class Stableswap {
         .addSigner(datum.sender);
     }
     tx.attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] });
-    return await tx.complete();
+    return await tx.commit();
   }
 }

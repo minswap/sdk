@@ -1,4 +1,4 @@
-import { Credential, Data } from "@minswap/lucid-cardano";
+import { Credential, Data } from "@spacebudz/lucid/mod";
 
 import {
   AddressPlutusData,

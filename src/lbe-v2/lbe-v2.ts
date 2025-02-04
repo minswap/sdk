@@ -1,14 +1,13 @@
+import invariant from "@minswap/tiny-invariant";
 import {
-  Address,
+  Addresses,
   Assets,
   Constr,
   Data,
   Lucid,
   Tx,
-  TxComplete,
-  UTxO,
-} from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
+  TxComplete, Utxo,
+} from "@spacebudz/lucid/mod";
 import JSONBig from "json-bigint";
 
 import {
@@ -121,13 +120,13 @@ export class LbeV2 {
     mintAssets[config.treasuryAsset] = 1n;
     mintAssets[config.managerAsset] = 1n;
     mintAssets[config.sellerAsset] = BigInt(sellerCount);
-    lucidTx.mintAssets(
+    lucidTx.mint(
       mintAssets,
       Data.to(LbeV2Types.FactoryRedeemer.toPlutusData(redeemer))
     );
 
     // VALID TIME RANGE
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     lucidTx
       .validFrom(currentTime)
       .validTo(
@@ -142,7 +141,7 @@ export class LbeV2 {
       .payToContract(
         config.factoryAddress,
         {
-          inline: Data.to(
+          Inline: Data.to(
             LbeV2Types.FactoryDatum.toPlutusData({
               head: factory.head,
               tail: lbeV2Id,
@@ -156,7 +155,7 @@ export class LbeV2 {
       .payToContract(
         config.factoryAddress,
         {
-          inline: Data.to(
+          Inline: Data.to(
             LbeV2Types.FactoryDatum.toPlutusData({
               head: lbeV2Id,
               tail: factory.tail,
@@ -170,7 +169,7 @@ export class LbeV2 {
       .payToContract(
         config.treasuryAddress,
         {
-          inline: Data.to(LbeV2Types.TreasuryDatum.toPlutusData(treasuryDatum)),
+          Inline: Data.to(LbeV2Types.TreasuryDatum.toPlutusData(treasuryDatum)),
         },
         {
           [config.treasuryAsset]: 1n,
@@ -183,7 +182,7 @@ export class LbeV2 {
       .payToContract(
         config.managerAddress,
         {
-          inline: Data.to(
+          Inline: Data.to(
             LbeV2Types.ManagerDatum.toPlutusData({
               factoryPolicyId: config.factoryHash,
               baseAsset: baseAsset,
@@ -203,7 +202,7 @@ export class LbeV2 {
       lucidTx.payToContract(
         config.sellerAddress,
         {
-          inline: Data.to(
+          Inline: Data.to(
             LbeV2Types.SellerDatum.toPlutusData({
               factoryPolicyId: config.factoryHash,
               owner: owner,
@@ -223,7 +222,7 @@ export class LbeV2 {
 
     // SIGN by OWNER
     const ownerPaymentCredential =
-      this.lucid.utils.getAddressDetails(owner).paymentCredential;
+      Addresses.inspect(owner).payment;
     invariant(
       ownerPaymentCredential && ownerPaymentCredential?.type === "Key",
       "owner payment credential must be public key"
@@ -238,7 +237,7 @@ export class LbeV2 {
       msg: [MetadataMessage.CREATE_EVENT],
       extraData: extraData ?? [],
     });
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async updateEvent(options: LbeV2UpdateEventOptions): Promise<TxComplete> {
@@ -252,7 +251,7 @@ export class LbeV2 {
       projectDetails,
     } = options;
     const config = LbeV2Constant.CONFIG[this.networkId];
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
 
     const datum = treasuryUtxo.datum;
     invariant(datum, "Treasury utxo must have inline datum");
@@ -292,7 +291,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        inline: Data.to(
+        Inline: Data.to(
           LbeV2Types.TreasuryDatum.toPlutusData(newTreasuryDatum)
         ),
       },
@@ -330,13 +329,13 @@ export class LbeV2 {
       extraData: extraData ?? [],
     });
 
-    return await lucidTx.complete();
+    return await lucidTx.commit();
   }
 
   async cancelEvent(options: LbeV2CancelEventOptions): Promise<TxComplete> {
     validateCancelEvent(options, this.lucid, this.networkId);
     const { treasuryUtxo, cancelData, currentSlot } = options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const datum = treasuryUtxo.datum;
@@ -376,7 +375,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        inline: Data.to(
+        Inline: Data.to(
           LbeV2Types.TreasuryDatum.toPlutusData(newTreasuryDatum)
         ),
       },
@@ -411,7 +410,7 @@ export class LbeV2 {
     }
 
     lucidTx.validTo(validTo);
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   calculatePenaltyAmount(options: {
@@ -451,7 +450,7 @@ export class LbeV2 {
     } = options;
     const config = LbeV2Constant.CONFIG[this.networkId];
 
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
 
     const rawTreasuryDatum = treasuryUtxo.datum;
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
@@ -563,7 +562,7 @@ export class LbeV2 {
         factoryRefs.length === 1,
         "cannot find deployed script for LbeV2 Factory"
       );
-      lucidTx.readFrom(factoryRefs).mintAssets(
+      lucidTx.readFrom(factoryRefs).mint(
         { [config.orderAsset]: orderTokenMintAmount },
         Data.to(
           LbeV2Types.FactoryRedeemer.toPlutusData({
@@ -589,7 +588,7 @@ export class LbeV2 {
     }
     lucidTx.payToContract(
       config.sellerAddress,
-      { inline: Data.to(LbeV2Types.SellerDatum.toPlutusData(newSellerDatum)) },
+      { Inline: Data.to(LbeV2Types.SellerDatum.toPlutusData(newSellerDatum)) },
       newSellerAssets
     );
 
@@ -617,7 +616,7 @@ export class LbeV2 {
       console.log(orderAssets);
       lucidTx.payToContract(
         config.orderAddress,
-        { inline: Data.to(LbeV2Types.OrderDatum.toPlutusData(newOrderDatum)) },
+        { Inline: Data.to(LbeV2Types.OrderDatum.toPlutusData(newOrderDatum)) },
         orderAssets
       );
     }
@@ -636,14 +635,14 @@ export class LbeV2 {
       });
     }
 
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async closeEventTx(options: CloseEventOptions): Promise<TxComplete> {
     validateCloseEvent(options, this.networkId);
     const { treasuryUtxo, headFactoryUtxo, tailFactoryUtxo, currentSlot } =
       options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawTreasuryDatum = treasuryUtxo.datum;
@@ -710,7 +709,7 @@ export class LbeV2 {
       );
 
     // MINT
-    lucidTx.mintAssets(
+    lucidTx.mint(
       {
         [config.factoryAsset]: -1n,
         [config.treasuryAsset]: -1n,
@@ -728,7 +727,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.factoryAddress,
       {
-        inline: Data.to(
+        Inline: Data.to(
           LbeV2Types.FactoryDatum.toPlutusData({
             head: headFactoryDatum.head,
             tail: tailFactoryDatum.tail,
@@ -751,7 +750,7 @@ export class LbeV2 {
       msg: [MetadataMessage.CLOSE_EVENT],
     });
 
-    return await lucidTx.complete();
+    return await lucidTx.commit();
   }
 
   async addSellers(options: AddSellersOptions): Promise<TxComplete> {
@@ -763,7 +762,7 @@ export class LbeV2 {
       sellerOwner,
       currentSlot,
     } = options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawTreasuryDatum = treasuryUtxo.datum;
@@ -813,7 +812,7 @@ export class LbeV2 {
     );
 
     // MINT
-    lucidTx.mintAssets(
+    lucidTx.mint(
       { [config.sellerAsset]: BigInt(addSellerCount) },
       Data.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
@@ -830,7 +829,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.managerAddress,
       {
-        inline: Data.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
+        Inline: Data.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
       },
       { ...managerUtxo.assets }
     );
@@ -838,7 +837,7 @@ export class LbeV2 {
       lucidTx.payToContract(
         config.sellerAddress,
         {
-          inline: Data.to(
+          Inline: Data.to(
             LbeV2Types.SellerDatum.toPlutusData({
               factoryPolicyId: config.factoryHash,
               owner: sellerOwner,
@@ -871,13 +870,13 @@ export class LbeV2 {
       msg: [MetadataMessage.LBE_V2_ADD_SELLERS],
     });
 
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async countingSellers(options: CountingSellersOptions): Promise<TxComplete> {
     validateCountingSeller(options, this.lucid, this.networkId);
     const { treasuryUtxo, managerUtxo, sellerUtxos, currentSlot } = options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawManagerDatum = managerUtxo.datum;
@@ -948,7 +947,7 @@ export class LbeV2 {
     );
 
     // MINT
-    lucidTx.mintAssets(
+    lucidTx.mint(
       { [config.sellerAsset]: -BigInt(sellerUtxos.length) },
       Data.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
@@ -974,14 +973,14 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.managerAddress,
       {
-        inline: Data.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
+        Inline: Data.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
       },
       { ...managerUtxo.assets }
     );
     for (let i = 0; i < sellerDatums.length; ++i) {
       const sellerDatum = sellerDatums[i];
       const sellerUtxo = sortedSellerUtxos[i];
-      lucidTx.payToAddress(sellerDatum.owner, {
+      lucidTx.payTo(sellerDatum.owner, {
         lovelace:
           sellerUtxo.assets["lovelace"] -
           LbeV2Constant.COLLECT_SELLER_COMMISSION,
@@ -996,13 +995,13 @@ export class LbeV2 {
       msg: [MetadataMessage.LBE_V2_COUNTING_SELLERS],
     });
 
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async collectManager(options: CollectManagerOptions): Promise<TxComplete> {
     validateCollectManager(options, this.lucid, this.networkId);
     const { treasuryUtxo, managerUtxo, currentSlot } = options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawManagerDatum = managerUtxo.datum;
@@ -1067,7 +1066,7 @@ export class LbeV2 {
     );
 
     // MINT
-    lucidTx.mintAssets(
+    lucidTx.mint(
       { [config.managerAsset]: -1n },
       Data.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
@@ -1080,7 +1079,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       treasuryUtxo.address,
       {
-        inline: Data.to(
+        Inline: Data.to(
           LbeV2Types.TreasuryDatum.toPlutusData({
             ...treasuryDatum,
             isManagerCollected: true,
@@ -1100,13 +1099,13 @@ export class LbeV2 {
       msg: [MetadataMessage.LBE_V2_COLLECT_MANAGER],
     });
 
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async collectOrders(options: CollectOrdersOptions): Promise<TxComplete> {
     validateCollectOrders(options, this.networkId);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawTreasuryDatum = treasuryUtxo.datum;
@@ -1191,7 +1190,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        inline: Data.to(
+        Inline: Data.to(
           LbeV2Types.TreasuryDatum.toPlutusData({
             ...treasuryDatum,
             collectedFund: treasuryDatum.collectedFund + deltaCollectedFund,
@@ -1206,7 +1205,7 @@ export class LbeV2 {
       lucidTx.payToContract(
         orderUtxo.address,
         {
-          inline: Data.to(
+          Inline: Data.to(
             LbeV2Types.OrderDatum.toPlutusData({
               ...orderDatum,
               isCollected: true,
@@ -1240,7 +1239,7 @@ export class LbeV2 {
       msg: [MetadataMessage.LBE_V2_COLLECT_ORDER],
     });
 
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   calculateRedeemAmount(params: CalculationRedeemAmountParams): {
@@ -1274,7 +1273,7 @@ export class LbeV2 {
   async redeemOrders(options: RedeemOrdersOptions): Promise<TxComplete> {
     validateRedeemOrders(options, this.networkId);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawTreasuryDatum = treasuryUtxo.datum;
@@ -1304,7 +1303,7 @@ export class LbeV2 {
         treasuryDatum.baseAsset
       );
 
-    const orderOutputs: { address: Address; assets: Assets }[] = [];
+    const orderOutputs: { address: string; assets: Assets }[] = [];
     let totalFund = 0n;
     let totalOrderLiquidity = 0n;
     let totalOrderBonusRaise = 0n;
@@ -1406,7 +1405,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        inline: Data.to(
+        Inline: Data.to(
           LbeV2Types.TreasuryDatum.toPlutusData({
             ...treasuryDatum,
             collectedFund: treasuryDatum.collectedFund - totalFund,
@@ -1416,11 +1415,11 @@ export class LbeV2 {
       newTreasuryAssets
     );
     for (const { assets, address } of orderOutputs) {
-      lucidTx.payToAddress(address, assets);
+      lucidTx.payTo(address, assets);
     }
 
     // MINT
-    lucidTx.mintAssets(
+    lucidTx.mint(
       { [config.orderAsset]: -BigInt(orderDatums.length) },
       Data.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
@@ -1448,13 +1447,13 @@ export class LbeV2 {
       msg: [MetadataMessage.LBE_V2_REDEEM_LP],
     });
 
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async refundOrders(options: RefundOrdersOptions): Promise<TxComplete> {
     validateRefundOrders(options, this.networkId);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawTreasuryDatum = treasuryUtxo.datum;
@@ -1476,7 +1475,7 @@ export class LbeV2 {
 
     const raiseAssetUnit = Asset.toString(treasuryDatum.raiseAsset);
 
-    const orderOutputs: { address: Address; assets: Assets }[] = [];
+    const orderOutputs: { address: string; assets: Assets }[] = [];
     let refundAmount = 0n;
     let totalOrderAmount = 0n;
     let totalOrderPenalty = 0n;
@@ -1557,7 +1556,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        inline: Data.to(
+        Inline: Data.to(
           LbeV2Types.TreasuryDatum.toPlutusData({
             ...treasuryDatum,
             collectedFund: treasuryDatum.collectedFund - refundAmount,
@@ -1569,11 +1568,11 @@ export class LbeV2 {
       newTreasuryAssets
     );
     for (const { assets, address } of orderOutputs) {
-      lucidTx.payToAddress(address, assets);
+      lucidTx.payTo(address, assets);
     }
 
     // MINT
-    lucidTx.mintAssets(
+    lucidTx.mint(
       { [config.orderAsset]: -BigInt(orderDatums.length) },
       Data.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
@@ -1601,13 +1600,13 @@ export class LbeV2 {
       msg: [MetadataMessage.LBE_V2_REFUND],
     });
 
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async createAmmPool(options: CreateAmmPoolTxOptions): Promise<TxComplete> {
     validateCreateAmmPool(options, this.networkId);
     const { treasuryUtxo, ammFactoryUtxo, currentSlot } = options;
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const config = LbeV2Constant.CONFIG[this.networkId];
 
     const rawTreasuryDatum = treasuryUtxo.datum;
@@ -1699,7 +1698,7 @@ export class LbeV2 {
     if (receiverLP) {
       receiveAssets[Asset.toString(lpAsset)] = receiverLP;
     }
-    lucidTx.payToAddress(receiver, receiveAssets);
+    lucidTx.payTo(receiver, receiveAssets);
 
     const newTreasuryAssets: Assets = {
       ...treasuryUtxo.assets,
@@ -1716,7 +1715,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        inline: Data.to(
+        Inline: Data.to(
           LbeV2Types.TreasuryDatum.toPlutusData(treasuryOutDatum)
         ),
       },
@@ -1724,9 +1723,9 @@ export class LbeV2 {
     );
 
     // CREATE POOL
-    const poolBatchingStakeCredential = this.lucid.utils.getAddressDetails(
+    const poolBatchingStakeCredential = Addresses.inspect(
       DexV2Constant.CONFIG[this.networkId].poolBatchingAddress
-    )?.stakeCredential;
+    )?.delegation;
     invariant(
       poolBatchingStakeCredential,
       `cannot parse Liquidity Pool batching address`
@@ -1755,13 +1754,13 @@ export class LbeV2 {
       msg: [MetadataMessage.LBE_V2_CREATE_AMM_POOL],
     });
 
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   private async buildCreateAMMPool(
     lucidTx: Tx,
     poolDatum: PoolV2.Datum,
-    factoryUtxo: UTxO,
+    factoryUtxo: Utxo,
     lpAsset: Asset
   ): Promise<void> {
     const dexV2Config = DexV2Constant.CONFIG[this.networkId];
@@ -1834,14 +1833,14 @@ export class LbeV2 {
       .payToContract(
         dexV2Config.poolCreationAddress,
         {
-          inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
+          Inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
         },
         poolAssets
       )
       .payToContract(
         dexV2Config.factoryAddress,
         {
-          inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
+          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
         },
         {
           [dexV2Config.factoryAsset]: 1n,
@@ -1850,7 +1849,7 @@ export class LbeV2 {
       .payToContract(
         dexV2Config.factoryAddress,
         {
-          inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
+          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
         },
         {
           [dexV2Config.factoryAsset]: 1n,
@@ -1858,7 +1857,7 @@ export class LbeV2 {
       );
 
     // MINT
-    lucidTx.mintAssets(
+    lucidTx.mint(
       {
         [Asset.toString(lpAsset)]: PoolV2.MAX_LIQUIDITY,
         [dexV2Config.factoryAsset]: 1n,

@@ -1,5 +1,5 @@
-import { UTxO } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Utxo } from "@spacebudz/lucid/mod";
 import Big from "big.js";
 import { zipWith } from "remeda";
 
@@ -1084,7 +1084,7 @@ function gcdFunction(a: bigint, b: bigint): bigint {
   return a;
 }
 
-export function compareUtxo(s1: UTxO, s2: UTxO): number {
+export function compareUtxo(s1: Utxo, s2: Utxo): number {
   if (s1.txHash === s2.txHash) {
     return s1.outputIndex - s2.outputIndex;
   }

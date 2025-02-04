@@ -1,12 +1,10 @@
+import invariant from "@minswap/tiny-invariant";
 import {
-  Address,
-  C,
+  Addresses,
   Constr,
   Credential,
   Data,
-  getAddressDetails,
-} from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
+} from "@spacebudz/lucid/mod";
 
 import { NetworkId } from "./network";
 
@@ -38,7 +36,7 @@ export namespace LucidCredential {
     }
   }
 
-  export function toCSLStakeCredential(
+  export function toCSLStakeCredential( // TODO
     credential: Credential
   ): C.StakeCredential {
     switch (credential.type) {
@@ -57,30 +55,30 @@ export namespace LucidCredential {
 }
 
 export namespace AddressPlutusData {
-  export function toPlutusData(address: Address): Constr<Data> {
-    const addressDetails = getAddressDetails(address);
+  export function toPlutusData(address: string): Constr<Data> {
+    const addressDetails = Addresses.inspect(address);
     if (addressDetails.type === "Base") {
       invariant(
-        addressDetails.paymentCredential && addressDetails.stakeCredential,
+        addressDetails.payment && addressDetails.delegation,
         "baseAddress must have both paymentCredential and stakeCredential"
       );
 
       return new Constr(0, [
-        LucidCredential.toPlutusData(addressDetails.paymentCredential),
+        LucidCredential.toPlutusData(addressDetails.payment),
         new Constr(0, [
           new Constr(0, [
-            LucidCredential.toPlutusData(addressDetails.stakeCredential),
+            LucidCredential.toPlutusData(addressDetails.delegation),
           ]),
         ]),
       ]);
     }
     if (addressDetails.type === "Enterprise") {
       invariant(
-        addressDetails.paymentCredential,
+        addressDetails.payment,
         "EnterpriseAddress must has paymentCredential"
       );
       return new Constr(0, [
-        LucidCredential.toPlutusData(addressDetails.paymentCredential),
+        LucidCredential.toPlutusData(addressDetails.payment),
         new Constr(1, []),
       ]);
     }
@@ -90,7 +88,7 @@ export namespace AddressPlutusData {
   export function fromPlutusData(
     networkId: NetworkId,
     data: Constr<Data>
-  ): Address {
+  ): string {
     switch (data.index) {
       case 0: {
         const paymentCredential = LucidCredential.fromPlutusData(
@@ -111,7 +109,7 @@ export namespace AddressPlutusData {
                 );
                 const cslStakeCredential =
                   LucidCredential.toCSLStakeCredential(stakeCredential);
-                const cslAddress = C.BaseAddress.new(
+                const cslAddress = C.BaseAddress.new( // TODO
                   networkId,
                   cslPaymentCredential,
                   cslStakeCredential
@@ -130,7 +128,7 @@ export namespace AddressPlutusData {
           }
           case 1: {
             // Enterprise Address
-            const cslAddress = C.EnterpriseAddress.new(
+            const cslAddress = C.EnterpriseAddress.new( // TODO
               networkId,
               cslPaymentCredential
             ).to_address();

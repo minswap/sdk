@@ -1,4 +1,4 @@
-import { Lucid } from "@minswap/lucid-cardano";
+import { Lucid } from "@spacebudz/lucid/mod";
 
 import { DexV2, DexV2Constant, OrderV2 } from ".";
 import { BlockfrostAdapter } from "./adapters/blockfrost";
@@ -37,7 +37,7 @@ export class ExpiredOrderMonitor {
     console.info("starting expired order canceller");
     const { orders: allOrders } = await this.blockfrostAdapter.getAllV2Orders();
     const currentSlot = await this.blockfrostAdapter.currentSlot();
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const mapDatum: Record<string, string> = {};
     const orders: OrderV2.State[] = [];
     for (const order of allOrders) {
@@ -106,7 +106,7 @@ export class ExpiredOrderMonitor {
       });
       const signedTx = await txComplete
         .signWithPrivateKey(this.privateKey)
-        .complete();
+        .commit();
 
       const txId = await signedTx.submit();
       console.info(`Transaction submitted successfully: ${txId}`);

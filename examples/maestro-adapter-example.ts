@@ -1,10 +1,11 @@
-import { Address, Lucid, Network, TxComplete } from "@minswap/lucid-cardano";
-import { Asset, NetworkId, PoolV2 } from "../src";
-import { getBackendMaestroLucidInstance } from "../src/utils/lucid";
-import { LbeV2 } from "../src/lbe-v2/lbe-v2";
-import { MaestroAdapter } from "../src/adapters/maestro";
-import { MaestroClient, Configuration } from "@maestro-org/typescript-sdk";
+import { Configuration,MaestroClient } from "@maestro-org/typescript-sdk";
 import invariant from "@minswap/tiny-invariant";
+import { Lucid, Network, TxComplete } from "@spacebudz/lucid/mod";
+
+import { Asset, NetworkId, PoolV2 } from "../src";
+import { MaestroAdapter } from "../src/adapters/maestro";
+import { LbeV2 } from "../src/lbe-v2/lbe-v2";
+import { getBackendMaestroLucidInstance } from "../src/utils/lucid";
 
 async function main(): Promise<void> {
   const cardanoNetwork: Network = "Preprod";
@@ -35,7 +36,7 @@ async function main(): Promise<void> {
   );
   const signedTx = await txComplete
     .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
-    .complete();
+    .commit();
 
   const txId = await signedTx.submit();
   console.info(`Transaction submitted successfully: ${txId}`);
@@ -44,7 +45,7 @@ async function main(): Promise<void> {
 // Example Tx: 7af5ea80b6a4a587e2c6cfce383367829f0cb68c90b65656c8198a72afc3f419
 async function _lbeV2DepositOrderExample(
   lucid: Lucid,
-  address: Address,
+  address: string,
   maestroAdapter: MaestroAdapter
 ): Promise<TxComplete> {
   const baseAsset = Asset.fromString(

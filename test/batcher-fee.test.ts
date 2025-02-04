@@ -1,11 +1,12 @@
 import invariant from "@minswap/tiny-invariant";
+import { Assets } from "@spacebudz/lucid/mod";
+
 import { NetworkEnvironment } from "../src";
 import { BatcherFee } from "../src/batcher-fee-reduction/calculate";
 import {
   BatcherFeeConfig,
   DexVersion,
 } from "../src/batcher-fee-reduction/configs.internal";
-import { Assets } from "@minswap/lucid-cardano";
 
 function compareAssets(a1: Assets, a2: Assets): boolean {
   if (Object.keys(a1).length !== Object.keys(a2).length) {

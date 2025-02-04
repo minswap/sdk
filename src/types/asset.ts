@@ -1,5 +1,5 @@
-import { Constr, Data } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Constr, Data } from "@spacebudz/lucid/mod";
 
 import { StringUtils } from "./string";
 

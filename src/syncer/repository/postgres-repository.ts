@@ -1,7 +1,7 @@
 import * as OgmiosSchema from "@cardano-ogmios/schema";
-import { Data } from "@minswap/lucid-cardano";
 import * as Prisma from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+import { Data } from "@spacebudz/lucid/mod";
 import JSONBig from "json-bigint"
 
 import { Asset } from "../../types/asset";

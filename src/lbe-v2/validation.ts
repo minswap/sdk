@@ -1,5 +1,5 @@
-import { Data, Lucid } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Addresses, Data, Lucid } from "@spacebudz/lucid/mod";
 
 import {
   Asset,
@@ -34,7 +34,7 @@ export function validateCreateEvent(
   networkId: NetworkId
 ): void {
   const { lbeV2Parameters, currentSlot, factoryUtxo, projectDetails } = options;
-  const currentTime = lucid.utils.slotToUnixTime(currentSlot);
+  const currentTime = lucid.utils.slotsToUnixTime(currentSlot);
   const { baseAsset, raiseAsset } = lbeV2Parameters;
   const datum = factoryUtxo.datum;
   invariant(datum, "Factory utxo must have inline datum");
@@ -158,7 +158,7 @@ export function validateUpdateEvent(
   const { owner, treasuryUtxo, lbeV2Parameters, currentSlot, projectDetails } =
     options;
   const config = LbeV2Constant.CONFIG[networkId];
-  const currentTime = lucid.utils.slotToUnixTime(currentSlot);
+  const currentTime = lucid.utils.slotsToUnixTime(currentSlot);
   const datum = treasuryUtxo.datum;
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -202,7 +202,7 @@ export function validateCancelEvent(
   const { treasuryUtxo, cancelData, currentSlot } = options;
   const config = LbeV2Constant.CONFIG[networkId];
 
-  const currentTime = lucid.utils.slotToUnixTime(currentSlot);
+  const currentTime = lucid.utils.slotsToUnixTime(currentSlot);
   const datum = treasuryUtxo.datum;
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -283,7 +283,7 @@ export function validateDepositOrWithdrawOrder(
     currentSlot,
     action,
   } = options;
-  const currentTime = lucid.utils.slotToUnixTime(currentSlot);
+  const currentTime = lucid.utils.slotsToUnixTime(currentSlot);
   const config = LbeV2Constant.CONFIG[networkId];
 
   const rawTreasuryDatum = treasuryUtxo.datum;
@@ -340,9 +340,9 @@ export function validateDepositOrWithdrawOrder(
       "treasury, order must share the same lbe id"
     );
 
-    const ownerPaymentCredential = lucid.utils.getAddressDetails(
+    const ownerPaymentCredential = Addresses.inspect(
       orderDatum.owner
-    ).paymentCredential;
+    ).payment;
     invariant(
       ownerPaymentCredential && ownerPaymentCredential.type === "Key",
       "Order owner must be pubkey hash"
@@ -434,7 +434,7 @@ export function validateAddSeller(
   networkId: NetworkId
 ): void {
   const { addSellerCount, treasuryUtxo, managerUtxo, currentSlot } = options;
-  const currentTime = lucid.utils.slotToUnixTime(currentSlot);
+  const currentTime = lucid.utils.slotsToUnixTime(currentSlot);
   const config = LbeV2Constant.CONFIG[networkId];
 
   const rawTreasuryDatum = treasuryUtxo.datum;
@@ -482,7 +482,7 @@ export function validateCountingSeller(
   networkId: NetworkId
 ): void {
   const { treasuryUtxo, managerUtxo, sellerUtxos, currentSlot } = options;
-  const currentTime = lucid.utils.slotToUnixTime(currentSlot);
+  const currentTime = lucid.utils.slotsToUnixTime(currentSlot);
   const config = LbeV2Constant.CONFIG[networkId];
 
   const rawTreasuryDatum = treasuryUtxo.datum;
@@ -560,7 +560,7 @@ export function validateCollectManager(
   networkId: NetworkId
 ): void {
   const { treasuryUtxo, managerUtxo, currentSlot } = options;
-  const currentTime = lucid.utils.slotToUnixTime(currentSlot);
+  const currentTime = lucid.utils.slotsToUnixTime(currentSlot);
   const config = LbeV2Constant.CONFIG[networkId];
 
   const rawTreasuryDatum = treasuryUtxo.datum;

@@ -1,14 +1,12 @@
+import invariant from "@minswap/tiny-invariant";
 import {
-  Address,
   Assets,
   Constr,
   Data,
   Lucid,
-  SpendingValidator,
   TxComplete,
-  UTxO,
-} from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
+} from "@spacebudz/lucid/mod";
+import { Utxo } from "@spacebudz/lucid/mod";
 
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
@@ -24,7 +22,7 @@ import { lucidToNetworkEnv } from "./utils/network.internal";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
 export type V1AndStableswapCustomReceiver = {
-  receiver: Address;
+  receiver: string;
   receiverDatum?: {
     hash: string;
     datum: string;
@@ -37,8 +35,8 @@ export type V1AndStableswapCustomReceiver = {
  * @availableUtxos Available UTxOs can be used in transaction
  */
 type CommonOptions = {
-  sender: Address;
-  availableUtxos: UTxO[];
+  sender: string;
+  availableUtxos: Utxo[];
 };
 
 /**
@@ -47,8 +45,8 @@ type CommonOptions = {
  * @sender The owner of this order. The @sender must be matched with data in Order's Datum
  */
 export type BuildCancelOrderOptions = {
-  orderUtxo: UTxO;
-  sender: Address;
+  orderUtxo: Utxo;
+  sender: string;
 };
 
 /**
@@ -73,7 +71,7 @@ export type BuildDepositTxOptions = CommonOptions & {
  * @minimumLPReceived Minimum Received Amount you can accept after order is executed
  */
 export type BuildZapInTxOptions = CommonOptions & {
-  sender: Address;
+  sender: string;
   assetIn: Asset;
   amountIn: bigint;
   assetOut: Asset;
@@ -188,7 +186,7 @@ export class Dex {
       )
       .addSigner(sender);
     if (Object.keys(reductionAssets).length !== 0) {
-      tx.payToAddress(sender, reductionAssets);
+      tx.payTo(sender, reductionAssets);
     }
     if (isLimitOrder) {
       tx.attachMetadata(674, {
@@ -199,20 +197,19 @@ export class Dex {
     }
     if (customReceiver && customReceiver.receiverDatum) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         customReceiver.receiver,
         customReceiver.receiverDatum.datum
       );
       if (utxoForStoringDatum) {
-        tx.payToAddressWithData(
+        tx.payToWithData(
           utxoForStoringDatum.address,
           utxoForStoringDatum.outputData,
           utxoForStoringDatum.assets
         );
       }
     }
-    return await tx.complete();
+    return await tx.commit();
   }
 
   async buildSwapExactOutTx(
@@ -264,19 +261,18 @@ export class Dex {
         Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
+      .payTo(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.SWAP_EXACT_OUT_ORDER] });
 
     if (customReceiver && customReceiver.receiverDatum) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         customReceiver.receiver,
         customReceiver.receiverDatum.datum
       );
       if (utxoForStoringDatum) {
-        tx.payToAddressWithData(
+        tx.payToWithData(
           utxoForStoringDatum.address,
           utxoForStoringDatum.outputData,
           utxoForStoringDatum.assets
@@ -284,7 +280,7 @@ export class Dex {
       }
     }
 
-    return await tx.complete();
+    return await tx.commit();
   }
 
   async buildWithdrawTx(options: BuildWithdrawTxOptions): Promise<TxComplete> {
@@ -333,10 +329,10 @@ export class Dex {
         Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
+      .payTo(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.WITHDRAW_ORDER] })
-      .complete();
+      .commit();
   }
 
   async buildZapInTx(options: BuildZapInTxOptions): Promise<TxComplete> {
@@ -383,10 +379,10 @@ export class Dex {
         Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
+      .payTo(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.ZAP_IN_ORDER] })
-      .complete();
+      .commit();
   }
 
   async buildDepositTx(options: BuildDepositTxOptions): Promise<TxComplete> {
@@ -435,10 +431,10 @@ export class Dex {
         Data.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payToAddress(sender, reductionAssets)
+      .payTo(sender, reductionAssets)
       .addSigner(sender)
       .attachMetadata(674, { msg: [MetadataMessage.DEPOSIT_ORDER] })
-      .complete();
+      .commit();
   }
 
   async buildCancelOrder(
@@ -459,8 +455,8 @@ export class Dex {
       .newTx()
       .collectFrom([orderUtxo], redeemer)
       .addSigner(orderDatum.sender)
-      .attachSpendingValidator(<SpendingValidator>DexV1Constant.ORDER_SCRIPT)
+      .attachScript(DexV1Constant.ORDER_SCRIPT)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
-      .complete();
+      .commit();
   }
 }
