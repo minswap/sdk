@@ -4,7 +4,7 @@ import {
   Constr,
   Credential,
   Data,
-} from "@spacebudz/lucid/mod";
+} from "@spacebudz/lucid";
 
 import { NetworkId } from "./network";
 

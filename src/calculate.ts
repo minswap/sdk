@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Utxo } from "@spacebudz/lucid/mod";
+import { Utxo } from "@spacebudz/lucid";
 import Big from "big.js";
 import { zipWith } from "remeda";
 

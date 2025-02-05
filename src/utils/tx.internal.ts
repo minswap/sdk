@@ -1,4 +1,4 @@
-import { Addresses, Assets, OutputData } from "@spacebudz/lucid/mod";
+import { Addresses, Assets, OutputData } from "@spacebudz/lucid";
 
 /**
  * Return a Output that pay back to @sender and include @datum

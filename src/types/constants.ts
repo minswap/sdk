@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { OutRef, Script } from "@spacebudz/lucid/mod";
+import { OutRef, Script } from "@spacebudz/lucid";
 
 import { Asset } from "./asset";
 import { NetworkEnvironment, NetworkId } from "./network";

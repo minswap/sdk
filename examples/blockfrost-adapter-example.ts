@@ -8,7 +8,7 @@ import {
   Network,
   OutRef,
   TxComplete, Utxo,
-} from "@spacebudz/lucid/mod";
+} from "@spacebudz/lucid";
 import BigNumber from "bignumber.js";
 
 import {

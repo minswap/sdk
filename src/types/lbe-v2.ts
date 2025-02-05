@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Data } from "@spacebudz/lucid/mod";
+import { Constr, Data } from "@spacebudz/lucid";
 
 import { Asset, LbeV2Constant, NetworkId, PoolV2 } from "..";
 import { AddressPlutusData } from "./address.internal";

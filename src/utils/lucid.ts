@@ -4,7 +4,7 @@ import {
   Maestro,
   MaestroSupportedNetworks,
   Network,
-} from "@spacebudz/lucid/mod";
+} from "@spacebudz/lucid";
 
 /**
  * Initialize Lucid Instance for Backend Environment

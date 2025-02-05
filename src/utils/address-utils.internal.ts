@@ -1,4 +1,4 @@
-import { Addresses } from "@spacebudz/lucid/mod";
+import { Addresses } from "@spacebudz/lucid";
 
 export function getScriptHashFromAddress(addr: string): string | null { // TODO
   try {

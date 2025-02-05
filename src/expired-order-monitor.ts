@@ -1,4 +1,4 @@
-import { Lucid } from "@spacebudz/lucid/mod";
+import { Lucid } from "@spacebudz/lucid";
 
 import { DexV2, DexV2Constant, OrderV2 } from ".";
 import { BlockfrostAdapter } from "./adapters/blockfrost";

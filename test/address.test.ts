@@ -1,4 +1,4 @@
-import { Credential, Data } from "@spacebudz/lucid/mod";
+import { Credential, Data } from "@spacebudz/lucid";
 
 import {
   AddressPlutusData,

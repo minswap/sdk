@@ -10,19 +10,19 @@ const main = async () => {
   });
   const adapter = new BlockfrostAdapter(NetworkId.TESTNET, blockFrostApi);
 
-  // const minAdaPool = await adapter.getV2PoolByPair(
-  //   Asset.fromString("lovelace"),
-  //   Asset.fromString(
-  //     "29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c64d494e"
-  //   )
-  // );
+  const minAdaPool = await adapter.getV2PoolByPair(
+    Asset.fromString("lovelace"),
+    Asset.fromString(
+      "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e"
+    )
+  );
 
-  // if (minAdaPool) {
-  //   const [a, b] = await adapter.getV2PoolPrice({ pool: minAdaPool });
-  //   console.log(
-  //     `ADA/MIN price: ${a.toString()}; MIN/ADA price: ${b.toString()}`
-  //   );
-  // }
+  if (minAdaPool) {
+    const [a, b] = await adapter.getV2PoolPrice({ pool: minAdaPool });
+    console.log(
+      `ADA/MIN price: ${a.toString()}; MIN/ADA price: ${b.toString()}`
+    );
+  }
 };
 
 main();

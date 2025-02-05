@@ -5,8 +5,8 @@ import {
   Data,
   Lucid,
   TxComplete,
-} from "@spacebudz/lucid/mod";
-import { Utxo } from "@spacebudz/lucid/mod";
+} from "@spacebudz/lucid";
+import { Utxo } from "@spacebudz/lucid";
 
 import {
   FIXED_DEPOSIT_ADA,

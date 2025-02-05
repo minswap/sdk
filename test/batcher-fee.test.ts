@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Assets } from "@spacebudz/lucid/mod";
+import { Assets } from "@spacebudz/lucid";
 
 import { NetworkEnvironment } from "../src";
 import { BatcherFee } from "../src/batcher-fee-reduction/calculate";

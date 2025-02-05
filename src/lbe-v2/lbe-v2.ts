@@ -7,7 +7,7 @@ import {
   Lucid,
   Tx,
   TxComplete, Utxo,
-} from "@spacebudz/lucid/mod";
+} from "@spacebudz/lucid";
 import JSONBig from "json-bigint";
 
 import {

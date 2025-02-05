@@ -1,4 +1,4 @@
-import { Constr, Data } from "@spacebudz/lucid/mod";
+import { Constr, Data } from "@spacebudz/lucid";
 
 import { Asset } from "./asset";
 import { DexV2Constant } from "./constants";

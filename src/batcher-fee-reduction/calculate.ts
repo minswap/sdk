@@ -1,4 +1,4 @@
-import { Assets, Utxos } from "@spacebudz/lucid/mod";
+import { Assets, Utxos } from "@spacebudz/lucid";
 import BigNumber from "bignumber.js";
 
 import { NetworkEnvironment } from "../types/network";

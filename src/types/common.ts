@@ -1,4 +1,4 @@
-import { Constr, Data } from "@spacebudz/lucid/mod";
+import { Constr, Data } from "@spacebudz/lucid";
 
 export namespace Options {
   export function toPlutusData<T>(

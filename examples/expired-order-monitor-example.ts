@@ -1,5 +1,5 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { Network } from "@spacebudz/lucid/mod";
+import { Network } from "@spacebudz/lucid";
 
 import { NetworkId } from "../src";
 import { BlockfrostAdapter } from "../src/adapters/blockfrost";

@@ -1,6 +1,6 @@
 import { Configuration,MaestroClient } from "@maestro-org/typescript-sdk";
 import invariant from "@minswap/tiny-invariant";
-import { Lucid, Network, TxComplete } from "@spacebudz/lucid/mod";
+import { Lucid, Network, TxComplete } from "@spacebudz/lucid";
 
 import { Asset, NetworkId, PoolV2 } from "../src";
 import { MaestroAdapter } from "../src/adapters/maestro";

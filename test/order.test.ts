@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Addresses, Data } from "@spacebudz/lucid/mod";
+import { Addresses, Data } from "@spacebudz/lucid";
 
 import { FIXED_BATCHER_FEE } from "../src/batcher-fee-reduction/configs.internal";
 import { Asset } from "../src/types/asset";

@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Data } from "@spacebudz/lucid/mod";
+import { Constr, Data } from "@spacebudz/lucid";
 
 import { StringUtils } from "./string";
 

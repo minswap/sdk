@@ -1,4 +1,4 @@
-import { Network } from "@spacebudz/lucid/mod";
+import { Network } from "@spacebudz/lucid";
 
 import { NetworkEnvironment, SlotConfig } from "../types/network";
 

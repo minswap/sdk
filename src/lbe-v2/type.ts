@@ -1,4 +1,4 @@
-import { Utxo } from "@spacebudz/lucid/mod";
+import { Utxo } from "@spacebudz/lucid";
 
 import { LbeV2Types } from "../types/lbe-v2";
 

@@ -11,8 +11,8 @@ import {
   Tx,
   TxComplete,
   Utxo,
-} from "@spacebudz/lucid/mod";
-import { stakeCredentialOf } from "@spacebudz/lucid/src/utils/utils";
+  stakeCredentialOf,
+} from "@spacebudz/lucid";
 
 import { BlockfrostAdapter } from "./adapters/blockfrost";
 import { BatcherFee } from "./batcher-fee-reduction/calculate";

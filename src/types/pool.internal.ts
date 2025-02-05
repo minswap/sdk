@@ -1,4 +1,4 @@
-import { Constr, Data } from "@spacebudz/lucid/mod";
+import { Constr, Data } from "@spacebudz/lucid";
 import invariant from "@minswap/tiny-invariant";
 
 import { getScriptHashFromAddress } from "../utils/address-utils.internal";

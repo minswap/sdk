@@ -1,4 +1,4 @@
-import { Data } from "@spacebudz/lucid/mod";
+import { Data } from "@spacebudz/lucid";
 import JSONBig from "json-bigint";
 
 import { NetworkId } from "../src";

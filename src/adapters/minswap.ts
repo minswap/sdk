@@ -1,6 +1,6 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import * as Prisma from "@prisma/client";
-import { Hasher } from "@spacebudz/lucid/mod";
+import { Hasher } from "@spacebudz/lucid";
 import JSONBig from "json-bigint";
 
 import { PostgresRepositoryReader } from "../syncer/repository/postgres-repository";

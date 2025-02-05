@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Addresses, Data, Lucid } from "@spacebudz/lucid/mod";
+import { Addresses, Data, Lucid } from "@spacebudz/lucid";
 
 import {
   Asset,
