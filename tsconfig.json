@@ -6,7 +6,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ES2022",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "lib": [
       "ES2022",
       "DOM"
