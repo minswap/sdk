@@ -1,12 +1,12 @@
-import { Credential, Data } from "@spacebudz/lucid";
+import { Credential } from "@spacebudz/lucid";
 
+import { DataObject } from "../src";
 import {
   AddressPlutusData,
   LucidCredential,
 } from "../src/types/address.internal";
 import { NetworkId } from "../src/types/network";
 import { getScriptHashFromAddress } from "../src/utils/address-utils.internal";
-import { DataObject } from "../src";
 
 test("Lucid Credential to PlutusData Converter", () => {
   const dummyHash = "b8b912cdbcc998f3f0c18e951928ca179de85735c4fc2d82e8d10777";

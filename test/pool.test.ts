@@ -1,4 +1,3 @@
-import { Data } from "@spacebudz/lucid";
 import JSONBig from "json-bigint";
 
 import { DataObject, NetworkId } from "../src";

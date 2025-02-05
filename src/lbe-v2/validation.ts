@@ -2,7 +2,7 @@ import invariant from "@minswap/tiny-invariant";
 import { Addresses, Lucid } from "@spacebudz/lucid";
 
 import {
-  Asset,
+  Asset, DataObject,
   DexV2Calculation,
   LbeV2Constant,
   MAX_POOL_V2_TRADING_FEE_NUMERATOR,

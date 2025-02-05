@@ -18,7 +18,7 @@ import {
   calculateSwapExactIn,
   calculateSwapExactOut,
   calculateWithdraw,
-  calculateZapIn,
+  calculateZapIn, DataObject, DataType,
   Dex,
   DexV2,
   DexV2Calculation,

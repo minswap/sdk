@@ -8,6 +8,7 @@ import { SECURITY_PARAM } from "../../types/constants";
 import { NetworkEnvironment, NetworkId } from "../../types/network";
 import { PoolV1, PoolV2, StablePool } from "../../types/pool";
 import { normalizeAssets } from "../../types/pool.internal";
+import { DataObject } from "../../index";
 
 export type PrismaClientInTx = Omit<Prisma.PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 

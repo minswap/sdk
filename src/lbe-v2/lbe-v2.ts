@@ -10,7 +10,7 @@ import {
 import JSONBig from "json-bigint";
 
 import {
-  compareUtxo,
+  compareUtxo, DataObject,
   DexV2Calculation,
   DexV2Constant,
   LbeV2Constant,

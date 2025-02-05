@@ -1,7 +1,7 @@
 import invariant from "@minswap/tiny-invariant";
 import { Lucid, Utxo } from "@spacebudz/lucid";
 
-import { LbeV2Constant, PoolV2 } from "..";
+import { DataObject, LbeV2Constant, PoolV2 } from "..";
 import { BlockfrostAdapter } from "../adapters/blockfrost";
 import { LbeV2 } from "../lbe-v2/lbe-v2";
 import { LbeV2Types } from "../types/lbe-v2";
