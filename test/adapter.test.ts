@@ -1,6 +1,6 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { Configuration, MaestroClient } from "@maestro-org/typescript-sdk";
-import { Network } from "@spacebudz/lucid/_dist/mod.d";
+import { Network } from "@spacebudz/lucid";
 
 import { Adapter } from "../src/adapters";
 import { BlockfrostAdapter } from "../src/adapters/blockfrost";
