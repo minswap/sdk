@@ -3,7 +3,8 @@ import { Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
 import { Utxo } from "@spacebudz/lucid";
 
 import {
-  DataObject, DataType,
+  DataObject,
+  DataType,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
   StableOrder,

@@ -1,4 +1,5 @@
 import { Constr, Data } from "@spacebudz/lucid";
+
 import { DataType } from "..";
 
 export namespace Options {

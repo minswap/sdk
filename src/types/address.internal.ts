@@ -5,8 +5,8 @@ import {
   Credential,
 } from "@spacebudz/lucid";
 
-import { NetworkId } from "./network";
 import { DataType } from "..";
+import { NetworkId } from "./network";
 
 export namespace LucidCredential {
   export function toPlutusData(data: Credential): Constr<DataType> {
