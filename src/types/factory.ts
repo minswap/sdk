@@ -1,4 +1,4 @@
-import { Constr, Data, from } from "@spacebudz/lucid";
+import { Constr, Data } from "@spacebudz/lucid";
 
 import { Asset } from "./asset";
 import { DexV2Constant } from "./constants";
@@ -72,7 +72,7 @@ export namespace FactoryV2 {
             this.txIn = txIn
             this.value = value
             this.datumCbor = datum
-            this.datum = Datum.fromPlutusData(from(datum))
+            this.datum = Datum.fromPlutusData(Data.from(datum))
 
             const config = DexV2Constant.CONFIG[networkId]
             if (!value.find((v) => v.unit === config.factoryAsset && v.quantity === "1")) {

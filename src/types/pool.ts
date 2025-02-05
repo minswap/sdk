@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Credential, Data, from } from "@spacebudz/lucid";
+import { Constr, Credential, Data } from "@spacebudz/lucid";
 
 import { sha3 } from "../utils/hash.internal";
 import { LucidCredential } from "./address.internal";
@@ -189,7 +189,7 @@ export namespace StablePool {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = Datum.fromPlutusData(from(datum));
+      this.datum = Datum.fromPlutusData(Data.from(datum));
       const allConfigs = StableswapConstant.CONFIG[networkId];
       const config = allConfigs.find((cfg) => cfg.poolAddress === address);
       if (!config) {
@@ -318,7 +318,7 @@ export namespace PoolV2 {
       this.txIn = txIn;
       this.value = value;
       this.datumRaw = datum;
-      this.datum = Datum.fromPlutusData(from(datum));
+      this.datum = Datum.fromPlutusData(Data.from(datum));
       this.config = DexV2Constant.CONFIG[networkId];
       this.lpAsset = {
         policyId: this.config.lpPolicyId,

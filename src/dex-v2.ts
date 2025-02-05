@@ -5,12 +5,10 @@ import {
   Constr,
   Credential,
   Data,
-  from,
   Hasher,
   Lucid,
   OutRef,
   stakeCredentialOf,
-  to,
   Tx,
   TxComplete,
   Utxo,
@@ -331,19 +329,19 @@ export class DexV2 {
       .readFrom([factoryRef, authenRef])
       .collectFrom(
         [factoryUtxo],
-        to(FactoryV2.Redeemer.toPlutusData(factoryRedeemer))
+        Data.to(FactoryV2.Redeemer.toPlutusData(factoryRedeemer))
       )
       .payToContract(
         config.poolCreationAddress,
         {
-          Inline: to(PoolV2.Datum.toPlutusData(poolDatum)),
+          Inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
         },
         poolValue
       )
       .payToContract(
         config.factoryAddress,
         {
-          Inline: to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
+          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
         },
         {
           [config.factoryAsset]: 1n,
@@ -352,7 +350,7 @@ export class DexV2 {
       .payToContract(
         config.factoryAddress,
         {
-          Inline: to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
+          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
         },
         {
           [config.factoryAsset]: 1n,
@@ -364,7 +362,7 @@ export class DexV2 {
           [config.factoryAsset]: 1n,
           [config.poolAuthenAsset]: 1n,
         },
-        to(new Constr(1, []))
+        Data.to(new Constr(1, []))
       )
       .attachMetadata(674, { msg: [MetadataMessage.CREATE_POOL] })
       .commit();
@@ -889,7 +887,7 @@ export class DexV2 {
       lucidTx.payToContract(
         orderAddress,
         {
-          Inline: to(OrderV2.Datum.toPlutusData(orderDatum)),
+          Inline: Data.to(OrderV2.Datum.toPlutusData(orderDatum)),
         },
         orderAssets
       );
@@ -961,7 +959,7 @@ export class DexV2 {
         const rawDatum = utxo.datum;
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          from(rawDatum)
+          Data.from(rawDatum)
         );
       } else if (utxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(utxo);
@@ -978,7 +976,7 @@ export class DexV2 {
       if (datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE)
         requiredPubKeyHashSet.add(datum.canceller.hash);
     }
-    const redeemer = to(
+    const redeemer = Data.to(
       new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
     );
     lucidTx.collectFrom(orderUtxos, redeemer);
@@ -1014,7 +1012,7 @@ export class DexV2 {
     const lucidTx = this.lucid.newTx().readFrom(refScript);
     lucidTx.collectFrom(
       sortedOrderUtxos,
-      to(new Constr(OrderV2.Redeemer.CANCEL_EXPIRED_ORDER_BY_ANYONE, []))
+      Data.to(new Constr(OrderV2.Redeemer.CANCEL_EXPIRED_ORDER_BY_ANYONE, []))
     );
     for (const orderUtxo of sortedOrderUtxos) {
       const orderAddr = orderUtxo.address;
@@ -1030,7 +1028,7 @@ export class DexV2 {
         const rawDatum = orderUtxo.datum;
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          from(rawDatum)
+          Data.from(rawDatum)
         );
       } else if (orderUtxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(orderUtxo);
@@ -1089,7 +1087,7 @@ export class DexV2 {
       .withdraw(
         DexV2Constant.CONFIG[this.networkId].expiredOrderCancelAddress,
         0n,
-        to(0n)
+        Data.to(0n)
       )
       .validFrom(currentTime)
       .validTo(currentTime + 3 * 60 * 60 * 1000)

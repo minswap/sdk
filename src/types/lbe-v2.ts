@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Data, from } from "@spacebudz/lucid";
+import { Constr, Data } from "@spacebudz/lucid";
 
 import { Asset, LbeV2Constant, NetworkId, PoolV2 } from "..";
 import { AddressPlutusData } from "./address.internal";
@@ -338,7 +338,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = TreasuryDatum.fromPlutusData(networkId, from(datum));
+      this.datum = TreasuryDatum.fromPlutusData(networkId, Data.from(datum));
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -521,7 +521,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = FactoryDatum.fromPlutusData(from(datum));
+      this.datum = FactoryDatum.fromPlutusData(Data.from(datum));
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -616,7 +616,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = ManagerDatum.fromPlutusData(from(datum));
+      this.datum = ManagerDatum.fromPlutusData(Data.from(datum));
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -716,7 +716,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = SellerDatum.fromPlutusData(from(datum), networkId);
+      this.datum = SellerDatum.fromPlutusData(Data.from(datum), networkId);
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -819,7 +819,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = OrderDatum.fromPlutusData(from(datum), networkId);
+      this.datum = OrderDatum.fromPlutusData(Data.from(datum), networkId);
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
