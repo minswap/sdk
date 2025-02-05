@@ -1,4 +1,5 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
+
 import { Asset, NetworkId } from "../src";
 import { BlockfrostAdapter } from "../src/adapters/blockfrost";
 

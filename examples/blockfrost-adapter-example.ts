@@ -4,6 +4,7 @@ import {
   Blockfrost,
   Constr,
   Data,
+  from,
   Lucid,
   Network,
   OutRef,
@@ -95,7 +96,7 @@ async function getPoolById(
   );
   const poolDatum = PoolV1.Datum.fromPlutusData(
     network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET,
-    Data.from(rawRoolDatum) as Constr<Data>
+    from(rawRoolDatum) as Constr<Data>
   );
   return {
     poolState: pool,

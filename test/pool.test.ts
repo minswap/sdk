@@ -1,4 +1,4 @@
-import { Data } from "@spacebudz/lucid";
+import { from, to } from "@spacebudz/lucid";
 import JSONBig from "json-bigint";
 
 import { NetworkId } from "../src";
@@ -53,11 +53,11 @@ test("Fee Sharing to PlutusData Converter", () => {
 
   const convertedFeeSharing1 = PoolFeeSharing.fromPlutusData(
     NetworkId.TESTNET,
-    Data.from(Data.to(PoolFeeSharing.toPlutusData(feeSharing1)))
+    from(to(PoolFeeSharing.toPlutusData(feeSharing1)))
   );
   const convertedFeeSharing2 = PoolFeeSharing.fromPlutusData(
     NetworkId.TESTNET,
-    Data.from(Data.to(PoolFeeSharing.toPlutusData(feeSharing2)))
+    from(to(PoolFeeSharing.toPlutusData(feeSharing2)))
   );
 
   expect(JSONBig.stringify(feeSharing1)).toEqual(
@@ -96,11 +96,11 @@ test("Pool Datum to PlutusData Converter", () => {
 
   const convertedPoolDatum1 = PoolV1.Datum.fromPlutusData(
     NetworkId.TESTNET,
-    Data.from(Data.to(PoolV1.Datum.toPlutusData(poolDatum1)))
+    from(to(PoolV1.Datum.toPlutusData(poolDatum1)))
   );
   const convertedPoolDatum2 = PoolV1.Datum.fromPlutusData(
     NetworkId.TESTNET,
-    Data.from(Data.to(PoolV1.Datum.toPlutusData(poolDatum2)))
+    from(to(PoolV1.Datum.toPlutusData(poolDatum2)))
   );
 
   expect(JSONBig.stringify(poolDatum1)).toEqual(

@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Assets, Constr, Data, Lucid, TxComplete } from "@spacebudz/lucid";
+import { Assets, Constr, Data, from, Lucid, to, TxComplete } from "@spacebudz/lucid";
 import { Utxo } from "@spacebudz/lucid";
 
 import {
@@ -333,14 +333,13 @@ export class Stableswap {
       tx.payToContract(
         config.orderAddress,
         {
-          Inline: Data.to(StableOrder.Datum.toPlutusData(datum)),
+          Inline: to(StableOrder.Datum.toPlutusData(datum)),
         },
         orderAssets
       );
 
       if (customReceiver && customReceiver.receiverDatum) {
         const utxoForStoringDatum = buildUtxoToStoreDatum(
-          this.lucid,
           sender,
           customReceiver.receiver,
           customReceiver.receiverDatum.datum
@@ -372,7 +371,7 @@ export class Stableswap {
   ): Promise<TxComplete> {
     const tx = this.lucid.newTx();
 
-    const redeemer = Data.to(new Constr(StableOrder.Redeemer.CANCEL_ORDER, []));
+    const redeemer = to(new Constr(StableOrder.Redeemer.CANCEL_ORDER, []));
     for (const utxo of options.orderUtxos) {
       const config = StableswapConstant.getConfigFromStableswapOrderAddress(
         utxo.address,
@@ -387,7 +386,7 @@ export class Stableswap {
         const rawDatum = utxo.datum;
         datum = StableOrder.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum)
+          from(rawDatum)
         );
       } else if (utxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(utxo);

@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Data } from "@spacebudz/lucid";
+import { Constr, Data, from } from "@spacebudz/lucid";
 
 import { AddressPlutusData } from "./address.internal";
 import { Asset } from "./asset";
@@ -1286,7 +1286,7 @@ export namespace OrderV2 {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = Datum.fromPlutusData(networkId, Data.from(datum));
+      this.datum = Datum.fromPlutusData(networkId, from(datum));
     }
   }
 }

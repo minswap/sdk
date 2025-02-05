@@ -1,4 +1,4 @@
-import { Credential, Data } from "@spacebudz/lucid";
+import { Credential, from, to } from "@spacebudz/lucid";
 
 import {
   AddressPlutusData,
@@ -20,11 +20,11 @@ test("Lucid Credential to PlutusData Converter", () => {
   };
 
   const convertedPubKeyCredential = LucidCredential.fromPlutusData(
-    Data.from(Data.to(LucidCredential.toPlutusData(pubKeyCredential)))
+    from(to(LucidCredential.toPlutusData(pubKeyCredential)))
   );
 
   const convertedScriptCredential = LucidCredential.fromPlutusData(
-    Data.from(Data.to(LucidCredential.toPlutusData(scriptCredential)))
+    from(to(LucidCredential.toPlutusData(scriptCredential)))
   );
 
   expect(JSON.stringify(convertedPubKeyCredential)).toEqual(
@@ -48,19 +48,19 @@ test("Address to PlutusData Converter", () => {
 
   const convertedPubkeyEnterpriseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(pubkeyEnterpriseAddress)))
+    from(to(AddressPlutusData.toPlutusData(pubkeyEnterpriseAddress)))
   );
   const convertedPubKeyBaseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(pubKeyBaseAddress)))
+    from(to(AddressPlutusData.toPlutusData(pubKeyBaseAddress)))
   );
   const convertedScriptEnterpriseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(scriptEnterpriseAddress)))
+    from(to(AddressPlutusData.toPlutusData(scriptEnterpriseAddress)))
   );
   const convertedScriptBaseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(scriptBaseAddress)))
+    from(to(AddressPlutusData.toPlutusData(scriptBaseAddress)))
   );
 
   expect(pubkeyEnterpriseAddress).toEqual(convertedPubkeyEnterpriseAddress);
