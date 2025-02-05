@@ -6,6 +6,7 @@ import {
 } from "../src/types/address.internal";
 import { NetworkId } from "../src/types/network";
 import { getScriptHashFromAddress } from "../src/utils/address-utils.internal";
+import { DataObject } from "../src";
 
 test("Lucid Credential to PlutusData Converter", () => {
   const dummyHash = "b8b912cdbcc998f3f0c18e951928ca179de85735c4fc2d82e8d10777";
@@ -20,11 +21,15 @@ test("Lucid Credential to PlutusData Converter", () => {
   };
 
   const convertedPubKeyCredential = LucidCredential.fromPlutusData(
-    Data.from(Data.to(LucidCredential.toPlutusData(pubKeyCredential)))
+    DataObject.from(
+      DataObject.to(LucidCredential.toPlutusData(pubKeyCredential))
+    )
   );
 
   const convertedScriptCredential = LucidCredential.fromPlutusData(
-    Data.from(Data.to(LucidCredential.toPlutusData(scriptCredential)))
+    DataObject.from(
+      DataObject.to(LucidCredential.toPlutusData(scriptCredential))
+    )
   );
 
   expect(JSON.stringify(convertedPubKeyCredential)).toEqual(
@@ -48,19 +53,27 @@ test("Address to PlutusData Converter", () => {
 
   const convertedPubkeyEnterpriseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(pubkeyEnterpriseAddress)))
+    DataObject.from(
+      DataObject.to(AddressPlutusData.toPlutusData(pubkeyEnterpriseAddress))
+    )
   );
   const convertedPubKeyBaseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(pubKeyBaseAddress)))
+    DataObject.from(
+      DataObject.to(AddressPlutusData.toPlutusData(pubKeyBaseAddress))
+    )
   );
   const convertedScriptEnterpriseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(scriptEnterpriseAddress)))
+    DataObject.from(
+      DataObject.to(AddressPlutusData.toPlutusData(scriptEnterpriseAddress))
+    )
   );
   const convertedScriptBaseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(scriptBaseAddress)))
+    DataObject.from(
+      DataObject.to(AddressPlutusData.toPlutusData(scriptBaseAddress))
+    )
   );
 
   expect(pubkeyEnterpriseAddress).toEqual(convertedPubkeyEnterpriseAddress);

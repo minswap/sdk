@@ -3,7 +3,6 @@ import {
   Addresses,
   Assets,
   Constr,
-  Data,
   Lucid,
   Tx,
   TxComplete, Utxo,
@@ -79,7 +78,7 @@ export class LbeV2 {
 
     const datum = factoryUtxo.datum;
     invariant(datum, "Factory utxo must have inline datum");
-    const factory = LbeV2Types.FactoryDatum.fromPlutusData(Data.from(datum));
+    const factory = LbeV2Types.FactoryDatum.fromPlutusData(DataObject.from(datum));
     const { baseAsset, raiseAsset, owner } = lbeV2Parameters;
     const lbeV2Id = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
 
@@ -107,7 +106,7 @@ export class LbeV2 {
     };
     lucidTx.collectFrom(
       [factoryUtxo],
-      Data.to(
+      DataObject.to(
         RedeemerWrapper.toPlutusData(
           LbeV2Types.FactoryRedeemer.toPlutusData(redeemer)
         )
@@ -122,7 +121,7 @@ export class LbeV2 {
     mintAssets[config.sellerAsset] = BigInt(sellerCount);
     lucidTx.mint(
       mintAssets,
-      Data.to(LbeV2Types.FactoryRedeemer.toPlutusData(redeemer))
+      DataObject.to(LbeV2Types.FactoryRedeemer.toPlutusData(redeemer))
     );
 
     // VALID TIME RANGE
@@ -141,7 +140,7 @@ export class LbeV2 {
       .payToContract(
         config.factoryAddress,
         {
-          Inline: Data.to(
+          Inline: DataObject.to(
             LbeV2Types.FactoryDatum.toPlutusData({
               head: factory.head,
               tail: lbeV2Id,
@@ -155,7 +154,7 @@ export class LbeV2 {
       .payToContract(
         config.factoryAddress,
         {
-          Inline: Data.to(
+          Inline: DataObject.to(
             LbeV2Types.FactoryDatum.toPlutusData({
               head: lbeV2Id,
               tail: factory.tail,
@@ -169,7 +168,7 @@ export class LbeV2 {
       .payToContract(
         config.treasuryAddress,
         {
-          Inline: Data.to(LbeV2Types.TreasuryDatum.toPlutusData(treasuryDatum)),
+          Inline: DataObject.to(LbeV2Types.TreasuryDatum.toPlutusData(treasuryDatum)),
         },
         {
           [config.treasuryAsset]: 1n,
@@ -182,7 +181,7 @@ export class LbeV2 {
       .payToContract(
         config.managerAddress,
         {
-          Inline: Data.to(
+          Inline: DataObject.to(
             LbeV2Types.ManagerDatum.toPlutusData({
               factoryPolicyId: config.factoryHash,
               baseAsset: baseAsset,
@@ -202,7 +201,7 @@ export class LbeV2 {
       lucidTx.payToContract(
         config.sellerAddress,
         {
-          Inline: Data.to(
+          Inline: DataObject.to(
             LbeV2Types.SellerDatum.toPlutusData({
               factoryPolicyId: config.factoryHash,
               owner: owner,
@@ -257,7 +256,7 @@ export class LbeV2 {
     invariant(datum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(datum)
+      DataObject.from(datum)
     );
 
     const newTreasuryDatum: LbeV2Types.TreasuryDatum =
@@ -280,7 +279,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       [treasuryUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.TreasuryRedeemer.toPlutusData({
           type: LbeV2Types.TreasuryRedeemerType.UPDATE_LBE,
         })
@@ -291,7 +290,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        Inline: Data.to(
+        Inline: DataObject.to(
           LbeV2Types.TreasuryDatum.toPlutusData(newTreasuryDatum)
         ),
       },
@@ -342,7 +341,7 @@ export class LbeV2 {
     invariant(datum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(datum)
+      DataObject.from(datum)
     );
     const { revocable, startTime, endTime, owner } = treasuryDatum;
 
@@ -364,7 +363,7 @@ export class LbeV2 {
     };
     lucidTx.collectFrom(
       [treasuryUtxo],
-      Data.to(LbeV2Types.TreasuryRedeemer.toPlutusData(treasuryRedeemer))
+      DataObject.to(LbeV2Types.TreasuryRedeemer.toPlutusData(treasuryRedeemer))
     );
 
     // PAY TO
@@ -375,7 +374,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        Inline: Data.to(
+        Inline: DataObject.to(
           LbeV2Types.TreasuryDatum.toPlutusData(newTreasuryDatum)
         ),
       },
@@ -456,13 +455,13 @@ export class LbeV2 {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     const rawSellerDatum = sellerUtxo.datum;
     invariant(rawSellerDatum, "Seller utxo must have inline datum");
     const sellerDatum = LbeV2Types.SellerDatum.fromPlutusData(
-      Data.from(rawSellerDatum),
+      DataObject.from(rawSellerDatum),
       this.networkId
     );
 
@@ -470,7 +469,7 @@ export class LbeV2 {
       const rawOrderDatum = utxo.datum;
       invariant(rawOrderDatum, "Factory utxo must have inline datum");
       return LbeV2Types.OrderDatum.fromPlutusData(
-        Data.from(rawOrderDatum),
+        DataObject.from(rawOrderDatum),
         this.networkId
       );
     });
@@ -526,7 +525,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       [sellerUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.SellerRedeemer.toPlutusData(
           LbeV2Types.SellerRedeemer.USING_SELLER
         )
@@ -534,7 +533,7 @@ export class LbeV2 {
     );
     lucidTx.collectFrom(
       orderUtxos,
-      Data.to(
+      DataObject.to(
         LbeV2Types.OrderRedeemer.toPlutusData(
           LbeV2Types.OrderRedeemer.UPDATE_ORDER
         )
@@ -564,7 +563,7 @@ export class LbeV2 {
       );
       lucidTx.readFrom(factoryRefs).mint(
         { [config.orderAsset]: orderTokenMintAmount },
-        Data.to(
+        DataObject.to(
           LbeV2Types.FactoryRedeemer.toPlutusData({
             type: LbeV2Types.FactoryRedeemerType.MINT_ORDER,
           })
@@ -588,7 +587,7 @@ export class LbeV2 {
     }
     lucidTx.payToContract(
       config.sellerAddress,
-      { Inline: Data.to(LbeV2Types.SellerDatum.toPlutusData(newSellerDatum)) },
+      { Inline: DataObject.to(LbeV2Types.SellerDatum.toPlutusData(newSellerDatum)) },
       newSellerAssets
     );
 
@@ -616,7 +615,7 @@ export class LbeV2 {
       console.log(orderAssets);
       lucidTx.payToContract(
         config.orderAddress,
-        { Inline: Data.to(LbeV2Types.OrderDatum.toPlutusData(newOrderDatum)) },
+        { Inline: DataObject.to(LbeV2Types.OrderDatum.toPlutusData(newOrderDatum)) },
         orderAssets
       );
     }
@@ -649,19 +648,19 @@ export class LbeV2 {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     const rawHeadFactoryDatum = headFactoryUtxo.datum;
     invariant(rawHeadFactoryDatum, "Treasury utxo must have inline datum");
     const headFactoryDatum = LbeV2Types.FactoryDatum.fromPlutusData(
-      Data.from(rawHeadFactoryDatum)
+      DataObject.from(rawHeadFactoryDatum)
     );
 
     const rawTailFactoryDatum = tailFactoryUtxo.datum;
     invariant(rawTailFactoryDatum, "Treasury utxo must have inline datum");
     const tailFactoryDatum = LbeV2Types.FactoryDatum.fromPlutusData(
-      Data.from(rawTailFactoryDatum)
+      DataObject.from(rawTailFactoryDatum)
     );
 
     const lucidTx = this.lucid.newTx();
@@ -689,7 +688,7 @@ export class LbeV2 {
     lucidTx
       .collectFrom(
         [treasuryUtxo],
-        Data.to(
+        DataObject.to(
           LbeV2Types.TreasuryRedeemer.toPlutusData({
             type: LbeV2Types.TreasuryRedeemerType.CLOSE_EVENT,
           })
@@ -697,7 +696,7 @@ export class LbeV2 {
       )
       .collectFrom(
         [headFactoryUtxo, tailFactoryUtxo],
-        Data.to(
+        DataObject.to(
           RedeemerWrapper.toPlutusData(
             LbeV2Types.FactoryRedeemer.toPlutusData({
               type: LbeV2Types.FactoryRedeemerType.CLOSE_TREASURY,
@@ -714,7 +713,7 @@ export class LbeV2 {
         [config.factoryAsset]: -1n,
         [config.treasuryAsset]: -1n,
       },
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.CLOSE_TREASURY,
           baseAsset: treasuryDatum.baseAsset,
@@ -727,7 +726,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.factoryAddress,
       {
-        Inline: Data.to(
+        Inline: DataObject.to(
           LbeV2Types.FactoryDatum.toPlutusData({
             head: headFactoryDatum.head,
             tail: tailFactoryDatum.tail,
@@ -769,13 +768,13 @@ export class LbeV2 {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     const rawManagerDatum = managerUtxo.datum;
     invariant(rawManagerDatum, "Treasury utxo must have inline datum");
     const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-      Data.from(rawManagerDatum)
+      DataObject.from(rawManagerDatum)
     );
 
     const lucidTx = this.lucid.newTx();
@@ -804,7 +803,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       [managerUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.ManagerRedeemer.toPlutusData(
           LbeV2Types.ManagerRedeemer.ADD_SELLERS
         )
@@ -814,7 +813,7 @@ export class LbeV2 {
     // MINT
     lucidTx.mint(
       { [config.sellerAsset]: BigInt(addSellerCount) },
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.MINT_SELLER,
         })
@@ -829,7 +828,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.managerAddress,
       {
-        Inline: Data.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
+        Inline: DataObject.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
       },
       { ...managerUtxo.assets }
     );
@@ -837,7 +836,7 @@ export class LbeV2 {
       lucidTx.payToContract(
         config.sellerAddress,
         {
-          Inline: Data.to(
+          Inline: DataObject.to(
             LbeV2Types.SellerDatum.toPlutusData({
               factoryPolicyId: config.factoryHash,
               owner: sellerOwner,
@@ -882,7 +881,7 @@ export class LbeV2 {
     const rawManagerDatum = managerUtxo.datum;
     invariant(rawManagerDatum, "Treasury utxo must have inline datum");
     const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-      Data.from(rawManagerDatum)
+      DataObject.from(rawManagerDatum)
     );
     const sortedSellerUtxos = [...sellerUtxos].sort(compareUtxo);
 
@@ -890,7 +889,7 @@ export class LbeV2 {
       const rawSellerDatum = utxo.datum;
       invariant(rawSellerDatum, "Seller utxo must have inline datum");
       const sellerDatum = LbeV2Types.SellerDatum.fromPlutusData(
-        Data.from(rawSellerDatum),
+        DataObject.from(rawSellerDatum),
         this.networkId
       );
       return sellerDatum;
@@ -931,7 +930,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       [managerUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.ManagerRedeemer.toPlutusData(
           LbeV2Types.ManagerRedeemer.COLLECT_SELLERS
         )
@@ -939,7 +938,7 @@ export class LbeV2 {
     );
     lucidTx.collectFrom(
       sellerUtxos,
-      Data.to(
+      DataObject.to(
         LbeV2Types.SellerRedeemer.toPlutusData(
           LbeV2Types.SellerRedeemer.COUNTING_SELLERS
         )
@@ -949,7 +948,7 @@ export class LbeV2 {
     // MINT
     lucidTx.mint(
       { [config.sellerAsset]: -BigInt(sellerUtxos.length) },
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.BURN_SELLER,
         })
@@ -973,7 +972,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.managerAddress,
       {
-        Inline: Data.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
+        Inline: DataObject.to(LbeV2Types.ManagerDatum.toPlutusData(newManagerDatum)),
       },
       { ...managerUtxo.assets }
     );
@@ -1007,14 +1006,14 @@ export class LbeV2 {
     const rawManagerDatum = managerUtxo.datum;
     invariant(rawManagerDatum, "Treasury utxo must have inline datum");
     const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-      Data.from(rawManagerDatum)
+      DataObject.from(rawManagerDatum)
     );
 
     const rawTreasuryDatum = treasuryUtxo.datum;
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     const lucidTx = this.lucid.newTx();
@@ -1050,7 +1049,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       [managerUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.ManagerRedeemer.toPlutusData(
           LbeV2Types.ManagerRedeemer.SPEND_MANAGER
         )
@@ -1058,7 +1057,7 @@ export class LbeV2 {
     );
     lucidTx.collectFrom(
       [treasuryUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.TreasuryRedeemer.toPlutusData({
           type: LbeV2Types.TreasuryRedeemerType.COLLECT_MANAGER,
         })
@@ -1068,7 +1067,7 @@ export class LbeV2 {
     // MINT
     lucidTx.mint(
       { [config.managerAsset]: -1n },
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.MINT_MANAGER,
         })
@@ -1079,7 +1078,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       treasuryUtxo.address,
       {
-        Inline: Data.to(
+        Inline: DataObject.to(
           LbeV2Types.TreasuryDatum.toPlutusData({
             ...treasuryDatum,
             isManagerCollected: true,
@@ -1112,7 +1111,7 @@ export class LbeV2 {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     const sortedOrderUtxos = [...orderUtxos].sort(compareUtxo);
@@ -1120,7 +1119,7 @@ export class LbeV2 {
       const rawOrderDatum = utxo.datum;
       invariant(rawOrderDatum, "Order utxo must have inline datum");
       return LbeV2Types.OrderDatum.fromPlutusData(
-        Data.from(rawOrderDatum),
+        DataObject.from(rawOrderDatum),
         this.networkId
       );
     });
@@ -1163,7 +1162,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       orderUtxos,
-      Data.to(
+      DataObject.to(
         LbeV2Types.OrderRedeemer.toPlutusData(
           LbeV2Types.OrderRedeemer.COLLECT_ORDER
         )
@@ -1171,7 +1170,7 @@ export class LbeV2 {
     );
     lucidTx.collectFrom(
       [treasuryUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.TreasuryRedeemer.toPlutusData({
           type: LbeV2Types.TreasuryRedeemerType.COLLECT_ORDERS,
         })
@@ -1190,7 +1189,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        Inline: Data.to(
+        Inline: DataObject.to(
           LbeV2Types.TreasuryDatum.toPlutusData({
             ...treasuryDatum,
             collectedFund: treasuryDatum.collectedFund + deltaCollectedFund,
@@ -1205,7 +1204,7 @@ export class LbeV2 {
       lucidTx.payToContract(
         orderUtxo.address,
         {
-          Inline: Data.to(
+          Inline: DataObject.to(
             LbeV2Types.OrderDatum.toPlutusData({
               ...orderDatum,
               isCollected: true,
@@ -1224,7 +1223,7 @@ export class LbeV2 {
     lucidTx.withdraw(
       config.factoryRewardAddress,
       0n,
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.MANAGE_ORDER,
         })
@@ -1280,7 +1279,7 @@ export class LbeV2 {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     const sortedOrderUtxos = [...orderUtxos].sort(compareUtxo);
@@ -1288,7 +1287,7 @@ export class LbeV2 {
       const rawOrderDatum = utxo.datum;
       invariant(rawOrderDatum, "Order utxo must have inline datum");
       return LbeV2Types.OrderDatum.fromPlutusData(
-        Data.from(rawOrderDatum),
+        DataObject.from(rawOrderDatum),
         this.networkId
       );
     });
@@ -1371,7 +1370,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       orderUtxos,
-      Data.to(
+      DataObject.to(
         LbeV2Types.OrderRedeemer.toPlutusData(
           LbeV2Types.OrderRedeemer.REDEEM_ORDER
         )
@@ -1379,7 +1378,7 @@ export class LbeV2 {
     );
     lucidTx.collectFrom(
       [treasuryUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.TreasuryRedeemer.toPlutusData({
           type: LbeV2Types.TreasuryRedeemerType.REDEEM_ORDERS,
         })
@@ -1405,7 +1404,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        Inline: Data.to(
+        Inline: DataObject.to(
           LbeV2Types.TreasuryDatum.toPlutusData({
             ...treasuryDatum,
             collectedFund: treasuryDatum.collectedFund - totalFund,
@@ -1421,7 +1420,7 @@ export class LbeV2 {
     // MINT
     lucidTx.mint(
       { [config.orderAsset]: -BigInt(orderDatums.length) },
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.MINT_REDEEM_ORDERS,
         })
@@ -1432,7 +1431,7 @@ export class LbeV2 {
     lucidTx.withdraw(
       config.factoryRewardAddress,
       0n,
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.MANAGE_ORDER,
         })
@@ -1460,7 +1459,7 @@ export class LbeV2 {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     const sortedOrderUtxos = [...orderUtxos].sort(compareUtxo);
@@ -1468,7 +1467,7 @@ export class LbeV2 {
       const rawOrderDatum = utxo.datum;
       invariant(rawOrderDatum, "Order utxo must have inline datum");
       return LbeV2Types.OrderDatum.fromPlutusData(
-        Data.from(rawOrderDatum),
+        DataObject.from(rawOrderDatum),
         this.networkId
       );
     });
@@ -1529,7 +1528,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       orderUtxos,
-      Data.to(
+      DataObject.to(
         LbeV2Types.OrderRedeemer.toPlutusData(
           LbeV2Types.OrderRedeemer.REDEEM_ORDER
         )
@@ -1537,7 +1536,7 @@ export class LbeV2 {
     );
     lucidTx.collectFrom(
       [treasuryUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.TreasuryRedeemer.toPlutusData({
           type: LbeV2Types.TreasuryRedeemerType.REDEEM_ORDERS,
         })
@@ -1556,7 +1555,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        Inline: Data.to(
+        Inline: DataObject.to(
           LbeV2Types.TreasuryDatum.toPlutusData({
             ...treasuryDatum,
             collectedFund: treasuryDatum.collectedFund - refundAmount,
@@ -1574,7 +1573,7 @@ export class LbeV2 {
     // MINT
     lucidTx.mint(
       { [config.orderAsset]: -BigInt(orderDatums.length) },
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.MINT_REDEEM_ORDERS,
         })
@@ -1585,7 +1584,7 @@ export class LbeV2 {
     lucidTx.withdraw(
       config.factoryRewardAddress,
       0n,
-      Data.to(
+      DataObject.to(
         LbeV2Types.FactoryRedeemer.toPlutusData({
           type: LbeV2Types.FactoryRedeemerType.MANAGE_ORDER,
         })
@@ -1613,7 +1612,7 @@ export class LbeV2 {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     const {
@@ -1680,7 +1679,7 @@ export class LbeV2 {
     // SPENT
     lucidTx.collectFrom(
       [treasuryUtxo],
-      Data.to(
+      DataObject.to(
         LbeV2Types.TreasuryRedeemer.toPlutusData({
           type: LbeV2Types.TreasuryRedeemerType.CREATE_AMM_POOL,
         })
@@ -1715,7 +1714,7 @@ export class LbeV2 {
     lucidTx.payToContract(
       config.treasuryAddress,
       {
-        Inline: Data.to(
+        Inline: DataObject.to(
           LbeV2Types.TreasuryDatum.toPlutusData(treasuryOutDatum)
         ),
       },
@@ -1786,7 +1785,7 @@ export class LbeV2 {
     const rawFactoryDatum = factoryUtxo.datum;
     invariant(rawFactoryDatum, "Treasury utxo must have inline datum");
     const factoryDatum = FactoryV2.Datum.fromPlutusData(
-      Data.from(rawFactoryDatum)
+      DataObject.from(rawFactoryDatum)
     );
 
     const newFactoryDatum1: FactoryV2.Datum = {
@@ -1820,7 +1819,7 @@ export class LbeV2 {
     // COLLECT FROM
     lucidTx.collectFrom(
       [factoryUtxo],
-      Data.to(
+      DataObject.to(
         FactoryV2.Redeemer.toPlutusData({
           assetA: assetA,
           assetB: assetB,
@@ -1833,14 +1832,14 @@ export class LbeV2 {
       .payToContract(
         dexV2Config.poolCreationAddress,
         {
-          Inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
+          Inline: DataObject.to(PoolV2.Datum.toPlutusData(poolDatum)),
         },
         poolAssets
       )
       .payToContract(
         dexV2Config.factoryAddress,
         {
-          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
+          Inline: DataObject.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
         },
         {
           [dexV2Config.factoryAsset]: 1n,
@@ -1849,7 +1848,7 @@ export class LbeV2 {
       .payToContract(
         dexV2Config.factoryAddress,
         {
-          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
+          Inline: DataObject.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
         },
         {
           [dexV2Config.factoryAsset]: 1n,
@@ -1863,7 +1862,7 @@ export class LbeV2 {
         [dexV2Config.factoryAsset]: 1n,
         [dexV2Config.poolAuthenAsset]: 1n,
       },
-      Data.to(new Constr(1, []))
+      DataObject.to(new Constr(1, []))
     );
 
     lucidTx.readFrom([ammFactoryRef, ammAuthenRef]);

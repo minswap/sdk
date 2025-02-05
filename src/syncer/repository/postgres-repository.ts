@@ -1,7 +1,6 @@
 import * as OgmiosSchema from "@cardano-ogmios/schema";
 import * as Prisma from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
-import { Data } from "@spacebudz/lucid";
 import JSONBig from "json-bigint"
 
 import { Asset } from "../../types/asset";
@@ -275,7 +274,7 @@ export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryRea
 
   async createPoolV1(params: { block: OgmiosSchema.BlockPraos, pool: PoolV1.State, rawDatum: string, networkId: NetworkId }): Promise<void> {
     const { block, pool, rawDatum, networkId } = params;
-    const { totalLiquidity } = PoolV1.Datum.fromPlutusData(networkId, Data.from(rawDatum))
+    const { totalLiquidity } = PoolV1.Datum.fromPlutusData(networkId, DataObject.from(rawDatum))
     await this.prismaClientInTx.poolV1.create({
       data: {
         lp_asset: pool.assetLP,
@@ -326,7 +325,7 @@ export class PostgresRepositoryWriterInTransaction extends PostgresRepositoryRea
         created_tx_index: pool.txIn.index,
         pool_address: pool.address,
         value: JSONBig.stringify(pool.value),
-        raw_datum: Data.to(StablePool.Datum.toPlutusData(pool.datum)),
+        raw_datum: DataObject.to(StablePool.Datum.toPlutusData(pool.datum)),
         slot: BigInt(block.slot),
         block_id: BigInt(block.height),
       }

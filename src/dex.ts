@@ -1,7 +1,8 @@
 import invariant from "@minswap/tiny-invariant";
-import { Assets, Constr, Data, Lucid, TxComplete } from "@spacebudz/lucid";
+import { Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
 import { Utxo } from "@spacebudz/lucid";
 
+import { DataObject, DataType } from ".";
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
 import { Asset } from "./types/asset";
@@ -175,7 +176,7 @@ export class Dex {
       .newTx()
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .addSigner(sender);
@@ -252,7 +253,7 @@ export class Dex {
       .newTx()
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payTo(sender, reductionAssets)
@@ -320,7 +321,7 @@ export class Dex {
       .newTx()
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payTo(sender, reductionAssets)
@@ -370,7 +371,7 @@ export class Dex {
       .newTx()
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payTo(sender, reductionAssets)
@@ -422,7 +423,7 @@ export class Dex {
       .newTx()
       .payToContract(
         DexV1Constant.ORDER_BASE_ADDRESS[this.networkId],
-        Data.to(OrderV1.Datum.toPlutusData(datum)),
+        DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
       .payTo(sender, reductionAssets)
@@ -435,7 +436,9 @@ export class Dex {
     options: BuildCancelOrderOptions
   ): Promise<TxComplete> {
     const { orderUtxo } = options;
-    const redeemer = Data.to(new Constr(OrderV1.Redeemer.CANCEL_ORDER, []));
+    const redeemer = DataObject.to(
+      new Constr(OrderV1.Redeemer.CANCEL_ORDER, [])
+    );
     const rawDatum = orderUtxo.datum;
     invariant(
       rawDatum,
@@ -443,7 +446,7 @@ export class Dex {
     );
     const orderDatum = OrderV1.Datum.fromPlutusData(
       this.networkId,
-      Data.from(rawDatum) as Constr<Data>
+      DataObject.from(rawDatum) as Constr<DataType>
     );
     return await this.lucid
       .newTx()

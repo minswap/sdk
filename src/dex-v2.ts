@@ -4,7 +4,6 @@ import {
   Assets,
   Constr,
   Credential,
-  Data,
   Hasher,
   Lucid,
   OutRef,
@@ -14,6 +13,7 @@ import {
   Utxo,
 } from "@spacebudz/lucid";
 
+import { DataObject, DataType } from ".";
 import { BlockfrostAdapter } from "./adapters/blockfrost";
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
@@ -329,19 +329,19 @@ export class DexV2 {
       .readFrom([factoryRef, authenRef])
       .collectFrom(
         [factoryUtxo],
-        Data.to(FactoryV2.Redeemer.toPlutusData(factoryRedeemer))
+        DataObject.to(FactoryV2.Redeemer.toPlutusData(factoryRedeemer))
       )
       .payToContract(
         config.poolCreationAddress,
         {
-          Inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
+          Inline: DataObject.to(PoolV2.Datum.toPlutusData(poolDatum)),
         },
         poolValue
       )
       .payToContract(
         config.factoryAddress,
         {
-          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
+          Inline: DataObject.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
         },
         {
           [config.factoryAsset]: 1n,
@@ -350,7 +350,7 @@ export class DexV2 {
       .payToContract(
         config.factoryAddress,
         {
-          Inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
+          Inline: DataObject.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
         },
         {
           [config.factoryAsset]: 1n,
@@ -362,7 +362,7 @@ export class DexV2 {
           [config.factoryAsset]: 1n,
           [config.poolAuthenAsset]: 1n,
         },
-        Data.to(new Constr(1, []))
+        DataObject.to(new Constr(1, []))
       )
       .attachMetadata(674, { msg: [MetadataMessage.CREATE_POOL] })
       .commit();
@@ -887,7 +887,7 @@ export class DexV2 {
       lucidTx.payToContract(
         orderAddress,
         {
-          Inline: Data.to(OrderV2.Datum.toPlutusData(orderDatum)),
+          Inline: DataObject.to(OrderV2.Datum.toPlutusData(orderDatum)),
         },
         orderAssets
       );
@@ -959,13 +959,13 @@ export class DexV2 {
         const rawDatum = utxo.datum;
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum)
+          DataObject.from(rawDatum)
         );
       } else if (utxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(utxo);
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          rawDatum as Constr<Data>
+          rawDatum as Constr<DataType>
         );
       } else {
         throw new Error(
@@ -976,7 +976,7 @@ export class DexV2 {
       if (datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE)
         requiredPubKeyHashSet.add(datum.canceller.hash);
     }
-    const redeemer = Data.to(
+    const redeemer = DataObject.to(
       new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
     );
     lucidTx.collectFrom(orderUtxos, redeemer);
@@ -1012,7 +1012,9 @@ export class DexV2 {
     const lucidTx = this.lucid.newTx().readFrom(refScript);
     lucidTx.collectFrom(
       sortedOrderUtxos,
-      Data.to(new Constr(OrderV2.Redeemer.CANCEL_EXPIRED_ORDER_BY_ANYONE, []))
+      DataObject.to(
+        new Constr(OrderV2.Redeemer.CANCEL_EXPIRED_ORDER_BY_ANYONE, [])
+      )
     );
     for (const orderUtxo of sortedOrderUtxos) {
       const orderAddr = orderUtxo.address;
@@ -1028,13 +1030,13 @@ export class DexV2 {
         const rawDatum = orderUtxo.datum;
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum)
+          DataObject.from(rawDatum)
         );
       } else if (orderUtxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(orderUtxo);
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          rawDatum as Constr<Data>
+          rawDatum as Constr<DataType>
         );
       } else {
         throw new Error(
@@ -1087,7 +1089,7 @@ export class DexV2 {
       .withdraw(
         DexV2Constant.CONFIG[this.networkId].expiredOrderCancelAddress,
         0n,
-        Data.to(0n)
+        DataObject.to(0n)
       )
       .validFrom(currentTime)
       .validTo(currentTime + 3 * 60 * 60 * 1000)

@@ -1,6 +1,7 @@
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Data } from "@spacebudz/lucid";
+import { Constr } from "@spacebudz/lucid";
 
+import { DataObject, DataType } from "..";
 import { AddressPlutusData } from "./address.internal";
 import { Asset } from "./asset";
 import { NetworkId } from "./network";
@@ -56,7 +57,7 @@ export namespace OrderV1 {
   };
 
   export namespace Datum {
-    export function toPlutusData(datum: Datum): Constr<Data> {
+    export function toPlutusData(datum: Datum): Constr<DataType> {
       const {
         sender,
         receiver,
@@ -70,7 +71,7 @@ export namespace OrderV1 {
       const receiverDatumHashConstr = receiverDatumHash
         ? new Constr(0, [receiverDatumHash])
         : new Constr(1, []);
-      let datumConstr: Constr<Data>;
+      let datumConstr: Constr<DataType>;
       switch (step.type) {
         case StepType.SWAP_EXACT_IN: {
           datumConstr = new Constr(0, [
@@ -146,7 +147,7 @@ export namespace OrderV1 {
 
     export function fromPlutusData(
       networkId: NetworkId,
-      data: Constr<Data>
+      data: Constr<DataType>
     ): Datum {
       if (data.index !== 0) {
         throw new Error(
@@ -155,14 +156,14 @@ export namespace OrderV1 {
       }
       const sender = AddressPlutusData.fromPlutusData(
         networkId,
-        data.fields[0] as Constr<Data>
+        data.fields[0] as Constr<DataType>
       );
       const receiver = AddressPlutusData.fromPlutusData(
         networkId,
-        data.fields[1] as Constr<Data>
+        data.fields[1] as Constr<DataType>
       );
       let receiverDatumHash: string | undefined = undefined;
-      const maybeReceiverDatumHash = data.fields[2] as Constr<Data>;
+      const maybeReceiverDatumHash = data.fields[2] as Constr<DataType>;
       switch (maybeReceiverDatumHash.index) {
         case 0: {
           receiverDatumHash = maybeReceiverDatumHash.fields[0] as string;
@@ -179,13 +180,13 @@ export namespace OrderV1 {
         }
       }
       let step: Step;
-      const orderStepConstr = data.fields[3] as Constr<Data>;
+      const orderStepConstr = data.fields[3] as Constr<DataType>;
       switch (orderStepConstr.index) {
         case StepType.SWAP_EXACT_IN: {
           step = {
             type: StepType.SWAP_EXACT_IN,
             desiredAsset: Asset.fromPlutusData(
-              orderStepConstr.fields[0] as Constr<Data>
+              orderStepConstr.fields[0] as Constr<DataType>
             ),
             minimumReceived: orderStepConstr.fields[1] as bigint,
           };
@@ -195,7 +196,7 @@ export namespace OrderV1 {
           step = {
             type: StepType.SWAP_EXACT_OUT,
             desiredAsset: Asset.fromPlutusData(
-              orderStepConstr.fields[0] as Constr<Data>
+              orderStepConstr.fields[0] as Constr<DataType>
             ),
             expectedReceived: orderStepConstr.fields[1] as bigint,
           };
@@ -220,7 +221,7 @@ export namespace OrderV1 {
           step = {
             type: StepType.ZAP_IN,
             desiredAsset: Asset.fromPlutusData(
-              orderStepConstr.fields[0] as Constr<Data>
+              orderStepConstr.fields[0] as Constr<DataType>
             ),
             minimumLP: orderStepConstr.fields[1] as bigint,
           };
@@ -306,7 +307,7 @@ export namespace StableOrder {
   };
 
   export namespace Datum {
-    export function toPlutusData(datum: Datum): Constr<Data> {
+    export function toPlutusData(datum: Datum): Constr<DataType> {
       const {
         sender,
         receiver,
@@ -320,7 +321,7 @@ export namespace StableOrder {
       const receiverDatumHashConstr = receiverDatumHash
         ? new Constr(0, [receiverDatumHash])
         : new Constr(1, []);
-      let stepConstr: Constr<Data>;
+      let stepConstr: Constr<DataType>;
       switch (step.type) {
         case StepType.SWAP: {
           stepConstr = new Constr(StepType.SWAP, [
@@ -365,7 +366,7 @@ export namespace StableOrder {
 
     export function fromPlutusData(
       networkId: NetworkId,
-      data: Constr<Data>
+      data: Constr<DataType>
     ): Datum {
       if (data.index !== 0) {
         throw new Error(
@@ -374,14 +375,14 @@ export namespace StableOrder {
       }
       const sender = AddressPlutusData.fromPlutusData(
         networkId,
-        data.fields[0] as Constr<Data>
+        data.fields[0] as Constr<DataType>
       );
       const receiver = AddressPlutusData.fromPlutusData(
         networkId,
-        data.fields[1] as Constr<Data>
+        data.fields[1] as Constr<DataType>
       );
       let receiverDatumHash: string | undefined = undefined;
-      const maybeReceiverDatumHash = data.fields[2] as Constr<Data>;
+      const maybeReceiverDatumHash = data.fields[2] as Constr<DataType>;
       switch (maybeReceiverDatumHash.index) {
         case 0: {
           receiverDatumHash = maybeReceiverDatumHash.fields[0] as string;
@@ -398,7 +399,7 @@ export namespace StableOrder {
         }
       }
       let step: Step;
-      const orderStepConstr = data.fields[3] as Constr<Data>;
+      const orderStepConstr = data.fields[3] as Constr<DataType>;
       switch (orderStepConstr.index) {
         case StepType.SWAP: {
           step = {
@@ -478,7 +479,7 @@ export namespace OrderV2 {
   };
 
   export namespace AuthorizationMethod {
-    export function fromPlutusData(data: Constr<Data>): AuthorizationMethod {
+    export function fromPlutusData(data: Constr<DataType>): AuthorizationMethod {
       let type: AuthorizationMethodType;
       if (data.fields.length !== 1) {
         throw Error(
@@ -513,7 +514,7 @@ export namespace OrderV2 {
         hash: data.fields[0] as string,
       };
     }
-    export function toPlutusData(method: AuthorizationMethod): Constr<Data> {
+    export function toPlutusData(method: AuthorizationMethod): Constr<DataType> {
       return new Constr(method.type, [method.hash]);
     }
   }
@@ -524,7 +525,7 @@ export namespace OrderV2 {
   }
 
   export namespace Direction {
-    export function fromPlutusData(data: Constr<Data>): Direction {
+    export function fromPlutusData(data: Constr<DataType>): Direction {
       switch (data.index) {
         case Direction.B_TO_A: {
           return Direction.B_TO_A;
@@ -539,7 +540,7 @@ export namespace OrderV2 {
         }
       }
     }
-    export function toPlutusData(direction: Direction): Constr<Data> {
+    export function toPlutusData(direction: Direction): Constr<DataType> {
       return new Constr(direction, []);
     }
   }
@@ -550,7 +551,7 @@ export namespace OrderV2 {
   }
 
   export namespace Killable {
-    export function fromPlutusData(data: Constr<Data>): Killable {
+    export function fromPlutusData(data: Constr<DataType>): Killable {
       switch (data.index) {
         case Killable.PENDING_ON_FAILED: {
           return Killable.PENDING_ON_FAILED;
@@ -565,7 +566,7 @@ export namespace OrderV2 {
         }
       }
     }
-    export function toPlutusData(killable: Killable): Constr<Data> {
+    export function toPlutusData(killable: Killable): Constr<DataType> {
       return new Constr(killable, []);
     }
   }
@@ -588,7 +589,7 @@ export namespace OrderV2 {
       };
 
   export namespace DepositAmount {
-    export function fromPlutusData(data: Constr<Data>): DepositAmount {
+    export function fromPlutusData(data: Constr<DataType>): DepositAmount {
       switch (data.index) {
         case AmountType.SPECIFIC_AMOUNT: {
           return {
@@ -611,7 +612,7 @@ export namespace OrderV2 {
         }
       }
     }
-    export function toPlutusData(amount: DepositAmount): Constr<Data> {
+    export function toPlutusData(amount: DepositAmount): Constr<DataType> {
       switch (amount.type) {
         case AmountType.SPECIFIC_AMOUNT: {
           return new Constr(AmountType.SPECIFIC_AMOUNT, [
@@ -640,7 +641,7 @@ export namespace OrderV2 {
       };
 
   export namespace SwapAmount {
-    export function fromPlutusData(data: Constr<Data>): SwapAmount {
+    export function fromPlutusData(data: Constr<DataType>): SwapAmount {
       switch (data.index) {
         case AmountType.SPECIFIC_AMOUNT: {
           return {
@@ -661,7 +662,7 @@ export namespace OrderV2 {
         }
       }
     }
-    export function toPlutusData(amount: SwapAmount): Constr<Data> {
+    export function toPlutusData(amount: SwapAmount): Constr<DataType> {
       switch (amount.type) {
         case AmountType.SPECIFIC_AMOUNT: {
           return new Constr(AmountType.SPECIFIC_AMOUNT, [amount.swapAmount]);
@@ -684,7 +685,7 @@ export namespace OrderV2 {
       };
 
   export namespace WithdrawAmount {
-    export function fromPlutusData(data: Constr<Data>): WithdrawAmount {
+    export function fromPlutusData(data: Constr<DataType>): WithdrawAmount {
       switch (data.index) {
         case AmountType.SPECIFIC_AMOUNT: {
           return {
@@ -705,7 +706,7 @@ export namespace OrderV2 {
         }
       }
     }
-    export function toPlutusData(amount: WithdrawAmount): Constr<Data> {
+    export function toPlutusData(amount: WithdrawAmount): Constr<DataType> {
       switch (amount.type) {
         case AmountType.SPECIFIC_AMOUNT: {
           return new Constr(AmountType.SPECIFIC_AMOUNT, [
@@ -725,18 +726,18 @@ export namespace OrderV2 {
   };
 
   export namespace Route {
-    export function fromPlutusData(data: Constr<Data>): Route {
+    export function fromPlutusData(data: Constr<DataType>): Route {
       if (data.index !== 0) {
         throw new Error(
           `Index of Order Route must be 0, actual: ${data.index}`
         );
       }
       return {
-        lpAsset: Asset.fromPlutusData(data.fields[0] as Constr<Data>),
-        direction: Direction.fromPlutusData(data.fields[1] as Constr<Data>),
+        lpAsset: Asset.fromPlutusData(data.fields[0] as Constr<DataType>),
+        direction: Direction.fromPlutusData(data.fields[1] as Constr<DataType>),
       };
     }
-    export function toPlutusData(route: Route): Constr<Data> {
+    export function toPlutusData(route: Route): Constr<DataType> {
       return new Constr(0, [
         Asset.toPlutusData(route.lpAsset),
         Direction.toPlutusData(route.direction),
@@ -857,25 +858,25 @@ export namespace OrderV2 {
     | Donation;
 
   export namespace Step {
-    export function fromPlutusData(data: Constr<Data>): Step {
+    export function fromPlutusData(data: Constr<DataType>): Step {
       switch (data.index) {
         case StepType.SWAP_EXACT_IN: {
           return {
             type: StepType.SWAP_EXACT_IN,
-            direction: Direction.fromPlutusData(data.fields[0] as Constr<Data>),
+            direction: Direction.fromPlutusData(data.fields[0] as Constr<DataType>),
             swapAmount: SwapAmount.fromPlutusData(
-              data.fields[1] as Constr<Data>
+              data.fields[1] as Constr<DataType>
             ),
             minimumReceived: data.fields[2] as bigint,
-            killable: Killable.fromPlutusData(data.fields[3] as Constr<Data>),
+            killable: Killable.fromPlutusData(data.fields[3] as Constr<DataType>),
           };
         }
         case StepType.STOP: {
           return {
             type: StepType.STOP,
-            direction: Direction.fromPlutusData(data.fields[0] as Constr<Data>),
+            direction: Direction.fromPlutusData(data.fields[0] as Constr<DataType>),
             swapAmount: SwapAmount.fromPlutusData(
-              data.fields[1] as Constr<Data>
+              data.fields[1] as Constr<DataType>
             ),
             stopReceived: data.fields[2] as bigint,
           };
@@ -883,9 +884,9 @@ export namespace OrderV2 {
         case StepType.OCO: {
           return {
             type: StepType.OCO,
-            direction: Direction.fromPlutusData(data.fields[0] as Constr<Data>),
+            direction: Direction.fromPlutusData(data.fields[0] as Constr<DataType>),
             swapAmount: SwapAmount.fromPlutusData(
-              data.fields[1] as Constr<Data>
+              data.fields[1] as Constr<DataType>
             ),
             minimumReceived: data.fields[2] as bigint,
             stopReceived: data.fields[3] as bigint,
@@ -894,50 +895,50 @@ export namespace OrderV2 {
         case StepType.SWAP_EXACT_OUT: {
           return {
             type: StepType.SWAP_EXACT_OUT,
-            direction: Direction.fromPlutusData(data.fields[0] as Constr<Data>),
+            direction: Direction.fromPlutusData(data.fields[0] as Constr<DataType>),
             maximumSwapAmount: SwapAmount.fromPlutusData(
-              data.fields[1] as Constr<Data>
+              data.fields[1] as Constr<DataType>
             ),
             expectedReceived: data.fields[2] as bigint,
-            killable: Killable.fromPlutusData(data.fields[3] as Constr<Data>),
+            killable: Killable.fromPlutusData(data.fields[3] as Constr<DataType>),
           };
         }
         case StepType.DEPOSIT: {
           return {
             type: StepType.DEPOSIT,
             depositAmount: DepositAmount.fromPlutusData(
-              data.fields[0] as Constr<Data>
+              data.fields[0] as Constr<DataType>
             ),
             minimumLP: data.fields[1] as bigint,
-            killable: Killable.fromPlutusData(data.fields[2] as Constr<Data>),
+            killable: Killable.fromPlutusData(data.fields[2] as Constr<DataType>),
           };
         }
         case StepType.WITHDRAW: {
           return {
             type: StepType.WITHDRAW,
             withdrawalAmount: WithdrawAmount.fromPlutusData(
-              data.fields[0] as Constr<Data>
+              data.fields[0] as Constr<DataType>
             ),
             minimumAssetA: data.fields[1] as bigint,
             minimumAssetB: data.fields[2] as bigint,
-            killable: Killable.fromPlutusData(data.fields[3] as Constr<Data>),
+            killable: Killable.fromPlutusData(data.fields[3] as Constr<DataType>),
           };
         }
         case StepType.ZAP_OUT: {
           return {
             type: StepType.ZAP_OUT,
-            direction: Direction.fromPlutusData(data.fields[0] as Constr<Data>),
+            direction: Direction.fromPlutusData(data.fields[0] as Constr<DataType>),
             withdrawalAmount: WithdrawAmount.fromPlutusData(
-              data.fields[1] as Constr<Data>
+              data.fields[1] as Constr<DataType>
             ),
             minimumReceived: data.fields[2] as bigint,
-            killable: Killable.fromPlutusData(data.fields[3] as Constr<Data>),
+            killable: Killable.fromPlutusData(data.fields[3] as Constr<DataType>),
           };
         }
         case StepType.PARTIAL_SWAP: {
           return {
             type: StepType.PARTIAL_SWAP,
-            direction: Direction.fromPlutusData(data.fields[0] as Constr<Data>),
+            direction: Direction.fromPlutusData(data.fields[0] as Constr<DataType>),
             totalSwapAmount: data.fields[1] as bigint,
             ioRatioNumerator: data.fields[2] as bigint,
             ioRatioDenominator: data.fields[3] as bigint,
@@ -950,22 +951,22 @@ export namespace OrderV2 {
           return {
             type: StepType.WITHDRAW_IMBALANCE,
             withdrawalAmount: WithdrawAmount.fromPlutusData(
-              data.fields[0] as Constr<Data>
+              data.fields[0] as Constr<DataType>
             ),
             ratioAssetA: data.fields[1] as bigint,
             ratioAssetB: data.fields[2] as bigint,
             minimumAssetA: data.fields[3] as bigint,
-            killable: Killable.fromPlutusData(data.fields[4] as Constr<Data>),
+            killable: Killable.fromPlutusData(data.fields[4] as Constr<DataType>),
           };
         }
         case StepType.SWAP_ROUTING: {
           return {
             type: StepType.SWAP_ROUTING,
-            routings: (data.fields[0] as Constr<Data>[]).map(
+            routings: (data.fields[0] as Constr<DataType>[]).map(
               Route.fromPlutusData
             ),
             swapAmount: SwapAmount.fromPlutusData(
-              data.fields[1] as Constr<Data>
+              data.fields[1] as Constr<DataType>
             ),
             minimumReceived: data.fields[2] as bigint,
           };
@@ -983,7 +984,7 @@ export namespace OrderV2 {
         }
       }
     }
-    export function toPlutusData(step: Step): Constr<Data> {
+    export function toPlutusData(step: Step): Constr<DataType> {
       switch (step.type) {
         case StepType.SWAP_EXACT_IN: {
           return new Constr(step.type, [
@@ -1094,7 +1095,7 @@ export namespace OrderV2 {
       };
 
   export namespace ExtraDatum {
-    export function fromPlutusData(data: Constr<Data>): ExtraDatum {
+    export function fromPlutusData(data: Constr<DataType>): ExtraDatum {
       switch (data.index) {
         case ExtraDatumType.NO_DATUM: {
           invariant(
@@ -1133,7 +1134,7 @@ export namespace OrderV2 {
       }
     }
 
-    export function toPlutusData(extraDatum: ExtraDatum): Constr<Data> {
+    export function toPlutusData(extraDatum: ExtraDatum): Constr<DataType> {
       switch (extraDatum.type) {
         case ExtraDatumType.NO_DATUM: {
           return new Constr(extraDatum.type, []);
@@ -1163,7 +1164,7 @@ export namespace OrderV2 {
   export namespace Datum {
     export function fromPlutusData(
       networkId: NetworkId,
-      data: Constr<Data>
+      data: Constr<DataType>
     ): Datum {
       if (data.index !== 0) {
         throw new Error(
@@ -1175,7 +1176,7 @@ export namespace OrderV2 {
           `Fields Length of Order Datum must be 9, actual: ${data.index}`
         );
       }
-      const maybeExpiry = data.fields[8] as Constr<Data>;
+      const maybeExpiry = data.fields[8] as Constr<DataType>;
       let expiry: bigint[] | undefined;
       switch (maybeExpiry.index) {
         case 0: {
@@ -1212,24 +1213,24 @@ export namespace OrderV2 {
       }
       return {
         canceller: AuthorizationMethod.fromPlutusData(
-          data.fields[0] as Constr<Data>
+          data.fields[0] as Constr<DataType>
         ),
         refundReceiver: AddressPlutusData.fromPlutusData(
           networkId,
-          data.fields[1] as Constr<Data>
+          data.fields[1] as Constr<DataType>
         ),
         refundReceiverDatum: ExtraDatum.fromPlutusData(
-          data.fields[2] as Constr<Data>
+          data.fields[2] as Constr<DataType>
         ),
         successReceiver: AddressPlutusData.fromPlutusData(
           networkId,
-          data.fields[3] as Constr<Data>
+          data.fields[3] as Constr<DataType>
         ),
         successReceiverDatum: ExtraDatum.fromPlutusData(
-          data.fields[4] as Constr<Data>
+          data.fields[4] as Constr<DataType>
         ),
-        lpAsset: Asset.fromPlutusData(data.fields[5] as Constr<Data>),
-        step: Step.fromPlutusData(data.fields[6] as Constr<Data>),
+        lpAsset: Asset.fromPlutusData(data.fields[5] as Constr<DataType>),
+        step: Step.fromPlutusData(data.fields[6] as Constr<DataType>),
         maxBatcherFee: data.fields[7] as bigint,
         expiredOptions: expiry
           ? {
@@ -1240,7 +1241,7 @@ export namespace OrderV2 {
       };
     }
 
-    export function toPlutusData(datum: Datum): Constr<Data> {
+    export function toPlutusData(datum: Datum): Constr<DataType> {
       return new Constr(0, [
         AuthorizationMethod.toPlutusData(datum.canceller),
         AddressPlutusData.toPlutusData(datum.refundReceiver),
@@ -1286,7 +1287,7 @@ export namespace OrderV2 {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = Datum.fromPlutusData(networkId, Data.from(datum));
+      this.datum = Datum.fromPlutusData(networkId, DataObject.from(datum));
     }
   }
 }

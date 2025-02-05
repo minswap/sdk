@@ -1,6 +1,7 @@
 import invariant from "@minswap/tiny-invariant";
-import { Constr, Data } from "@spacebudz/lucid";
+import { Constr } from "@spacebudz/lucid";
 
+import { DataType } from "..";
 import { getScriptHashFromAddress } from "../utils/address-utils.internal";
 import { AddressPlutusData } from "./address.internal";
 import { DexV1Constant } from "./constants";
@@ -31,7 +32,7 @@ export type PoolFeeSharing = {
 export namespace PoolFeeSharing {
   export function toPlutusData(
     feeSharing: PoolFeeSharing
-  ): Constr<Constr<Data>> {
+  ): Constr<Constr<DataType>> {
     const { feeTo, feeToDatumHash } = feeSharing;
     return new Constr(0, [
       AddressPlutusData.toPlutusData(feeTo),
@@ -41,7 +42,7 @@ export namespace PoolFeeSharing {
 
   export function fromPlutusData(
     networkId: NetworkId,
-    data: Constr<Data>
+    data: Constr<DataType>
   ): PoolFeeSharing {
     if (data.index !== 0) {
       throw new Error(
@@ -49,7 +50,7 @@ export namespace PoolFeeSharing {
       );
     }
     let feeToDatumHash: string | undefined = undefined;
-    const maybeFeeToDatumHash = data.fields[1] as Constr<Data>;
+    const maybeFeeToDatumHash = data.fields[1] as Constr<DataType>;
     switch (maybeFeeToDatumHash.index) {
       case 0: {
         feeToDatumHash = maybeFeeToDatumHash.fields[0] as string;
@@ -68,7 +69,7 @@ export namespace PoolFeeSharing {
     return {
       feeTo: AddressPlutusData.fromPlutusData(
         networkId,
-        data.fields[0] as Constr<Data>
+        data.fields[0] as Constr<DataType>
       ),
       feeToDatumHash: feeToDatumHash,
     };

@@ -3,7 +3,6 @@ import invariant from "@minswap/tiny-invariant";
 import {
   Blockfrost,
   Constr,
-  Data,
   Lucid,
   Network,
   OutRef,
@@ -95,7 +94,7 @@ async function getPoolById(
   );
   const poolDatum = PoolV1.Datum.fromPlutusData(
     network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET,
-    Data.from(rawRoolDatum) as Constr<Data>
+    DataObject.from(rawRoolDatum) as Constr<DataType>
   );
   return {
     poolState: pool,

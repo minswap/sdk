@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Addresses, Data, Lucid } from "@spacebudz/lucid";
+import { Addresses, Lucid } from "@spacebudz/lucid";
 
 import {
   Asset,
@@ -38,7 +38,7 @@ export function validateCreateEvent(
   const { baseAsset, raiseAsset } = lbeV2Parameters;
   const datum = factoryUtxo.datum;
   invariant(datum, "Factory utxo must have inline datum");
-  const factory = LbeV2Types.FactoryDatum.fromPlutusData(Data.from(datum));
+  const factory = LbeV2Types.FactoryDatum.fromPlutusData(DataObject.from(datum));
   const config = LbeV2Constant.CONFIG[networkId];
   invariant(
     config.factoryAsset in factoryUtxo.assets,
@@ -167,7 +167,7 @@ export function validateUpdateEvent(
   invariant(datum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(datum)
+    DataObject.from(datum)
   );
   invariant(
     currentTime < treasuryDatum.startTime,
@@ -211,7 +211,7 @@ export function validateCancelEvent(
   invariant(datum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(datum)
+    DataObject.from(datum)
   );
   const {
     revocable,
@@ -251,7 +251,7 @@ export function validateCancelEvent(
     case LbeV2Types.CancelReason.CREATED_POOL: {
       const ammPoolUtxo = cancelData.ammPoolUtxo;
       invariant(ammPoolUtxo.datum, "ammFactory utxo must have inline datum");
-      const ammPool = PoolV2.Datum.fromPlutusData(Data.from(ammPoolUtxo.datum));
+      const ammPool = PoolV2.Datum.fromPlutusData(DataObject.from(ammPoolUtxo.datum));
       invariant(
         lbeId === PoolV2.computeLPAssetName(ammPool.assetA, ammPool.assetB),
         "treasury and Amm Pool must share the same lbe id"
@@ -290,7 +290,7 @@ export function validateDepositOrWithdrawOrder(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -300,7 +300,7 @@ export function validateDepositOrWithdrawOrder(
   const rawSellerDatum = sellerUtxo.datum;
   invariant(rawSellerDatum, "Seller utxo must have inline datum");
   const sellerDatum = LbeV2Types.SellerDatum.fromPlutusData(
-    Data.from(rawSellerDatum),
+    DataObject.from(rawSellerDatum),
     networkId
   );
   invariant(
@@ -316,7 +316,7 @@ export function validateDepositOrWithdrawOrder(
       "Order utxo assets must have order asset"
     );
     return LbeV2Types.OrderDatum.fromPlutusData(
-      Data.from(rawOrderDatum),
+      DataObject.from(rawOrderDatum),
       networkId
     );
   });
@@ -385,7 +385,7 @@ export function validateCloseEvent(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -399,7 +399,7 @@ export function validateCloseEvent(
   const rawHeadFactoryDatum = headFactoryUtxo.datum;
   invariant(rawHeadFactoryDatum, "Treasury utxo must have inline datum");
   const headFactoryDatum = LbeV2Types.FactoryDatum.fromPlutusData(
-    Data.from(rawHeadFactoryDatum)
+    DataObject.from(rawHeadFactoryDatum)
   );
   invariant(
     config.factoryAsset in headFactoryUtxo.assets,
@@ -409,7 +409,7 @@ export function validateCloseEvent(
   const rawTailFactoryDatum = tailFactoryUtxo.datum;
   invariant(rawTailFactoryDatum, "Treasury utxo must have inline datum");
   const tailFactoryDatum = LbeV2Types.FactoryDatum.fromPlutusData(
-    Data.from(rawTailFactoryDatum)
+    DataObject.from(rawTailFactoryDatum)
   );
   invariant(
     config.factoryAsset in tailFactoryUtxo.assets,
@@ -441,7 +441,7 @@ export function validateAddSeller(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -451,7 +451,7 @@ export function validateAddSeller(
   const rawManagerDatum = managerUtxo.datum;
   invariant(rawManagerDatum, "Manager utxo must have inline datum");
   const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-    Data.from(rawManagerDatum)
+    DataObject.from(rawManagerDatum)
   );
   invariant(
     config.managerAsset in managerUtxo.assets,
@@ -489,7 +489,7 @@ export function validateCountingSeller(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -499,7 +499,7 @@ export function validateCountingSeller(
   const rawManagerDatum = managerUtxo.datum;
   invariant(rawManagerDatum, "Manager utxo must have inline datum");
   const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-    Data.from(rawManagerDatum)
+    DataObject.from(rawManagerDatum)
   );
   invariant(
     config.managerAsset in managerUtxo.assets,
@@ -525,7 +525,7 @@ export function validateCountingSeller(
       "Seller utxo assets must have seller asset"
     );
     const sellerDatum = LbeV2Types.SellerDatum.fromPlutusData(
-      Data.from(rawSellerDatum),
+      DataObject.from(rawSellerDatum),
       networkId
     );
     invariant(
@@ -567,7 +567,7 @@ export function validateCollectManager(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -577,7 +577,7 @@ export function validateCollectManager(
   const rawManagerDatum = managerUtxo.datum;
   invariant(rawManagerDatum, "Manager utxo must have inline datum");
   const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-    Data.from(rawManagerDatum)
+    DataObject.from(rawManagerDatum)
   );
   invariant(
     config.managerAsset in managerUtxo.assets,
@@ -620,7 +620,7 @@ export function validateCollectOrders(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -631,7 +631,7 @@ export function validateCollectOrders(
     const rawOrderDatum = orderUtxo.datum;
     invariant(rawOrderDatum, "Order utxo must have inline datum");
     const orderDatum = LbeV2Types.OrderDatum.fromPlutusData(
-      Data.from(rawOrderDatum),
+      DataObject.from(rawOrderDatum),
       networkId
     );
     invariant(orderDatum.isCollected === false, "Order must not be collected");
@@ -676,7 +676,7 @@ export function validateRedeemOrders(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -687,7 +687,7 @@ export function validateRedeemOrders(
     const rawOrderDatum = orderUtxo.datum;
     invariant(rawOrderDatum, "Order utxo must have inline datum");
     const orderDatum = LbeV2Types.OrderDatum.fromPlutusData(
-      Data.from(rawOrderDatum),
+      DataObject.from(rawOrderDatum),
       networkId
     );
     invariant(
@@ -724,7 +724,7 @@ export function validateRefundOrders(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
   invariant(
     config.treasuryAsset in treasuryUtxo.assets,
@@ -735,7 +735,7 @@ export function validateRefundOrders(
     const rawOrderDatum = orderUtxo.datum;
     invariant(rawOrderDatum, "Order utxo must have inline datum");
     const orderDatum = LbeV2Types.OrderDatum.fromPlutusData(
-      Data.from(rawOrderDatum),
+      DataObject.from(rawOrderDatum),
       networkId
     );
     invariant(
@@ -774,13 +774,13 @@ export function validateCreateAmmPool(
   invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
   const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
     networkId,
-    Data.from(rawTreasuryDatum)
+    DataObject.from(rawTreasuryDatum)
   );
 
   const rawAmmFactoryDatum = ammFactoryUtxo.datum;
   invariant(rawAmmFactoryDatum, "Amm Factory utxo must have inline datum");
   const ammFactory = FactoryV2.Datum.fromPlutusData(
-    Data.from(rawAmmFactoryDatum)
+    DataObject.from(rawAmmFactoryDatum)
   );
 
   const {

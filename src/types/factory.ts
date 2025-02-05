@@ -1,5 +1,6 @@
-import { Constr, Data } from "@spacebudz/lucid";
+import { Constr } from "@spacebudz/lucid";
 
+import { DataObject, DataType } from "..";
 import { Asset } from "./asset";
 import { DexV2Constant } from "./constants";
 import { NetworkId } from "./network";
@@ -12,14 +13,14 @@ export namespace FactoryV2 {
     }
 
     export namespace Datum {
-        export function toPlutusData(datum: Datum): Constr<Data> {
+        export function toPlutusData(datum: Datum): Constr<DataType> {
             return new Constr(0, [
                 datum.head,
                 datum.tail
             ])
         }
 
-        export function fromPlutusData(data: Constr<Data>): Datum {
+        export function fromPlutusData(data: Constr<DataType>): Datum {
             if (data.index !== 0) {
                 throw new Error(`Index of Factory V2 Datum must be 0, actual: ${data.index}`);
             }
@@ -36,20 +37,20 @@ export namespace FactoryV2 {
     }
 
     export namespace Redeemer {
-        export function toPlutusData(redeemer: Redeemer): Constr<Data> {
+        export function toPlutusData(redeemer: Redeemer): Constr<DataType> {
             return new Constr(0, [
                 Asset.toPlutusData(redeemer.assetA),
                 Asset.toPlutusData(redeemer.assetB)
             ])
         }
 
-        export function fromPlutusData(data: Constr<Data>): Redeemer {
+        export function fromPlutusData(data: Constr<DataType>): Redeemer {
             if (data.index !== 0) {
                 throw new Error(`Index of Factory V2 Datum must be 0, actual: ${data.index}`);
             }
             return {
-                assetA: Asset.fromPlutusData(data.fields[0] as Constr<Data>),
-                assetB: Asset.fromPlutusData(data.fields[1] as Constr<Data>)
+                assetA: Asset.fromPlutusData(data.fields[0] as Constr<DataType>),
+                assetB: Asset.fromPlutusData(data.fields[1] as Constr<DataType>)
             }
         }
     }
@@ -72,7 +73,7 @@ export namespace FactoryV2 {
             this.txIn = txIn
             this.value = value
             this.datumCbor = datum
-            this.datum = Datum.fromPlutusData(Data.from(datum))
+            this.datum = Datum.fromPlutusData(DataObject.from(datum))
 
             const config = DexV2Constant.CONFIG[networkId]
             if (!value.find((v) => v.unit === config.factoryAsset && v.quantity === "1")) {

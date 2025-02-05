@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Data, Lucid, Utxo } from "@spacebudz/lucid";
+import { Lucid, Utxo } from "@spacebudz/lucid";
 
 import { LbeV2Constant, PoolV2 } from "..";
 import { BlockfrostAdapter } from "../adapters/blockfrost";
@@ -96,7 +96,7 @@ export class LbeV2Worker {
       invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
       const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
         this.networkId,
-        Data.from(rawTreasuryDatum)
+        DataObject.from(rawTreasuryDatum)
       );
       const lbeId = PoolV2.computeLPAssetName(
         treasuryDatum.baseAsset,
@@ -115,7 +115,7 @@ export class LbeV2Worker {
       const rawManagerDatum = managerUtxo.datum;
       invariant(rawManagerDatum, "Manager utxo must have inline datum");
       const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-        Data.from(rawManagerDatum)
+        DataObject.from(rawManagerDatum)
       );
       const lbeId = PoolV2.computeLPAssetName(
         managerDatum.baseAsset,
@@ -129,7 +129,7 @@ export class LbeV2Worker {
       const rawDatum = sellerUtxo.datum;
       invariant(rawDatum, "Seller utxo must have inline datum");
       const datum = LbeV2Types.SellerDatum.fromPlutusData(
-        Data.from(rawDatum),
+        DataObject.from(rawDatum),
         this.networkId
       );
       const lbeId = PoolV2.computeLPAssetName(
@@ -144,7 +144,7 @@ export class LbeV2Worker {
       const rawDatum = orderUtxo.datum;
       invariant(rawDatum, "Order utxo must have inline datum");
       const datum = LbeV2Types.OrderDatum.fromPlutusData(
-        Data.from(rawDatum),
+        DataObject.from(rawDatum),
         this.networkId
       );
       const lbeId = PoolV2.computeLPAssetName(
@@ -230,7 +230,7 @@ export class LbeV2Worker {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     if (treasuryDatum.collectedFund < (treasuryDatum.minimumRaise ?? 1n)) {
@@ -440,7 +440,7 @@ export class LbeV2Worker {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
     const {
       endTime,
@@ -469,7 +469,7 @@ export class LbeV2Worker {
       const rawManagerDatum = eventData.managerUtxo.datum;
       invariant(rawManagerDatum, "Treasury utxo must have inline datum");
       managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-        Data.from(rawManagerDatum)
+        DataObject.from(rawManagerDatum)
       );
     }
 
@@ -501,7 +501,7 @@ export class LbeV2Worker {
         invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
         const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
           this.networkId,
-          Data.from(rawTreasuryDatum)
+          DataObject.from(rawTreasuryDatum)
         );
         console.error(
           `Fail to run worker for LBE ${PoolV2.computeLPAssetName(treasuryDatum.baseAsset, treasuryDatum.raiseAsset)}: ${err}`

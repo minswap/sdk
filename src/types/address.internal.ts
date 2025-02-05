@@ -3,18 +3,18 @@ import {
   Addresses,
   Constr,
   Credential,
-  Data,
 } from "@spacebudz/lucid";
 
 import { NetworkId } from "./network";
+import { DataType } from "..";
 
 export namespace LucidCredential {
-  export function toPlutusData(data: Credential): Constr<Data> {
+  export function toPlutusData(data: Credential): Constr<DataType> {
     const constructor = data.type === "Key" ? 0 : 1;
     return new Constr(constructor, [data.hash]);
   }
 
-  export function fromPlutusData(data: Constr<Data>): Credential {
+  export function fromPlutusData(data: Constr<DataType>): Credential {
     switch (data.index) {
       case 0: {
         return {
@@ -38,7 +38,7 @@ export namespace LucidCredential {
 }
 
 export namespace AddressPlutusData {
-  export function toPlutusData(address: string): Constr<Data> {
+  export function toPlutusData(address: string): Constr<DataType> {
     const addressDetails = Addresses.inspect(address);
     if (addressDetails.type === "Base") {
       invariant(
@@ -70,23 +70,23 @@ export namespace AddressPlutusData {
 
   export function fromPlutusData(
     networkId: NetworkId,
-    data: Constr<Data>
+    data: Constr<DataType>
   ): string {
     switch (data.index) {
       case 0: {
         const paymentCredential = LucidCredential.fromPlutusData(
-          data.fields[0] as Constr<Data>
+          data.fields[0] as Constr<DataType>
         );
-        const maybeStakeCredentialConstr = data.fields[1] as Constr<Data>;
+        const maybeStakeCredentialConstr = data.fields[1] as Constr<DataType>;
         switch (maybeStakeCredentialConstr.index) {
           case 0: {
             // Base Address or Pointer Address
             const stakeCredentialConstr = maybeStakeCredentialConstr
-              .fields[0] as Constr<Data>;
+              .fields[0] as Constr<DataType>;
             switch (stakeCredentialConstr.index) {
               case 0: {
                 const stakeCredential = LucidCredential.fromPlutusData(
-                  stakeCredentialConstr.fields[0] as Constr<Data>
+                  stakeCredentialConstr.fields[0] as Constr<DataType>
                 );
                 return Addresses.credentialToAddress(
                   (networkId === NetworkId.MAINNET ? "Mainnet" : "Preprod"),
