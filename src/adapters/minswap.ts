@@ -63,10 +63,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
       alwaysParseAsBig: true,
       useNativeBigInt: true,
     }).parse(prismaPool.value);
-    const datumHash = Hasher.hashData(prismaPool.raw_datum) // TODO
-    // const datumHash = C.hash_plutus_data(
-    //   C.PlutusData.from_bytes(fromHex(prismaPool.raw_datum))
-    // ).to_hex();
+    const datumHash = Hasher.hashData(prismaPool.raw_datum);
     return new PoolV1.State(address, txIn, value, datumHash);
   }
 

@@ -1513,31 +1513,6 @@ async function _lbeV2CloseEventExample(
   });
 }
 
-/**
- * Initialize Lucid Instance for Browser Environment
- * @param network Network you're working on
- * @param projectId Blockfrost API KEY
- * @param blockfrostUrl Blockfrost URL
- * @returns
- */
-async function _getBrowserLucidInstance(
-  network: Network,
-  projectId: string,
-  blockfrostUrl: string
-): Promise<Lucid> {
-  const provider = new Blockfrost(blockfrostUrl, projectId);
-  const lucid = new Lucid({
-    provider: provider,
-    network: network,
-  });
-
-  // This is an approach we can inject Eternl Extension to Lucid Instance
-  // We can do similar with other wallet extensions
-  const api = await window.cardano.eternl.enable(); // TODO
-  lucid.selectWalletFromApi(api);
-  return lucid;
-}
-
 function calculateGcd(a: bigint, b: bigint): bigint {
   if (!b) {
     return a;
