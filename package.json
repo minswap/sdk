@@ -28,6 +28,7 @@
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
     "syncer:start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/syncer/main.ts",
+    "hi": "tsx --experimental-wasm-modules examples/hi.ts",
     "type-check": "tsc --noEmit"
   },
   "keywords": [
