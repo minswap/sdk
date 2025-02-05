@@ -35,23 +35,6 @@ export namespace LucidCredential {
       }
     }
   }
-
-  export function toCSLStakeCredential( // TODO
-    credential: Credential
-  ): C.StakeCredential {
-    switch (credential.type) {
-      case "Key": {
-        return C.StakeCredential.from_keyhash(
-          C.Ed25519KeyHash.from_hex(credential.hash)
-        );
-      }
-      case "Script": {
-        return C.StakeCredential.from_scripthash(
-          C.ScriptHash.from_hex(credential.hash)
-        );
-      }
-    }
-  }
 }
 
 export namespace AddressPlutusData {
@@ -94,8 +77,6 @@ export namespace AddressPlutusData {
         const paymentCredential = LucidCredential.fromPlutusData(
           data.fields[0] as Constr<Data>
         );
-        const cslPaymentCredential =
-          LucidCredential.toCSLStakeCredential(paymentCredential);
         const maybeStakeCredentialConstr = data.fields[1] as Constr<Data>;
         switch (maybeStakeCredentialConstr.index) {
           case 0: {
@@ -107,14 +88,11 @@ export namespace AddressPlutusData {
                 const stakeCredential = LucidCredential.fromPlutusData(
                   stakeCredentialConstr.fields[0] as Constr<Data>
                 );
-                const cslStakeCredential =
-                  LucidCredential.toCSLStakeCredential(stakeCredential);
-                const cslAddress = C.BaseAddress.new( // TODO
-                  networkId,
-                  cslPaymentCredential,
-                  cslStakeCredential
-                ).to_address();
-                return cslAddress.to_bech32(undefined);
+                return Addresses.credentialToAddress(
+                  (networkId === NetworkId.MAINNET ? "Mainnet" : "Preprod"),
+                  paymentCredential,
+                  stakeCredential
+                )
               }
               case 1: {
                 throw new Error(`Pointer Address has not been supported yet`);
@@ -127,12 +105,10 @@ export namespace AddressPlutusData {
             }
           }
           case 1: {
-            // Enterprise Address
-            const cslAddress = C.EnterpriseAddress.new( // TODO
-              networkId,
-              cslPaymentCredential
-            ).to_address();
-            return cslAddress.to_bech32(undefined);
+            return Addresses.credentialToAddress(
+              (networkId === NetworkId.MAINNET ? "Mainnet" : "Preprod"),
+              paymentCredential
+            );
           }
           default: {
             throw new Error(
