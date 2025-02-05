@@ -8,3 +8,9 @@ export enum NetworkEnvironment {
   TESTNET_PREVIEW = 2,
   TESTNET_PREPROD = 1,
 }
+
+export type SlotConfig = {
+  zeroTime: number;
+  zeroSlot: number;
+  slotLength: number;
+};

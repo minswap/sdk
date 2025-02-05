@@ -9,7 +9,7 @@ import { DexV1Constant, StableswapConstant } from "../types/constants";
 import { NetworkEnvironment, NetworkId } from "../types/network";
 import { PoolV1, PoolV2, StablePool } from "../types/pool";
 import { TxHistory, TxIn, Value } from "../types/tx.internal";
-import { networkEnvToLucidNetwork } from "../utils/network.internal";
+import { networkEnvToLucidNetwork, slotToBeginUnixTime } from "../utils/network.internal";
 import {
   GetPoolByIdParams,
   GetPoolInTxParams,
@@ -128,10 +128,9 @@ export class MinswapAdapter extends BlockfrostAdapter {
         txIndex: prismaPool.created_tx_index,
         blockHeight: Number(prismaPool.block_id),
         time: new Date(
-          slotToBeginUnixTime( // TODO
+          slotToBeginUnixTime(
             Number(prismaPool.slot),
-            SLOT_CONFIG_NETWORK[network] // TODO
-
+            network
           )
         ),
       })
