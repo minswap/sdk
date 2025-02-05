@@ -1,5 +1,5 @@
-import { Constr, Data } from "@spacebudz/lucid";
 import invariant from "@minswap/tiny-invariant";
+import { Constr, Data } from "@spacebudz/lucid";
 
 import { getScriptHashFromAddress } from "../utils/address-utils.internal";
 import { AddressPlutusData } from "./address.internal";

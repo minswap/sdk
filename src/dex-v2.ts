@@ -8,10 +8,10 @@ import {
   Hasher,
   Lucid,
   OutRef,
+  stakeCredentialOf,
   Tx,
   TxComplete,
   Utxo,
-  stakeCredentialOf,
 } from "@spacebudz/lucid";
 
 import { BlockfrostAdapter } from "./adapters/blockfrost";
@@ -690,8 +690,7 @@ export class DexV2 {
   private buildOrderAddress(senderAddressStakeCred: Credential): string {
     const orderAddress =
       DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
-    const orderAddressPaymentCred =
-      Addresses.inspect(orderAddress).payment;
+    const orderAddressPaymentCred = Addresses.inspect(orderAddress).payment;
     invariant(
       orderAddressPaymentCred,
       "order address payment credentials not found"
@@ -801,8 +800,7 @@ export class DexV2 {
         orderAssets["lovelace"] = totalBatcherFee;
       }
 
-      const senderPaymentCred =
-        Addresses.inspect(sender).payment;
+      const senderPaymentCred = Addresses.inspect(sender).payment;
       invariant(
         senderPaymentCred,
         "sender address payment credentials not found"
@@ -840,9 +838,7 @@ export class DexV2 {
             type: OrderV2.ExtraDatumType.NO_DATUM,
           };
         } else {
-          const datumHash = Hasher.hashData(
-            customSuccessReceiverDatum.datum
-          );
+          const datumHash = Hasher.hashData(customSuccessReceiverDatum.datum);
           successReceiverDatum = {
             type: customSuccessReceiverDatum.type,
             hash: datumHash,
@@ -857,9 +853,7 @@ export class DexV2 {
             type: OrderV2.ExtraDatumType.NO_DATUM,
           };
         } else {
-          const datumHash = Hasher.hashData(
-            customRefundReceiverDatum.datum
-          );
+          const datumHash = Hasher.hashData(customRefundReceiverDatum.datum);
           refundReceiverDatum = {
             type: customRefundReceiverDatum.type,
             hash: datumHash,
@@ -883,7 +877,7 @@ export class DexV2 {
       };
       let orderAddress: string;
       try {
-        const senderStakeAddress = stakeCredentialOf(sender)
+        const senderStakeAddress = stakeCredentialOf(sender);
         orderAddress = this.buildOrderAddress(senderStakeAddress);
       } catch {
         // if fails then sender address doesn't have stake credentials
@@ -953,8 +947,7 @@ export class DexV2 {
     const lucidTx = this.lucid.newTx().readFrom([orderRef]);
     for (const utxo of orderUtxos) {
       const orderAddr = utxo.address;
-      const orderScriptPaymentCred =
-        Addresses.inspect(orderAddr).payment;
+      const orderScriptPaymentCred = Addresses.inspect(orderAddr).payment;
       invariant(
         orderScriptPaymentCred?.type === "Script" &&
           orderScriptPaymentCred.hash ===
@@ -1023,8 +1016,7 @@ export class DexV2 {
     );
     for (const orderUtxo of sortedOrderUtxos) {
       const orderAddr = orderUtxo.address;
-      const orderScriptPaymentCred =
-        Addresses.inspect(orderAddr).payment;
+      const orderScriptPaymentCred = Addresses.inspect(orderAddr).payment;
       invariant(
         orderScriptPaymentCred?.type === "Script" &&
           orderScriptPaymentCred.hash ===

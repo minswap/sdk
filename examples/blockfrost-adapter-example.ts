@@ -7,7 +7,8 @@ import {
   Lucid,
   Network,
   OutRef,
-  TxComplete, Utxo,
+  TxComplete,
+  Utxo,
 } from "@spacebudz/lucid";
 import BigNumber from "bignumber.js";
 
@@ -533,12 +534,13 @@ async function _withdrawV2TxExample(
   const lpAmount = 20_000n;
   const pool = await blockFrostAdapter.getV2PoolByLp(lpAsset);
   invariant(pool, "Pool not found");
-  const { withdrawalA, withdrawalB } =
-    DexV2Calculation.calculateWithdrawAmount({
+  const { withdrawalA, withdrawalB } = DexV2Calculation.calculateWithdrawAmount(
+    {
       withdrawalLPAmount: lpAmount,
       totalLiquidity: pool.totalLiquidity,
       datumReserves: pool.datumReserves,
-    });
+    }
+  );
 
   const slippageTolerance = new BigNumber(20).div(100);
   const acceptableAmountAReceive = Slippage.apply({
@@ -1229,7 +1231,7 @@ async function _updateLbeV2EventExample(
   const baseAsset = Asset.fromString(
     "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0ba547d1ae595c49041570991a1c33729106e635f20643b99e3ddb1e77dc439586"
   );
-  const curSlot = lucid.utils.unixTimeToSlots(Date.now())
+  const curSlot = lucid.utils.unixTimeToSlots(Date.now());
   const curDate = lucid.utils.slotsToUnixTime(curSlot);
   const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
     baseAsset: baseAsset,

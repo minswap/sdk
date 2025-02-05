@@ -1,4 +1,4 @@
-import { Configuration,MaestroClient } from "@maestro-org/typescript-sdk";
+import { Configuration, MaestroClient } from "@maestro-org/typescript-sdk";
 import invariant from "@minswap/tiny-invariant";
 import { Lucid, Network, TxComplete } from "@spacebudz/lucid";
 
