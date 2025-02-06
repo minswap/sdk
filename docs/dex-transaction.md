@@ -32,14 +32,14 @@ If you are transacting through the `Stableswap` or `DexV2` classes, the transact
 ### 1. Make a Trade on a Stable Pool
 
 ```typescript
-const network: Network = "Preprod";
-const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+const networkId: NetworkId = NetworkId.TESTNET;
+const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
 const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
 
-const lucid = await getBackendLucidInstance(
-  network,
+const lucid = await getBackendBlockfrostLucidInstance(
+  networkId,
   blockfrostProjectId,
   blockfrostUrl,
   address
@@ -55,7 +55,11 @@ const blockfrostAdapter = new BlockfrostAdapter(
 
 const utxos = await lucid.utxosAt(address);
 
-const lpAsset = Asset.fromString("<STABLE_POOL_LP_ASSET>");
+// This is LP asset of tDJED-tiUSD pool.
+// You can replace this with your own LP asset.
+const lpAsset = Asset.fromString(
+  "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+);
 const config = StableswapConstant.getConfigByLpAsset(
   lpAsset,
   NetworkId.TESTNET
@@ -63,9 +67,11 @@ const config = StableswapConstant.getConfigByLpAsset(
 
 const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
 
-invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+if (!pool) {
+  throw new Error("could not find pool");
+}
 
-const swapAmount = 1_000n;
+const swapAmount = BigInt(1_000);
 
 // This pool has 2 assets in its config: [tDJED, tiUSD].
 // Index-0 Asset is tDJED, and Index-1 Asset is tiUSD.
@@ -90,16 +96,18 @@ const txComplete = await new Stableswap(lucid).createBulkOrdersTx({
       lpAsset: lpAsset,
       type: StableOrder.StepType.SWAP,
       assetInAmount: swapAmount,
-      assetInIndex: 0n,
-      assetOutIndex: 1n,
+      assetInIndex: BigInt(0),
+      assetOutIndex: BigInt(1),
       minimumAssetOut: amountOut,
     },
   ],
 });
 
 const signedTx = await txComplete
-  .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
-  .complete();
+  .signWithPrivateKey(
+    "<YOUR_PRIVATE_KEY>"
+  )
+  .commit();
 const txId = await signedTx.submit();
 console.info(`Transaction submitted successfully: ${txId}`);
 ```

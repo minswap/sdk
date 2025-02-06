@@ -28,8 +28,6 @@
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate",
     "syncer:start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/syncer/main.ts",
-    "dex-v2-trade": "tsx --experimental-wasm-modules examples/dex-v2-trade-example.ts",
-    "create-dex-v2-lp": "tsx --experimental-wasm-modules examples/create-dex-v2-lp-example.ts",
     "type-check": "tsc --noEmit"
   },
   "keywords": [

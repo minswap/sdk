@@ -2,6 +2,7 @@ export * from "./adapters";
 export * from "./calculate";
 export * from "./dex";
 export * from "./dex-v2";
+export { Stableswap } from "./stableswap";
 export * from "./types/asset";
 export * from "./types/constants";
 export * from "./types/network";
