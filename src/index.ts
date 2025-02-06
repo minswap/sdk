@@ -7,6 +7,7 @@ export * from "./types/constants";
 export * from "./types/network";
 export * from "./types/order";
 export * from "./types/pool";
+export * from "./utils/lucid";
 
 import { Data } from "@spacebudz/lucid";
 

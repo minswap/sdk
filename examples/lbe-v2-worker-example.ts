@@ -1,21 +1,20 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { Network } from "@spacebudz/lucid";
 
 import { NetworkId } from "../src";
 import { BlockfrostAdapter } from "../src/adapters/blockfrost";
 import { LbeV2Worker } from "../src/lbe-v2-worker/worker";
 import { NetworkEnvironment } from "../src/types/network";
-import { getBackendLucidInstance } from "../src/utils/lucid";
+import { getBackendBlockfrostLucidInstance } from "../src/utils/lucid";
 
 async function main(): Promise<void> {
-  const network: Network = "Preprod";
+  const networkId: NetworkId = NetworkId.TESTNET;
   const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
     "addr_test1vrd9v47japxwp8540vsrh4grz4u9urfpfawwy7sf6r0vxqgm7wdxh";
-  const lucid = await getBackendLucidInstance(
-    network,
+  const lucid = await getBackendBlockfrostLucidInstance(
+    networkId,
     blockfrostProjectId,
     blockfrostUrl,
     address

@@ -1,10 +1,8 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import invariant from "@minswap/tiny-invariant";
 import {
-  Blockfrost,
   Constr,
   Lucid,
-  Network,
   OutRef,
   TxComplete,
   Utxo,
@@ -36,7 +34,7 @@ import { BlockfrostAdapter } from "../src/adapters/blockfrost";
 import { LbeV2 } from "../src/lbe-v2/lbe-v2";
 import { Stableswap } from "../src/stableswap";
 import { LbeV2Types } from "../src/types/lbe-v2";
-import { getBackendLucidInstance } from "../src/utils/lucid";
+import { getBackendBlockfrostLucidInstance } from "../src/utils/lucid";
 import { Slippage } from "../src/utils/slippage.internal";
 
 const MIN: Asset = {
@@ -45,14 +43,14 @@ const MIN: Asset = {
 };
 
 async function main(): Promise<void> {
-  const network: Network = "Preprod";
+  const networkId: NetworkId = NetworkId.TESTNET;
   const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address =
     "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
-  const lucid = await getBackendLucidInstance(
-    network,
+  const lucid = await getBackendBlockfrostLucidInstance(
+    networkId,
     blockfrostProjectId,
     blockfrostUrl,
     address
@@ -80,7 +78,7 @@ async function main(): Promise<void> {
 }
 
 async function getPoolById(
-  network: Network,
+  networkId: NetworkId,
   blockfrostAdapter: BlockfrostAdapter,
   poolId: string
 ): Promise<{ poolState: PoolV1.State; poolDatum: PoolV1.Datum }> {
@@ -95,7 +93,7 @@ async function getPoolById(
     pool.datumHash
   );
   const poolDatum = PoolV1.Datum.fromPlutusData(
-    network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET,
+    networkId,
     DataObject.from(rawRoolDatum) as Constr<DataType>
   );
   return {
@@ -106,7 +104,7 @@ async function getPoolById(
 
 // MARK: DEX V1
 async function _depositTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
   address: string,
@@ -117,7 +115,7 @@ async function _depositTxExample(
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -150,7 +148,7 @@ async function _depositTxExample(
 }
 
 async function _swapExactInTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
   address: string,
@@ -161,7 +159,7 @@ async function _swapExactInTxExample(
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -191,7 +189,7 @@ async function _swapExactInTxExample(
 }
 
 async function _swapExactOutTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
   address: string,
@@ -202,7 +200,7 @@ async function _swapExactOutTxExample(
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -231,7 +229,7 @@ async function _swapExactOutTxExample(
 }
 
 async function _swapLimitExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
   address: string,
@@ -241,7 +239,7 @@ async function _swapLimitExample(
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
-  const { poolDatum } = await getPoolById(network, blockfrostAdapter, poolId);
+  const { poolDatum } = await getPoolById(networkId, blockfrostAdapter, poolId);
 
   const swapAmountADA = 10_000_000n;
 
@@ -262,7 +260,7 @@ async function _swapLimitExample(
 }
 
 async function _withdrawTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
   address: string,
@@ -273,7 +271,7 @@ async function _withdrawTxExample(
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -307,7 +305,7 @@ async function _withdrawTxExample(
 }
 
 async function _zapTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
   address: string,
@@ -318,7 +316,7 @@ async function _zapTxExample(
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
