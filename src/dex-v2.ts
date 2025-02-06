@@ -901,7 +901,7 @@ export class DexV2 {
     const limitOrderMessage = limitOrders.length > 0 ? limitOrders : undefined;
     lucidTx.attachMetadata(674, {
       msg: [metadata],
-      limitOrders: limitOrderMessage,
+      ...(limitOrderMessage && { limitOrders: limitOrderMessage }),
     });
     if (Object.keys(reductionAssets).length !== 0) {
       lucidTx.payTo(sender, reductionAssets);
