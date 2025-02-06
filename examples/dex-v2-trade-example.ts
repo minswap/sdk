@@ -7,12 +7,13 @@ import {
   DexV2,
   DexV2Calculation,
   getBackendBlockfrostLucidInstance,
-  NetworkId, OrderV2,
+  NetworkId,
+  OrderV2,
 } from "../src";
 
 async function main() {
   const network: NetworkId = NetworkId.TESTNET;
-  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+  const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address = "<YOUR_ADDRESS>";
@@ -56,30 +57,32 @@ async function main() {
   });
 
   // 20% slippage tolerance
-  const acceptedAmountOut = DexV2Calculation.calculateAmountOutWithSlippageTolerance({
-    slippageTolerancePercent: 20,
-    amountOut: amountOut,
-    type: "down",
-  });
+  const acceptedAmountOut =
+    DexV2Calculation.calculateAmountOutWithSlippageTolerance({
+      slippageTolerancePercent: 20,
+      amountOut: amountOut,
+      type: "down",
+    });
 
-  const txComplete = await new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx(
-    {
-      sender: address,
-      availableUtxos: utxos,
-      orderOptions: [
-        {
-          type: OrderV2.StepType.SWAP_EXACT_IN,
-          amountIn: swapAmount,
-          assetIn: assetA,
-          direction: OrderV2.Direction.A_TO_B,
-          minimumAmountOut: acceptedAmountOut,
-          lpAsset: pool.lpAsset,
-          isLimitOrder: false,
-          killOnFailed: false,
-        },
-      ],
-    }
-  );
+  const txComplete = await new DexV2(
+    lucid,
+    blockfrostAdapter
+  ).createBulkOrdersTx({
+    sender: address,
+    availableUtxos: utxos,
+    orderOptions: [
+      {
+        type: OrderV2.StepType.SWAP_EXACT_IN,
+        amountIn: swapAmount,
+        assetIn: assetA,
+        direction: OrderV2.Direction.A_TO_B,
+        minimumAmountOut: acceptedAmountOut,
+        lpAsset: pool.lpAsset,
+        isLimitOrder: false,
+        killOnFailed: false,
+      },
+    ],
+  });
 
   const signedTx = await txComplete
     .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
