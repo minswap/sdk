@@ -1,10 +1,12 @@
 import invariant from "@minswap/tiny-invariant";
 import { Utxo } from "@spacebudz/lucid";
 import Big from "big.js";
+import BigNumber from "bignumber.js";
 import { zipWith } from "remeda";
 
 import { OrderV2 } from "./types/order";
 import { PoolV2 } from "./types/pool";
+import { Slippage } from "./utils/slippage.internal";
 import { sqrt } from "./utils/sqrt.internal";
 
 /**
@@ -18,6 +20,7 @@ export type CalculateSwapExactInOptions = {
   reserveIn: bigint;
   reserveOut: bigint;
 };
+
 /**
  * Calculate Amount Out & Price Impact while swapping exact in
  * @param options See @CalculateSwapExactInOptions description
@@ -56,6 +59,7 @@ export type CalculateSwapExactOutOptions = {
   reserveIn: bigint;
   reserveOut: bigint;
 };
+
 /**
  * Calculate necessary Amount In & Price Impact to cover the @exactAmountOut while swapping exact out
  * @param options See @CalculateSwapExactOutOptions description
@@ -229,6 +233,12 @@ export namespace DexV2Calculation {
     tradingFeeNumerator: bigint;
   };
 
+  export type CalculateAmountOutWithSlippageToleranceOptions = {
+    slippageTolerancePercent: number;
+    amountOut: bigint;
+    type: "up" | "down";
+  };
+
   export type CalculateAmountInOptions = {
     reserveIn: bigint;
     reserveOut: bigint;
@@ -312,6 +322,19 @@ export namespace DexV2Calculation {
       PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR * amountInDenominator * reserveIn +
       amountInNumerator * diff;
     return [numerator, denominator];
+  }
+
+  export function calculateAmountOutWithSlippageTolerance({
+    slippageTolerancePercent,
+    amountOut,
+    type,
+  }: CalculateAmountOutWithSlippageToleranceOptions): bigint {
+    const slippageTolerance = new BigNumber(slippageTolerancePercent).div(100);
+    return Slippage.apply({
+      slippage: slippageTolerance,
+      amount: amountOut,
+      type: type,
+    });
   }
 
   export function calculateAmountIn({
