@@ -87,6 +87,35 @@ export function calculateSwapExactOut(options: CalculateSwapExactOutOptions): {
 }
 
 /**
+ * Options to calculate amount with slippage tolerance up or down
+ * @slippageTolerancePercent The slippage tolerance percent
+ * @amount The amount that we want to calculate
+ * @type The type of slippage tolerance, up or down
+ */
+export type CalculateSwapExactOutWithSlippageToleranceOptions = {
+  slippageTolerancePercent: number;
+  amount: bigint;
+  type: "up" | "down";
+};
+
+/**
+ * Calculate result amount with slippage tolerance up or down
+ * @param options See @CalculateSwapExactOutWithSlippageToleranceOptions description
+ * @returns The amount needed of the input token for the swap and its price impact
+ */
+export function calculateAmountWithSlippageTolerance(
+  options: CalculateSwapExactOutWithSlippageToleranceOptions
+): bigint {
+  const { slippageTolerancePercent, amount, type } = options;
+  const slippageTolerance = new BigNumber(slippageTolerancePercent).div(100);
+  return Slippage.apply({
+    slippage: slippageTolerance,
+    amount: amount,
+    type: type,
+  });
+}
+
+/**
  * Options to calculate LP Amount while depositing
  * @depositedAmountA Amount of Asset A you want to deposit
  * @depositedAmountB Amount of Asset B you want to deposit
@@ -233,12 +262,6 @@ export namespace DexV2Calculation {
     tradingFeeNumerator: bigint;
   };
 
-  export type CalculateAmountWithSlippageToleranceOptions = {
-    slippageTolerancePercent: number;
-    amount: bigint;
-    type: "up" | "down";
-  };
-
   export type CalculateAmountInOptions = {
     reserveIn: bigint;
     reserveOut: bigint;
@@ -322,19 +345,6 @@ export namespace DexV2Calculation {
       PoolV2.DEFAULT_TRADING_FEE_DENOMINATOR * amountInDenominator * reserveIn +
       amountInNumerator * diff;
     return [numerator, denominator];
-  }
-
-  export function calculateAmountWithSlippageTolerance({
-    slippageTolerancePercent,
-    amount,
-    type,
-  }: CalculateAmountWithSlippageToleranceOptions): bigint {
-    const slippageTolerance = new BigNumber(slippageTolerancePercent).div(100);
-    return Slippage.apply({
-      slippage: slippageTolerance,
-      amount: amount,
-      type: type,
-    });
   }
 
   export function calculateAmountIn({

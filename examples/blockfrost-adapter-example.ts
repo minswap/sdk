@@ -7,6 +7,7 @@ import {
   ADA,
   Asset,
   BlockfrostAdapter,
+  calculateAmountWithSlippageTolerance,
   calculateDeposit,
   calculateSwapExactIn,
   calculateSwapExactOut,
@@ -40,8 +41,7 @@ async function main(): Promise<void> {
   const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
-  const address =
-    "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
+  const address = "<YOUR_ADDRESS>";
   const lucid = await getBackendBlockfrostLucidInstance(
     networkId,
     blockfrostProjectId,
@@ -57,10 +57,14 @@ async function main(): Promise<void> {
     })
   );
 
-  const txComplete = await _lbeV2DepositOrderExample(
+  const utxos = await lucid.utxosAt(address);
+
+  // Replace your function that you want to test here
+  const txComplete = await _swapExactInV2TxExample(
     lucid,
+    blockfrostAdapter,
     address,
-    blockfrostAdapter
+    utxos
   );
 
   const signedTx = await txComplete
@@ -126,11 +130,15 @@ async function _depositTxExample(
   });
 
   // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
-  const slippageTolerance = 20n;
-  const acceptedLPAmount = (lpAmount * (100n - slippageTolerance)) / 100n;
+  const acceptedLPAmount = calculateAmountWithSlippageTolerance(
+    {
+      slippageTolerancePercent: 20,
+      amount: lpAmount,
+      type: "down",
+    }
+  )
 
-  const dex = new Dex(lucid);
-  return await dex.buildDepositTx({
+  return await new Dex(lucid).buildDepositTx({
     amountA: necessaryAmountA,
     amountB: necessaryAmountB,
     assetA: poolDatum.assetA,
@@ -366,11 +374,12 @@ async function _createPoolV2(
   const txComplete = await dexV2.createPoolTx({
     assetA: ADA,
     assetB: {
+      // Replace with your asset
       policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
       tokenName: "434d",
     },
     amountA: 10_000000n,
-    amountB: 300_000000n,
+    amountB: 30_000n,
     tradingFeeNumerator: 100n,
   });
 
@@ -399,7 +408,7 @@ async function _swapExactInV2TxExample(
 
   // 20%
   const acceptedAmountOut =
-    DexV2Calculation.calculateAmountWithSlippageTolerance({
+    calculateAmountWithSlippageTolerance({
       slippageTolerancePercent: 20,
       amount: amountOut,
       type: "down",
@@ -444,7 +453,7 @@ async function _swapExactOutV2TxExample(
   });
 
   // 20%
-  const maximumAmountIn = DexV2Calculation.calculateAmountWithSlippageTolerance(
+  const maximumAmountIn = calculateAmountWithSlippageTolerance(
     {
       slippageTolerancePercent: 20,
       amount: amountIn,
@@ -491,7 +500,7 @@ async function _depositV2TxExample(
   });
 
   const acceptableLPAmount =
-    DexV2Calculation.calculateAmountWithSlippageTolerance({
+    calculateAmountWithSlippageTolerance({
       slippageTolerancePercent: 20,
       amount: lpAmount,
       type: "down",
@@ -539,14 +548,14 @@ async function _withdrawV2TxExample(
   );
 
   const acceptableAmountAReceive =
-    DexV2Calculation.calculateAmountWithSlippageTolerance({
+    calculateAmountWithSlippageTolerance({
       slippageTolerancePercent: 20,
       amount: withdrawalA,
       type: "down",
     });
 
   const acceptableAmountBReceive =
-    DexV2Calculation.calculateAmountWithSlippageTolerance({
+    calculateAmountWithSlippageTolerance({
       slippageTolerancePercent: 20,
       amount: withdrawalB,
       type: "down",
@@ -588,7 +597,7 @@ async function _stopV2TxExample(
   });
 
   // sell at 10% down
-  const stopAmount = DexV2Calculation.calculateAmountWithSlippageTolerance({
+  const stopAmount = calculateAmountWithSlippageTolerance({
     slippageTolerancePercent: 10,
     amount: amountOut,
     type: "down",
@@ -630,13 +639,13 @@ async function _ocoV2TxExample(
     tradingFeeNumerator: pool.feeA[0],
   });
 
-  const limitAmount = DexV2Calculation.calculateAmountWithSlippageTolerance({
+  const limitAmount = calculateAmountWithSlippageTolerance({
     slippageTolerancePercent: 20,
     amount: amountOut,
     type: "up",
   });
 
-  const stopAmount = DexV2Calculation.calculateAmountWithSlippageTolerance({
+  const stopAmount = calculateAmountWithSlippageTolerance({
     slippageTolerancePercent: 20,
     amount: amountOut,
     type: "down",
@@ -681,7 +690,7 @@ async function _zapOutV2TxExample(
   });
 
   const acceptableZapOutAmount =
-    DexV2Calculation.calculateAmountWithSlippageTolerance({
+    calculateAmountWithSlippageTolerance({
       slippageTolerancePercent: 20,
       amount: zapAmountOut,
       type: "down",
@@ -723,7 +732,7 @@ async function _partialSwapV2TxExample(
   });
 
   // 20% above market
-  const limitAmount = DexV2Calculation.calculateAmountWithSlippageTolerance({
+  const limitAmount = calculateAmountWithSlippageTolerance({
     slippageTolerancePercent: 20,
     amount: amountOut,
     type: "up",
@@ -809,7 +818,7 @@ async function _multiRoutingTxExample(
   }
 
   const acceptableOutputAmount =
-    DexV2Calculation.calculateAmountWithSlippageTolerance({
+    calculateAmountWithSlippageTolerance({
       slippageTolerancePercent: 20,
       amount: lastAmountIn,
       type: "down",
@@ -847,8 +856,9 @@ async function _cancelV2TxExample(
   return new DexV2(lucid, blockFrostAdapter).cancelOrder({
     orderOutRefs: [
       {
+        // Replace with your tx hash of your Tx Order
         txHash:
-          "83e22abd3fad8525b02bf2fd1c8e8d0dbc37dbbe09384d666699081ee3e6f282",
+          "3523bd66555055b75d9bc7ebaabed85bf5f08834e9d40e6864803c960329c2a7",
         outputIndex: 0,
       },
     ],
@@ -874,7 +884,7 @@ async function _swapStableExample(
 
   invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
-  const swapAmount = 1_000n;
+  const swapAmount = 10n;
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
   // Index-0 Asset is tDJED. Index-1 Asset is tiUSD.
@@ -976,7 +986,7 @@ async function _withdrawStableExample(
 
   invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
-  const lpAmount = 10_000n;
+  const lpAmount = 100n;
 
   const amountOuts = StableswapCalculation.calculateWithdraw({
     withdrawalLPAmount: lpAmount,
@@ -1103,7 +1113,7 @@ async function _bulkOrderStableExample(
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
   );
-  const lpAmount = 12345n;
+  const lpAmount = 100n;
   const outIndex = 0;
 
   return new Stableswap(lucid).createBulkOrdersTx({
@@ -1120,7 +1130,7 @@ async function _bulkOrderStableExample(
       {
         lpAsset: lpAsset,
         type: StableOrder.StepType.SWAP,
-        assetInAmount: 1000n,
+        assetInAmount: 10n,
         assetInIndex: 0n,
         assetOutIndex: 1n,
         minimumAssetOut: 1n,
