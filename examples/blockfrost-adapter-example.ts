@@ -1129,7 +1129,10 @@ async function _bulkOrderStableExample(
   });
 }
 
-async function _cancelStableExample(lucid: Lucid, outRef: OutRef): Promise<TxComplete> {
+async function _cancelStableExample(
+  lucid: Lucid,
+  outRef: OutRef
+): Promise<TxComplete> {
   const orderUtxos = await lucid.utxosByOutRef([outRef]);
   invariant(orderUtxos.length > 0, "Can not find order to cancel");
   return new Stableswap(lucid).buildCancelOrdersTx({
@@ -1167,9 +1170,7 @@ async function _createLbeV2EventExample(
     minimumRaise: 50n,
     maximumRaise: 100n,
     penaltyConfig: {
-      penaltyStartTime: BigInt(
-        curDate + ONE_MINUTE_IN_MS * 2
-      ),
+      penaltyStartTime: BigInt(curDate + ONE_MINUTE_IN_MS * 2),
       percent: 20n,
     },
     revocable: true,
