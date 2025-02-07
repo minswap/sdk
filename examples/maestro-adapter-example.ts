@@ -2,10 +2,14 @@ import { Configuration, MaestroClient } from "@maestro-org/typescript-sdk";
 import invariant from "@minswap/tiny-invariant";
 import { Lucid, Network, TxComplete } from "@spacebudz/lucid";
 
-import { Asset, NetworkId, PoolV2 } from "../src";
-import { MaestroAdapter } from "../src/adapters/maestro";
-import { LbeV2 } from "../src/lbe-v2/lbe-v2";
-import { getBackendMaestroLucidInstance } from "../src/utils/lucid";
+import {
+  Asset,
+  getBackendMaestroLucidInstance,
+  LbeV2,
+  MaestroAdapter,
+  NetworkId,
+  PoolV2,
+} from "../src";
 
 async function main(): Promise<void> {
   const cardanoNetwork: Network = "Preprod";
