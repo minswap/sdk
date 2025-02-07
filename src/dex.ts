@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
+import { Addresses, Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
 import { Utxo } from "@spacebudz/lucid";
 
 import { DataObject, DataType } from ".";
@@ -179,7 +179,7 @@ export class Dex {
         DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .addSigner(sender);
+      .addSigner(Addresses.addressToCredential(sender).hash);
     if (Object.keys(reductionAssets).length !== 0) {
       tx.payTo(sender, reductionAssets);
     }
@@ -257,7 +257,7 @@ export class Dex {
         orderAssets
       )
       .payTo(sender, reductionAssets)
-      .addSigner(sender)
+      .addSigner(Addresses.addressToCredential(sender).hash)
       .attachMetadata(674, { msg: [MetadataMessage.SWAP_EXACT_OUT_ORDER] });
 
     if (customReceiver && customReceiver.receiverDatum) {
@@ -325,7 +325,7 @@ export class Dex {
         orderAssets
       )
       .payTo(sender, reductionAssets)
-      .addSigner(sender)
+      .addSigner(Addresses.addressToCredential(sender).hash)
       .attachMetadata(674, { msg: [MetadataMessage.WITHDRAW_ORDER] })
       .commit();
   }
@@ -375,7 +375,7 @@ export class Dex {
         orderAssets
       )
       .payTo(sender, reductionAssets)
-      .addSigner(sender)
+      .addSigner(Addresses.addressToCredential(sender).hash)
       .attachMetadata(674, { msg: [MetadataMessage.ZAP_IN_ORDER] })
       .commit();
   }
@@ -427,7 +427,7 @@ export class Dex {
         orderAssets
       )
       .payTo(sender, reductionAssets)
-      .addSigner(sender)
+      .addSigner(Addresses.addressToCredential(sender).hash)
       .attachMetadata(674, { msg: [MetadataMessage.DEPOSIT_ORDER] })
       .commit();
   }
@@ -451,7 +451,7 @@ export class Dex {
     return await this.lucid
       .newTx()
       .collectFrom([orderUtxo], redeemer)
-      .addSigner(orderDatum.sender)
+      .addSigner(Addresses.addressToCredential(orderDatum.sender).hash)
       .attachScript(DexV1Constant.ORDER_SCRIPT)
       .attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] })
       .commit();

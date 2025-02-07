@@ -226,7 +226,7 @@ export class LbeV2 {
       ownerPaymentCredential && ownerPaymentCredential?.type === "Key",
       "owner payment credential must be public key"
     );
-    lucidTx.addSigner(owner);
+    lucidTx.addSigner(Addresses.addressToCredential(owner).hash);
 
     // METADATA / EXTRA METADATA
     const extraData: string[] | null =
@@ -304,7 +304,7 @@ export class LbeV2 {
     );
 
     // SIGNER
-    lucidTx.addSigner(owner);
+    lucidTx.addSigner(Addresses.addressToCredential(owner).hash);
 
     // TIME RANGE
     lucidTx
@@ -389,7 +389,7 @@ export class LbeV2 {
           validTo,
           Number(revocable ? endTime : startTime) - 1000
         );
-        lucidTx.addSigner(owner).attachMetadata(674, {
+        lucidTx.addSigner(Addresses.addressToCredential(owner).hash).attachMetadata(674, {
           msg: [MetadataMessage.CANCEL_EVENT_BY_OWNER],
         });
         break;
@@ -542,7 +542,7 @@ export class LbeV2 {
 
     // ADD SIGNER
     for (const orderDatum of orderDatums) {
-      lucidTx.addSigner(orderDatum.owner);
+      lucidTx.addSigner(Addresses.addressToCredential(orderDatum.owner).hash);
     }
 
     // MINT
@@ -739,7 +739,7 @@ export class LbeV2 {
     );
 
     // ADD SIGNER
-    lucidTx.addSigner(treasuryDatum.owner);
+    lucidTx.addSigner(Addresses.addressToCredential(treasuryDatum.owner).hash);
 
     // VALID TIME
     lucidTx.validFrom(currentTime).validTo(currentTime + THREE_HOUR_IN_MS);

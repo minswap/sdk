@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
+import { Addresses, Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
 import { Utxo } from "@spacebudz/lucid";
 
 import {
@@ -415,7 +415,7 @@ export class Stableswap {
       const orderRef = orderRefs[0];
       tx.readFrom([orderRef])
         .collectFrom([utxo], redeemer)
-        .addSigner(datum.sender);
+        .addSigner(Addresses.addressToCredential(datum.sender).hash);
     }
     tx.attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] });
     return await tx.commit();
