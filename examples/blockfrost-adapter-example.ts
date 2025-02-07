@@ -1129,20 +1129,9 @@ async function _bulkOrderStableExample(
   });
 }
 
-async function _cancelStableExample(lucid: Lucid): Promise<TxComplete> {
-  const orderUtxos = await lucid.utxosByOutRef([
-    {
-      txHash:
-        "c3ad8e0aa159a22a14088474908e5c23ba6772a6aa82f8250e7e8eaa1016b2d8",
-      outputIndex: 0,
-    },
-    {
-      txHash:
-        "72e57a1fd90bf0b9291a6fa8e04793099d51df7844813689dde67ce3eea03c1f",
-      outputIndex: 0,
-    },
-  ]);
-  invariant(orderUtxos.length === 2, "Can not find order to cancel");
+async function _cancelStableExample(lucid: Lucid, outRef: OutRef): Promise<TxComplete> {
+  const orderUtxos = await lucid.utxosByOutRef([outRef]);
+  invariant(orderUtxos.length > 0, "Can not find order to cancel");
   return new Stableswap(lucid).buildCancelOrdersTx({
     orderUtxos: orderUtxos,
   });
@@ -1159,6 +1148,7 @@ async function _createLbeV2EventExample(
   address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
   );
@@ -1166,19 +1156,19 @@ async function _createLbeV2EventExample(
   const curDate = lucid.utils.slotsToUnixTime(curSlot);
   const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
     baseAsset: baseAsset,
-    reserveBase: 100_000n,
+    reserveBase: 10n,
     raiseAsset: ADA,
-    startTime: BigInt(curDate + ONE_HOUR_IN_MS),
+    startTime: BigInt(curDate + ONE_MINUTE_IN_MS),
     endTime: BigInt(curDate + 2 * ONE_HOUR_IN_MS),
     owner: address,
     receiver: address,
     poolAllocation: 100n,
     minimumOrderRaise: undefined,
-    minimumRaise: 10_000_000n,
-    maximumRaise: 100_000_000n,
+    minimumRaise: 50n,
+    maximumRaise: 100n,
     penaltyConfig: {
       penaltyStartTime: BigInt(
-        curDate + ONE_HOUR_IN_MS + 20 * ONE_MINUTE_IN_MS
+        curDate + ONE_MINUTE_IN_MS * 2
       ),
       percent: 20n,
     },
@@ -1231,6 +1221,7 @@ async function _updateLbeV2EventExample(
   address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0ba547d1ae595c49041570991a1c33729106e635f20643b99e3ddb1e77dc439586"
   );
@@ -1238,7 +1229,7 @@ async function _updateLbeV2EventExample(
   const curDate = lucid.utils.slotsToUnixTime(curSlot);
   const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
     baseAsset: baseAsset,
-    reserveBase: 100_000n,
+    reserveBase: 100n,
     raiseAsset: ADA,
     startTime: BigInt(curDate + _ONE_DAY_IN_MS * 20),
     endTime: BigInt(curDate + _ONE_DAY_IN_MS * 20 + 2 * ONE_HOUR_IN_MS),
@@ -1246,8 +1237,8 @@ async function _updateLbeV2EventExample(
     receiver: address,
     poolAllocation: 100n,
     minimumOrderRaise: undefined,
-    minimumRaise: 10_000_000n,
-    maximumRaise: 100_000_000n,
+    minimumRaise: 50n,
+    maximumRaise: 100n,
     penaltyConfig: {
       penaltyStartTime: BigInt(
         curDate + _ONE_DAY_IN_MS * 20 + 10 * ONE_MINUTE_IN_MS
@@ -1300,6 +1291,7 @@ async function _lbeV2AddMoreSellersExample(
   address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
   );
@@ -1335,6 +1327,7 @@ async function _cancelLbeV2EventByOwnerExample(
   address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d865190718981e4e7fab3eb80963f14148714d7a7847652d4017d0fb744db075027"
   );
@@ -1361,6 +1354,7 @@ async function _lbeV2DepositOrderExample(
   address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
   );
@@ -1417,6 +1411,7 @@ async function _lbeV2WithdrawOrderExample(
   address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
   );
@@ -1463,7 +1458,7 @@ async function _lbeV2WithdrawOrderExample(
     treasuryUtxo: treasuryUtxos[0],
     sellerUtxo: sellerUtxos[0],
     owner: address,
-    action: { type: "withdraw", withdrawalAmount: 1_000_000n },
+    action: { type: "withdraw", withdrawalAmount: 10n },
   });
 }
 
@@ -1473,6 +1468,7 @@ async function _lbeV2CloseEventExample(
   address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
   );
