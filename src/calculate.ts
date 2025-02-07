@@ -233,9 +233,9 @@ export namespace DexV2Calculation {
     tradingFeeNumerator: bigint;
   };
 
-  export type CalculateAmountOutWithSlippageToleranceOptions = {
+  export type CalculateAmountWithSlippageToleranceOptions = {
     slippageTolerancePercent: number;
-    amountOut: bigint;
+    amount: bigint;
     type: "up" | "down";
   };
 
@@ -324,15 +324,15 @@ export namespace DexV2Calculation {
     return [numerator, denominator];
   }
 
-  export function calculateAmountOutWithSlippageTolerance({
+  export function calculateAmountWithSlippageTolerance({
     slippageTolerancePercent,
-    amountOut,
+    amount,
     type,
-  }: CalculateAmountOutWithSlippageToleranceOptions): bigint {
+  }: CalculateAmountWithSlippageToleranceOptions): bigint {
     const slippageTolerance = new BigNumber(slippageTolerancePercent).div(100);
     return Slippage.apply({
       slippage: slippageTolerance,
-      amount: amountOut,
+      amount: amount,
       type: type,
     });
   }

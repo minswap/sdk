@@ -2,9 +2,11 @@ export * from "./adapters";
 export * from "./calculate";
 export * from "./dex";
 export * from "./dex-v2";
+export * from "./lbe-v2/lbe-v2";
 export { Stableswap } from "./stableswap";
 export * from "./types/asset";
 export * from "./types/constants";
+export * from "./types/lbe-v2"
 export * from "./types/network";
 export * from "./types/order";
 export * from "./types/pool";

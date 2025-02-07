@@ -6,6 +6,7 @@ import BigNumber from "bignumber.js";
 import {
   ADA,
   Asset,
+  BlockfrostAdapter,
   calculateDeposit,
   calculateSwapExactIn,
   calculateSwapExactOut,
@@ -16,20 +17,18 @@ import {
   Dex,
   DexV2,
   DexV2Calculation,
+  getBackendBlockfrostLucidInstance,
+  LbeV2,
+  LbeV2Types,
   NetworkId,
   OrderV2,
   PoolV1,
   PoolV2,
   StableOrder,
+  Stableswap,
   StableswapCalculation,
   StableswapConstant,
 } from "../src";
-import { BlockfrostAdapter } from "../src/adapters/blockfrost";
-import { LbeV2 } from "../src/lbe-v2/lbe-v2";
-import { Stableswap } from "../src/stableswap";
-import { LbeV2Types } from "../src/types/lbe-v2";
-import { getBackendBlockfrostLucidInstance } from "../src/utils/lucid";
-import { Slippage } from "../src/utils/slippage.internal";
 
 const MIN: Asset = {
   policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
@@ -63,6 +62,7 @@ async function main(): Promise<void> {
     address,
     blockfrostAdapter
   );
+
   const signedTx = await txComplete
     .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
     .commit();
@@ -396,13 +396,14 @@ async function _swapExactInV2TxExample(
     amountIn: swapAmount,
     tradingFeeNumerator: pool.feeA[0],
   });
+
   // 20%
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptedAmountOut = Slippage.apply({
-    slippage: slippageTolerance,
-    amount: amountOut,
-    type: "down",
-  });
+  const acceptedAmountOut =
+    DexV2Calculation.calculateAmountWithSlippageTolerance({
+      slippageTolerancePercent: 20,
+      amount: amountOut,
+      type: "down",
+    });
 
   return new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx({
     sender: address,
@@ -443,12 +444,14 @@ async function _swapExactOutV2TxExample(
   });
 
   // 20%
-  const slippageTolerance = new BigNumber(20).div(100);
-  const maximumAmountIn = Slippage.apply({
-    slippage: slippageTolerance,
-    amount: amountIn,
-    type: "up",
-  });
+  const maximumAmountIn = DexV2Calculation.calculateAmountWithSlippageTolerance(
+    {
+      slippageTolerancePercent: 20,
+      amount: amountIn,
+      type: "up",
+    }
+  );
+
   return new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx({
     sender: address,
     availableUtxos: availableUtxos,
@@ -487,12 +490,12 @@ async function _depositV2TxExample(
     poolInfo: pool.info,
   });
 
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptableLPAmount = Slippage.apply({
-    slippage: slippageTolerance,
-    amount: lpAmount,
-    type: "down",
-  });
+  const acceptableLPAmount =
+    DexV2Calculation.calculateAmountWithSlippageTolerance({
+      slippageTolerancePercent: 20,
+      amount: lpAmount,
+      type: "down",
+    });
 
   return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
     sender: address,
@@ -535,17 +538,20 @@ async function _withdrawV2TxExample(
     }
   );
 
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptableAmountAReceive = Slippage.apply({
-    slippage: slippageTolerance,
-    amount: withdrawalA,
-    type: "down",
-  });
-  const acceptableAmountBReceive = Slippage.apply({
-    slippage: slippageTolerance,
-    amount: withdrawalB,
-    type: "down",
-  });
+  const acceptableAmountAReceive =
+    DexV2Calculation.calculateAmountWithSlippageTolerance({
+      slippageTolerancePercent: 20,
+      amount: withdrawalA,
+      type: "down",
+    });
+
+  const acceptableAmountBReceive =
+    DexV2Calculation.calculateAmountWithSlippageTolerance({
+      slippageTolerancePercent: 20,
+      amount: withdrawalB,
+      type: "down",
+    });
+
   return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
     sender: address,
     availableUtxos,
@@ -582,8 +588,8 @@ async function _stopV2TxExample(
   });
 
   // sell at 10% down
-  const stopAmount = Slippage.apply({
-    slippage: new BigNumber(10).div(100),
+  const stopAmount = DexV2Calculation.calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 10,
     amount: amountOut,
     type: "down",
   });
@@ -623,16 +629,19 @@ async function _ocoV2TxExample(
     amountIn: amountA,
     tradingFeeNumerator: pool.feeA[0],
   });
-  const limitAmount = Slippage.apply({
-    slippage: new BigNumber(20).div(100),
+
+  const limitAmount = DexV2Calculation.calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: amountOut,
     type: "up",
   });
-  const stopAmount = Slippage.apply({
-    slippage: new BigNumber(20).div(100),
+
+  const stopAmount = DexV2Calculation.calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: amountOut,
     type: "down",
   });
+
   return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
     sender: address,
     orderOptions: [
@@ -671,12 +680,12 @@ async function _zapOutV2TxExample(
     poolInfo: pool.info,
   });
 
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptableZapOutAmount = Slippage.apply({
-    slippage: slippageTolerance,
-    amount: zapAmountOut,
-    type: "down",
-  });
+  const acceptableZapOutAmount =
+    DexV2Calculation.calculateAmountWithSlippageTolerance({
+      slippageTolerancePercent: 20,
+      amount: zapAmountOut,
+      type: "down",
+    });
 
   return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
     sender: address,
@@ -712,9 +721,10 @@ async function _partialSwapV2TxExample(
     amountIn: amountA,
     tradingFeeNumerator: pool.feeA[0],
   });
+
   // 20% above market
-  const limitAmount = Slippage.apply({
-    slippage: new BigNumber(20).div(100),
+  const limitAmount = DexV2Calculation.calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: amountOut,
     type: "up",
   });
@@ -798,12 +808,12 @@ async function _multiRoutingTxExample(
     lastAmountIn = amountOut;
   }
 
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptableOutputAmount = Slippage.apply({
-    slippage: slippageTolerance,
-    amount: lastAmountIn,
-    type: "down",
-  });
+  const acceptableOutputAmount =
+    DexV2Calculation.calculateAmountWithSlippageTolerance({
+      slippageTolerancePercent: 20,
+      amount: lastAmountIn,
+      type: "down",
+    });
 
   return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
     sender: address,
