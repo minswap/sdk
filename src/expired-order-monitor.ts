@@ -100,7 +100,7 @@ export class ExpiredOrderMonitor {
       const address = Addresses.credentialToAddress(
         this.lucid.network,
         credential
-      )
+      );
       const availableUtxos = await this.lucid.utxosAt(address);
       const txComplete = await new DexV2(
         this.lucid,
