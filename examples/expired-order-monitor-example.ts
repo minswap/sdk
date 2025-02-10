@@ -28,6 +28,7 @@ async function main(): Promise<void> {
     })
   );
 
+  // To test it, you need to create an expired order first
   const monitor = new ExpiredOrderMonitor({
     lucid,
     blockfrostAdapter,

@@ -29,6 +29,7 @@ async function main(): Promise<void> {
     })
   );
 
+  // To test it, you need to create an event, then you create a deposit order
   const worker = new LbeV2Worker({
     networkEnv: NetworkEnvironment.TESTNET_PREPROD,
     networkId: NetworkId.TESTNET,
