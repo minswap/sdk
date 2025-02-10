@@ -1,7 +1,7 @@
-import { Lucid } from "@spacebudz/lucid";
+import { Addresses, Crypto, Lucid } from "@spacebudz/lucid";
 
 import { DexV2, DexV2Constant, OrderV2 } from ".";
-import { BlockfrostAdapter } from "./adapters/blockfrost";
+import { BlockfrostAdapter } from "./adapters";
 import { runRecurringJob } from "./utils/job";
 
 type DexV2WorkerConstructor = {
@@ -96,12 +96,19 @@ export class ExpiredOrderMonitor {
       return;
     }
     try {
+      const credential = Crypto.privateKeyToDetails(this.privateKey).credential;
+      const address = Addresses.credentialToAddress(
+        this.lucid.network,
+        credential
+      )
+      const availableUtxos = await this.lucid.utxosAt(address);
       const txComplete = await new DexV2(
         this.lucid,
         this.blockfrostAdapter
       ).cancelExpiredOrders({
         orderUtxos: orderUtxos,
         currentSlot,
+        availableUtxos,
         extraDatumMap: mapDatum,
       });
       const signedTx = await txComplete

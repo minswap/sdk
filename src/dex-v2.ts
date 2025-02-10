@@ -13,8 +13,7 @@ import {
   Utxo,
 } from "@spacebudz/lucid";
 
-import { DataObject, DataType } from ".";
-import { BlockfrostAdapter } from "./adapters/blockfrost";
+import { Adapter, DataObject, DataType } from ".";
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
 import { compareUtxo, DexV2Calculation } from "./calculate";
@@ -194,6 +193,7 @@ export type CancelBulkOrdersOptions = {
 
 export type CancelExpiredOrderOptions = {
   orderUtxos: Utxo[];
+  availableUtxos: Utxo[];
   currentSlot: number;
   extraDatumMap: Record<string, string>;
 };
@@ -201,11 +201,11 @@ export type CancelExpiredOrderOptions = {
 export class DexV2 {
   private readonly lucid: Lucid;
   private readonly networkId: NetworkId;
-  private readonly adapter: BlockfrostAdapter;
+  private readonly adapter: Adapter;
   private readonly networkEnv: NetworkEnvironment;
   private readonly dexVersion = DexVersion.DEX_V2;
 
-  constructor(lucid: Lucid, adapter: BlockfrostAdapter) {
+  constructor(lucid: Lucid, adapter: Adapter) {
     this.lucid = lucid;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
@@ -996,6 +996,7 @@ export class DexV2 {
   async cancelExpiredOrders({
     orderUtxos,
     currentSlot,
+    availableUtxos,
     extraDatumMap,
   }: CancelExpiredOrderOptions): Promise<TxComplete> {
     const refScript = await this.lucid.utxosByOutRef([
@@ -1010,6 +1011,7 @@ export class DexV2 {
     const sortedOrderUtxos = [...orderUtxos].sort(compareUtxo);
 
     const lucidTx = this.lucid.newTx().readFrom(refScript);
+    lucidTx.collectFrom(availableUtxos);
     lucidTx.collectFrom(
       sortedOrderUtxos,
       DataObject.to(
