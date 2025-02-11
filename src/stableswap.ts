@@ -1,15 +1,10 @@
-import {
-  Address,
-  Assets,
-  Constr,
-  Data,
-  Lucid,
-  TxComplete,
-  UTxO,
-} from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Addresses, Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
+import { Utxo } from "@spacebudz/lucid";
 
 import {
+  DataObject,
+  DataType,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
   StableOrder,
@@ -77,12 +72,12 @@ export type OrderOptions = (
 
 export type BulkOrdersOption = {
   options: OrderOptions[];
-  sender: Address;
-  availableUtxos: UTxO[];
+  sender: string;
+  availableUtxos: Utxo[];
 };
 
 export type BuildCancelOrderOptions = {
-  orderUtxos: UTxO[];
+  orderUtxos: Utxo[];
 };
 
 export class Stableswap {
@@ -340,20 +335,19 @@ export class Stableswap {
       tx.payToContract(
         config.orderAddress,
         {
-          inline: Data.to(StableOrder.Datum.toPlutusData(datum)),
+          Inline: DataObject.to(StableOrder.Datum.toPlutusData(datum)),
         },
         orderAssets
       );
 
       if (customReceiver && customReceiver.receiverDatum) {
         const utxoForStoringDatum = buildUtxoToStoreDatum(
-          this.lucid,
           sender,
           customReceiver.receiver,
           customReceiver.receiverDatum.datum
         );
         if (utxoForStoringDatum) {
-          tx.payToAddressWithData(
+          tx.payToWithData(
             utxoForStoringDatum.address,
             utxoForStoringDatum.outputData,
             utxoForStoringDatum.assets
@@ -362,7 +356,7 @@ export class Stableswap {
       }
     }
     if (Object.keys(reductionAssets).length !== 0) {
-      tx.payToAddress(sender, reductionAssets);
+      tx.payTo(sender, reductionAssets);
     }
     tx.attachMetadata(674, {
       msg: [
@@ -371,7 +365,7 @@ export class Stableswap {
           : this.getOrderMetadata(orderOptions[0]),
       ],
     });
-    return await tx.complete();
+    return await tx.commit();
   }
 
   async buildCancelOrdersTx(
@@ -379,7 +373,9 @@ export class Stableswap {
   ): Promise<TxComplete> {
     const tx = this.lucid.newTx();
 
-    const redeemer = Data.to(new Constr(StableOrder.Redeemer.CANCEL_ORDER, []));
+    const redeemer = DataObject.to(
+      new Constr(StableOrder.Redeemer.CANCEL_ORDER, [])
+    );
     for (const utxo of options.orderUtxos) {
       const config = StableswapConstant.getConfigFromStableswapOrderAddress(
         utxo.address,
@@ -394,13 +390,13 @@ export class Stableswap {
         const rawDatum = utxo.datum;
         datum = StableOrder.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum)
+          DataObject.from(rawDatum)
         );
       } else if (utxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(utxo);
         datum = StableOrder.Datum.fromPlutusData(
           this.networkId,
-          rawDatum as Constr<Data>
+          rawDatum as Constr<DataType>
         );
       } else {
         throw new Error(
@@ -419,9 +415,9 @@ export class Stableswap {
       const orderRef = orderRefs[0];
       tx.readFrom([orderRef])
         .collectFrom([utxo], redeemer)
-        .addSigner(datum.sender);
+        .addSigner(Addresses.addressToCredential(datum.sender).hash);
     }
     tx.attachMetadata(674, { msg: [MetadataMessage.CANCEL_ORDER] });
-    return await tx.complete();
+    return await tx.commit();
   }
 }

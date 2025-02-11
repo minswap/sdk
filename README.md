@@ -24,7 +24,8 @@ We provide multiple adapters to get the price and liquidity pool information.
 
 ## ES Module Requirement
 
-This package depends on `lucid-cardano`, which is an ESM package, so it's also an ESM package. To import from ESM package, you need to specify `"type": "module"` in `package.json` and configure other build flags accordingly.
+This package depends on `@spacebudz/lucid`, which is an ESM package, so it's also an ESM package. To import from ESM package, you need to specify `"type": "module"` in `package.json` and configure other build flags accordingly.
+Also, `--experimental-wasm-modules` flag needs to be set in Node.js and `@jsr:registry=https://npm.jsr.io` needs to be added to `.npmrc` file.
 
 ## Examples
 

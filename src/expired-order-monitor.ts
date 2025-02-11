@@ -1,7 +1,7 @@
-import { Lucid } from "@minswap/lucid-cardano";
+import { Addresses, Crypto, Lucid } from "@spacebudz/lucid";
 
 import { DexV2, DexV2Constant, OrderV2 } from ".";
-import { BlockfrostAdapter } from "./adapters/blockfrost";
+import { BlockfrostAdapter } from "./adapters";
 import { runRecurringJob } from "./utils/job";
 
 type DexV2WorkerConstructor = {
@@ -37,7 +37,7 @@ export class ExpiredOrderMonitor {
     console.info("starting expired order canceller");
     const { orders: allOrders } = await this.blockfrostAdapter.getAllV2Orders();
     const currentSlot = await this.blockfrostAdapter.currentSlot();
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     const mapDatum: Record<string, string> = {};
     const orders: OrderV2.State[] = [];
     for (const order of allOrders) {
@@ -96,17 +96,24 @@ export class ExpiredOrderMonitor {
       return;
     }
     try {
+      const credential = Crypto.privateKeyToDetails(this.privateKey).credential;
+      const address = Addresses.credentialToAddress(
+        this.lucid.network,
+        credential
+      );
+      const availableUtxos = await this.lucid.utxosAt(address);
       const txComplete = await new DexV2(
         this.lucid,
         this.blockfrostAdapter
       ).cancelExpiredOrders({
         orderUtxos: orderUtxos,
         currentSlot,
+        availableUtxos,
         extraDatumMap: mapDatum,
       });
       const signedTx = await txComplete
         .signWithPrivateKey(this.privateKey)
-        .complete();
+        .commit();
 
       const txId = await signedTx.submit();
       console.info(`Transaction submitted successfully: ${txId}`);

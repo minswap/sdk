@@ -1,6 +1,7 @@
-import { Constr, Credential, Data } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Constr, Credential } from "@spacebudz/lucid";
 
+import { DataObject, DataType } from "..";
 import { sha3 } from "../utils/hash.internal";
 import { LucidCredential } from "./address.internal";
 import { ADA, Asset } from "./asset";
@@ -118,7 +119,7 @@ export namespace PoolV1 {
   };
 
   export namespace Datum {
-    export function toPlutusData(datum: Datum): Constr<Data> {
+    export function toPlutusData(datum: Datum): Constr<DataType> {
       const { assetA, assetB, totalLiquidity, rootKLast, feeSharing } = datum;
       return new Constr(0, [
         Asset.toPlutusData(assetA),
@@ -133,18 +134,18 @@ export namespace PoolV1 {
 
     export function fromPlutusData(
       networkId: NetworkId,
-      data: Constr<Data>
+      data: Constr<DataType>
     ): Datum {
       if (data.index !== 0) {
         throw new Error(`Index of Pool Datum must be 0, actual: ${data.index}`);
       }
       let feeSharing: PoolFeeSharing | undefined = undefined;
-      const maybeFeeSharingConstr = data.fields[4] as Constr<Data>;
+      const maybeFeeSharingConstr = data.fields[4] as Constr<DataType>;
       switch (maybeFeeSharingConstr.index) {
         case 0: {
           feeSharing = PoolFeeSharing.fromPlutusData(
             networkId,
-            maybeFeeSharingConstr.fields[0] as Constr<Data>
+            maybeFeeSharingConstr.fields[0] as Constr<DataType>
           );
           break;
         }
@@ -159,8 +160,8 @@ export namespace PoolV1 {
         }
       }
       return {
-        assetA: Asset.fromPlutusData(data.fields[0] as Constr<Data>),
-        assetB: Asset.fromPlutusData(data.fields[1] as Constr<Data>),
+        assetA: Asset.fromPlutusData(data.fields[0] as Constr<DataType>),
+        assetB: Asset.fromPlutusData(data.fields[1] as Constr<DataType>),
         totalLiquidity: data.fields[2] as bigint,
         rootKLast: data.fields[3] as bigint,
         feeSharing: feeSharing,
@@ -189,7 +190,7 @@ export namespace StablePool {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = Datum.fromPlutusData(Data.from(datum));
+      this.datum = Datum.fromPlutusData(DataObject.from(datum));
       const allConfigs = StableswapConstant.CONFIG[networkId];
       const config = allConfigs.find((cfg) => cfg.poolAddress === address);
       if (!config) {
@@ -244,7 +245,7 @@ export namespace StablePool {
   };
 
   export namespace Datum {
-    export function toPlutusData(datum: Datum): Constr<Data> {
+    export function toPlutusData(datum: Datum): Constr<DataType> {
       const { balances, totalLiquidity, amplificationCoefficient, orderHash } =
         datum;
       return new Constr(0, [
@@ -255,7 +256,7 @@ export namespace StablePool {
       ]);
     }
 
-    export function fromPlutusData(data: Constr<Data>): Datum {
+    export function fromPlutusData(data: Constr<DataType>): Datum {
       if (data.index !== 0) {
         throw new Error(`Index of Pool Datum must be 0, actual: ${data.index}`);
       }
@@ -318,7 +319,7 @@ export namespace PoolV2 {
       this.txIn = txIn;
       this.value = value;
       this.datumRaw = datum;
-      this.datum = Datum.fromPlutusData(Data.from(datum));
+      this.datum = Datum.fromPlutusData(DataObject.from(datum));
       this.config = DexV2Constant.CONFIG[networkId];
       this.lpAsset = {
         policyId: this.config.lpPolicyId,
@@ -432,7 +433,7 @@ export namespace PoolV2 {
   };
 
   export namespace Datum {
-    export function toPlutusData(datum: Datum): Constr<Data> {
+    export function toPlutusData(datum: Datum): Constr<DataType> {
       const {
         poolBatchingStakeCredential,
         assetA,
@@ -462,18 +463,18 @@ export namespace PoolV2 {
       ]);
     }
 
-    export function fromPlutusData(data: Constr<Data>): Datum {
+    export function fromPlutusData(data: Constr<DataType>): Datum {
       if (data.index !== 0) {
         throw new Error(`Index of Pool Datum must be 0, actual: ${data.index}`);
       }
-      const stakeCredentialConstr = data.fields[0] as Constr<Data>;
+      const stakeCredentialConstr = data.fields[0] as Constr<DataType>;
       if (stakeCredentialConstr.index !== 0) {
         throw new Error(
           `Index of Stake Credential must be 0, actual: ${stakeCredentialConstr.index}`
         );
       }
       let feeSharingNumerator: bigint | undefined = undefined;
-      const maybeFeeSharingConstr = data.fields[8] as Constr<Data>;
+      const maybeFeeSharingConstr = data.fields[8] as Constr<DataType>;
       switch (maybeFeeSharingConstr.index) {
         case 0: {
           feeSharingNumerator = maybeFeeSharingConstr.fields[0] as bigint;
@@ -489,14 +490,14 @@ export namespace PoolV2 {
           );
         }
       }
-      const allowDynamicFeeConstr = data.fields[9] as Constr<Data>;
+      const allowDynamicFeeConstr = data.fields[9] as Constr<DataType>;
       const allowDynamicFee = allowDynamicFeeConstr.index === 1;
       return {
         poolBatchingStakeCredential: LucidCredential.fromPlutusData(
-          stakeCredentialConstr.fields[0] as Constr<Data>
+          stakeCredentialConstr.fields[0] as Constr<DataType>
         ),
-        assetA: Asset.fromPlutusData(data.fields[1] as Constr<Data>),
-        assetB: Asset.fromPlutusData(data.fields[2] as Constr<Data>),
+        assetA: Asset.fromPlutusData(data.fields[1] as Constr<DataType>),
+        assetB: Asset.fromPlutusData(data.fields[2] as Constr<DataType>),
         totalLiquidity: data.fields[3] as bigint,
         reserveA: data.fields[4] as bigint,
         reserveB: data.fields[5] as bigint,

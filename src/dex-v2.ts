@@ -1,19 +1,19 @@
+import invariant from "@minswap/tiny-invariant";
 import {
-  Address,
+  Addresses,
   Assets,
   Constr,
   Credential,
-  Data,
+  Hasher,
   Lucid,
   OutRef,
+  stakeCredentialOf,
   Tx,
   TxComplete,
-  UnixTime,
-  UTxO,
-} from "@minswap/lucid-cardano";
-import invariant from "@minswap/tiny-invariant";
+  Utxo,
+} from "@spacebudz/lucid";
 
-import { BlockfrostAdapter } from "./adapters/blockfrost";
+import { Adapter, DataObject, DataType } from ".";
 import { BatcherFee } from "./batcher-fee-reduction/calculate";
 import { DexVersion } from "./batcher-fee-reduction/configs.internal";
 import { compareUtxo, DexV2Calculation } from "./calculate";
@@ -31,14 +31,14 @@ import { lucidToNetworkEnv } from "./utils/network.internal";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
 export type V2CustomReceiver = {
-  refundReceiver: Address;
+  refundReceiver: string;
   refundReceiverDatum?: {
     type:
       | OrderV2.ExtraDatumType.DATUM_HASH
       | OrderV2.ExtraDatumType.INLINE_DATUM;
     datum: string;
   };
-  successReceiver: Address;
+  successReceiver: string;
   successReceiverDatum?: {
     type:
       | OrderV2.ExtraDatumType.DATUM_HASH
@@ -68,10 +68,10 @@ export type CreatePoolV2Options = {
 };
 
 export type BulkOrdersOption = {
-  sender: Address;
+  sender: string;
   orderOptions: OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
-  availableUtxos: UTxO[];
+  availableUtxos: Utxo[];
   composeTx?: Tx;
   authorizationMethodType?: OrderV2.AuthorizationMethodType;
 };
@@ -192,19 +192,20 @@ export type CancelBulkOrdersOptions = {
 };
 
 export type CancelExpiredOrderOptions = {
-  orderUtxos: UTxO[];
-  currentSlot: UnixTime;
+  orderUtxos: Utxo[];
+  availableUtxos: Utxo[];
+  currentSlot: number;
   extraDatumMap: Record<string, string>;
 };
 
 export class DexV2 {
   private readonly lucid: Lucid;
   private readonly networkId: NetworkId;
-  private readonly adapter: BlockfrostAdapter;
+  private readonly adapter: Adapter;
   private readonly networkEnv: NetworkEnvironment;
   private readonly dexVersion = DexVersion.DEX_V2;
 
-  constructor(lucid: Lucid, adapter: BlockfrostAdapter) {
+  constructor(lucid: Lucid, adapter: Adapter) {
     this.lucid = lucid;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
@@ -246,9 +247,9 @@ export class DexV2 {
       policyId: config.lpPolicyId,
       tokenName: lpAssetName,
     };
-    const poolBatchingStakeCredential = this.lucid.utils.getAddressDetails(
+    const poolBatchingStakeCredential = Addresses.inspect(
       config.poolBatchingAddress
-    )?.stakeCredential;
+    )?.delegation;
     invariant(
       poolBatchingStakeCredential,
       `cannot parse Liquidity Pool batching address`
@@ -328,19 +329,19 @@ export class DexV2 {
       .readFrom([factoryRef, authenRef])
       .collectFrom(
         [factoryUtxo],
-        Data.to(FactoryV2.Redeemer.toPlutusData(factoryRedeemer))
+        DataObject.to(FactoryV2.Redeemer.toPlutusData(factoryRedeemer))
       )
       .payToContract(
         config.poolCreationAddress,
         {
-          inline: Data.to(PoolV2.Datum.toPlutusData(poolDatum)),
+          Inline: DataObject.to(PoolV2.Datum.toPlutusData(poolDatum)),
         },
         poolValue
       )
       .payToContract(
         config.factoryAddress,
         {
-          inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
+          Inline: DataObject.to(FactoryV2.Datum.toPlutusData(newFactoryDatum1)),
         },
         {
           [config.factoryAsset]: 1n,
@@ -349,22 +350,22 @@ export class DexV2 {
       .payToContract(
         config.factoryAddress,
         {
-          inline: Data.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
+          Inline: DataObject.to(FactoryV2.Datum.toPlutusData(newFactoryDatum2)),
         },
         {
           [config.factoryAsset]: 1n,
         }
       )
-      .mintAssets(
+      .mint(
         {
           [Asset.toString(lpAsset)]: PoolV2.MAX_LIQUIDITY,
           [config.factoryAsset]: 1n,
           [config.poolAuthenAsset]: 1n,
         },
-        Data.to(new Constr(1, []))
+        DataObject.to(new Constr(1, []))
       )
       .attachMetadata(674, { msg: [MetadataMessage.CREATE_POOL] })
-      .complete();
+      .commit();
   }
 
   private buildOrderValue(options: OrderOptions): Assets {
@@ -689,8 +690,7 @@ export class DexV2 {
   private buildOrderAddress(senderAddressStakeCred: Credential): string {
     const orderAddress =
       DexV2Constant.CONFIG[this.networkId].orderEnterpriseAddress;
-    const orderAddressPaymentCred =
-      this.lucid.utils.getAddressDetails(orderAddress).paymentCredential;
+    const orderAddressPaymentCred = Addresses.inspect(orderAddress).payment;
     invariant(
       orderAddressPaymentCred,
       "order address payment credentials not found"
@@ -777,7 +777,7 @@ export class DexV2 {
     const limitOrders: string[] = [];
     const lucidTx = this.lucid.newTx();
     const necessaryExtraDatums: {
-      receiver: Address;
+      receiver: string;
       datum: string;
     }[] = [];
     for (let i = 0; i < orderOptions.length; i++) {
@@ -800,8 +800,7 @@ export class DexV2 {
         orderAssets["lovelace"] = totalBatcherFee;
       }
 
-      const senderPaymentCred =
-        this.lucid.utils.getAddressDetails(sender).paymentCredential;
+      const senderPaymentCred = Addresses.inspect(sender).payment;
       invariant(
         senderPaymentCred,
         "sender address payment credentials not found"
@@ -817,11 +816,11 @@ export class DexV2 {
             hash: senderPaymentCred.hash,
           };
 
-      let successReceiver: Address = sender;
+      let successReceiver: string = sender;
       let successReceiverDatum: OrderV2.ExtraDatum = {
         type: OrderV2.ExtraDatumType.NO_DATUM,
       };
-      let refundReceiver: Address = sender;
+      let refundReceiver: string = sender;
       let refundReceiverDatum: OrderV2.ExtraDatum = {
         type: OrderV2.ExtraDatumType.NO_DATUM,
       };
@@ -839,9 +838,7 @@ export class DexV2 {
             type: OrderV2.ExtraDatumType.NO_DATUM,
           };
         } else {
-          const datumHash = this.lucid.utils.datumToHash(
-            customSuccessReceiverDatum.datum
-          );
+          const datumHash = Hasher.hashData(customSuccessReceiverDatum.datum);
           successReceiverDatum = {
             type: customSuccessReceiverDatum.type,
             hash: datumHash,
@@ -856,9 +853,7 @@ export class DexV2 {
             type: OrderV2.ExtraDatumType.NO_DATUM,
           };
         } else {
-          const datumHash = this.lucid.utils.datumToHash(
-            customRefundReceiverDatum.datum
-          );
+          const datumHash = Hasher.hashData(customRefundReceiverDatum.datum);
           refundReceiverDatum = {
             type: customRefundReceiverDatum.type,
             hash: datumHash,
@@ -882,7 +877,7 @@ export class DexV2 {
       };
       let orderAddress: string;
       try {
-        const senderStakeAddress = this.lucid.utils.stakeCredentialOf(sender);
+        const senderStakeAddress = stakeCredentialOf(sender);
         orderAddress = this.buildOrderAddress(senderStakeAddress);
       } catch {
         // if fails then sender address doesn't have stake credentials
@@ -892,7 +887,7 @@ export class DexV2 {
       lucidTx.payToContract(
         orderAddress,
         {
-          inline: Data.to(OrderV2.Datum.toPlutusData(orderDatum)),
+          Inline: DataObject.to(OrderV2.Datum.toPlutusData(orderDatum)),
         },
         orderAssets
       );
@@ -906,30 +901,29 @@ export class DexV2 {
     const limitOrderMessage = limitOrders.length > 0 ? limitOrders : undefined;
     lucidTx.attachMetadata(674, {
       msg: [metadata],
-      limitOrders: limitOrderMessage,
+      ...(limitOrderMessage && { limitOrders: limitOrderMessage }),
     });
     if (Object.keys(reductionAssets).length !== 0) {
-      lucidTx.payToAddress(sender, reductionAssets);
+      lucidTx.payTo(sender, reductionAssets);
     }
     if (composeTx) {
       lucidTx.compose(composeTx);
     }
     for (const necessaryExtraDatum of necessaryExtraDatums) {
       const utxoForStoringDatum = buildUtxoToStoreDatum(
-        this.lucid,
         sender,
         necessaryExtraDatum.receiver,
         necessaryExtraDatum.datum
       );
       if (utxoForStoringDatum) {
-        lucidTx.payToAddressWithData(
+        lucidTx.payToWithData(
           utxoForStoringDatum.address,
           utxoForStoringDatum.outputData,
           utxoForStoringDatum.assets
         );
       }
     }
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async cancelOrder({
@@ -953,8 +947,7 @@ export class DexV2 {
     const lucidTx = this.lucid.newTx().readFrom([orderRef]);
     for (const utxo of orderUtxos) {
       const orderAddr = utxo.address;
-      const orderScriptPaymentCred =
-        this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
+      const orderScriptPaymentCred = Addresses.inspect(orderAddr).payment;
       invariant(
         orderScriptPaymentCred?.type === "Script" &&
           orderScriptPaymentCred.hash ===
@@ -966,13 +959,13 @@ export class DexV2 {
         const rawDatum = utxo.datum;
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum)
+          DataObject.from(rawDatum)
         );
       } else if (utxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(utxo);
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          rawDatum as Constr<Data>
+          rawDatum as Constr<DataType>
         );
       } else {
         throw new Error(
@@ -983,13 +976,13 @@ export class DexV2 {
       if (datum.canceller.type === OrderV2.AuthorizationMethodType.SIGNATURE)
         requiredPubKeyHashSet.add(datum.canceller.hash);
     }
-    const redeemer = Data.to(
+    const redeemer = DataObject.to(
       new Constr(OrderV2.Redeemer.CANCEL_ORDER_BY_OWNER, [])
     );
     lucidTx.collectFrom(orderUtxos, redeemer);
 
     for (const hash of requiredPubKeyHashSet.keys()) {
-      lucidTx.addSignerKey(hash);
+      lucidTx.addSigner(hash);
     }
     lucidTx.attachMetadata(674, {
       msg: [MetadataMessage.CANCEL_ORDER],
@@ -997,19 +990,20 @@ export class DexV2 {
     if (composeTx) {
       lucidTx.compose(composeTx);
     }
-    return lucidTx.complete();
+    return lucidTx.commit();
   }
 
   async cancelExpiredOrders({
     orderUtxos,
     currentSlot,
+    availableUtxos,
     extraDatumMap,
   }: CancelExpiredOrderOptions): Promise<TxComplete> {
     const refScript = await this.lucid.utxosByOutRef([
       DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].order,
       DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].expiredOrderCancellation,
     ]);
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
     invariant(
       refScript.length === 2,
       "cannot find deployed script for V2 Order or Expired Order Cancellation"
@@ -1017,14 +1011,16 @@ export class DexV2 {
     const sortedOrderUtxos = [...orderUtxos].sort(compareUtxo);
 
     const lucidTx = this.lucid.newTx().readFrom(refScript);
+    lucidTx.collectFrom(availableUtxos);
     lucidTx.collectFrom(
       sortedOrderUtxos,
-      Data.to(new Constr(OrderV2.Redeemer.CANCEL_EXPIRED_ORDER_BY_ANYONE, []))
+      DataObject.to(
+        new Constr(OrderV2.Redeemer.CANCEL_EXPIRED_ORDER_BY_ANYONE, [])
+      )
     );
     for (const orderUtxo of sortedOrderUtxos) {
       const orderAddr = orderUtxo.address;
-      const orderScriptPaymentCred =
-        this.lucid.utils.getAddressDetails(orderAddr).paymentCredential;
+      const orderScriptPaymentCred = Addresses.inspect(orderAddr).payment;
       invariant(
         orderScriptPaymentCred?.type === "Script" &&
           orderScriptPaymentCred.hash ===
@@ -1036,13 +1032,13 @@ export class DexV2 {
         const rawDatum = orderUtxo.datum;
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          Data.from(rawDatum)
+          DataObject.from(rawDatum)
         );
       } else if (orderUtxo.datumHash) {
         const rawDatum = await this.lucid.datumOf(orderUtxo);
         datum = OrderV2.Datum.fromPlutusData(
           this.networkId,
-          rawDatum as Constr<Data>
+          rawDatum as Constr<DataType>
         );
       } else {
         throw new Error(
@@ -1064,15 +1060,15 @@ export class DexV2 {
       outAssets["lovelace"] -= expiryOptions.maxCancellationTip;
       switch (refundDatum.type) {
         case OrderV2.ExtraDatumType.NO_DATUM: {
-          lucidTx.payToAddress(datum.refundReceiver, outAssets);
+          lucidTx.payTo(datum.refundReceiver, outAssets);
           break;
         }
         case OrderV2.ExtraDatumType.DATUM_HASH: {
-          lucidTx.payToAddressWithData(
+          lucidTx.payToWithData(
             datum.refundReceiver,
             refundDatum.hash in extraDatumMap
-              ? { asHash: extraDatumMap[refundDatum.hash] }
-              : { hash: refundDatum.hash },
+              ? { AsHash: extraDatumMap[refundDatum.hash] }
+              : { Hash: refundDatum.hash },
             outAssets
           );
           break;
@@ -1082,9 +1078,9 @@ export class DexV2 {
             refundDatum.hash in extraDatumMap,
             `Can not find refund datum of order ${orderUtxo.txHash}#${orderUtxo.outputIndex}`
           );
-          lucidTx.payToAddressWithData(
+          lucidTx.payToWithData(
             datum.refundReceiver,
-            { inline: extraDatumMap[refundDatum.hash] },
+            { Inline: extraDatumMap[refundDatum.hash] },
             outAssets
           );
           break;
@@ -1095,13 +1091,13 @@ export class DexV2 {
       .withdraw(
         DexV2Constant.CONFIG[this.networkId].expiredOrderCancelAddress,
         0n,
-        Data.to(0n)
+        DataObject.to(0n)
       )
       .validFrom(currentTime)
       .validTo(currentTime + 3 * 60 * 60 * 1000)
       .attachMetadata(674, {
         msg: [MetadataMessage.CANCEL_ORDERS_AUTOMATICALLY],
       });
-    return await lucidTx.complete();
+    return await lucidTx.commit();
   }
 }

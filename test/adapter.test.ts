@@ -1,6 +1,6 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { Configuration, MaestroClient } from "@maestro-org/typescript-sdk";
-import { Network } from "@minswap/lucid-cardano";
+import { Network } from "@spacebudz/lucid";
 
 import { Adapter, BlockfrostAdapter, MaestroAdapter } from "../src/adapters";
 import { ADA, Asset } from "../src/types/asset";

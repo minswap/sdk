@@ -1,11 +1,11 @@
 import {
-  Address,
   Blockfrost,
   Lucid,
   Maestro,
   MaestroSupportedNetworks,
-  Network,
-} from "@minswap/lucid-cardano";
+} from "@spacebudz/lucid";
+
+import { NetworkId } from "../types/network";
 
 /**
  * Initialize Lucid Instance for Backend Environment
@@ -15,15 +15,18 @@ import {
  * @param address Your own address
  * @returns
  */
-export async function getBackendLucidInstance(
-  network: Network,
+export async function getBackendBlockfrostLucidInstance(
+  networkId: NetworkId,
   projectId: string,
   blockfrostUrl: string,
-  address: Address,
+  address: string,
 ): Promise<Lucid> {
   const provider = new Blockfrost(blockfrostUrl, projectId);
-  const lucid = await Lucid.new(provider, network);
-  lucid.selectWalletFrom({
+  const lucid = new Lucid({
+    provider: provider,
+    network: networkId === NetworkId.MAINNET ? 'Mainnet' : 'Preprod',
+  });
+  lucid.selectReadOnlyWallet({
     address: address,
   });
   return lucid;
@@ -39,14 +42,17 @@ export async function getBackendLucidInstance(
 export async function getBackendMaestroLucidInstance(
   network: MaestroSupportedNetworks,
   apiKey: string,
-  address: Address,
+  address: string,
 ): Promise<Lucid> {
   const provider = new Maestro({
     network: network,
     apiKey: apiKey,
   });
-  const lucid = await Lucid.new(provider, network);
-  lucid.selectWalletFrom({
+  const lucid = new Lucid({
+    provider: provider,
+    network: network,
+  });
+  lucid.selectReadOnlyWallet({
     address: address,
   });
   return lucid;

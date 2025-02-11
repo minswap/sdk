@@ -32,14 +32,14 @@ If you are transacting through the `Stableswap` or `DexV2` classes, the transact
 ### 1. Make a Trade on a Stable Pool
 
 ```typescript
-const network: Network = "Preprod";
-const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+const networkId: NetworkId = NetworkId.TESTNET;
+const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
 const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
 
-const lucid = await getBackendLucidInstance(
-  network,
+const lucid = await getBackendBlockfrostLucidInstance(
+  networkId,
   blockfrostProjectId,
   blockfrostUrl,
   address
@@ -55,7 +55,11 @@ const blockfrostAdapter = new BlockfrostAdapter(
 
 const utxos = await lucid.utxosAt(address);
 
-const lpAsset = Asset.fromString("<STABLE_POOL_LP_ASSET>");
+// This is LP asset of tDJED-tiUSD pool.
+// You can replace this with your own LP asset.
+const lpAsset = Asset.fromString(
+  "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
+);
 const config = StableswapConstant.getConfigByLpAsset(
   lpAsset,
   NetworkId.TESTNET
@@ -63,9 +67,11 @@ const config = StableswapConstant.getConfigByLpAsset(
 
 const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
 
-invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
+if (!pool) {
+  throw new Error("could not find pool");
+}
 
-const swapAmount = 1_000n;
+const swapAmount = BigInt(1_000);
 
 // This pool has 2 assets in its config: [tDJED, tiUSD].
 // Index-0 Asset is tDJED, and Index-1 Asset is tiUSD.
@@ -90,16 +96,18 @@ const txComplete = await new Stableswap(lucid).createBulkOrdersTx({
       lpAsset: lpAsset,
       type: StableOrder.StepType.SWAP,
       assetInAmount: swapAmount,
-      assetInIndex: 0n,
-      assetOutIndex: 1n,
+      assetInIndex: BigInt(0),
+      assetOutIndex: BigInt(1),
       minimumAssetOut: amountOut,
     },
   ],
 });
 
 const signedTx = await txComplete
-  .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
-  .complete();
+  .signWithPrivateKey(
+    "<YOUR_PRIVATE_KEY>"
+  )
+  .commit();
 const txId = await signedTx.submit();
 console.info(`Transaction submitted successfully: ${txId}`);
 ```
@@ -107,13 +115,13 @@ console.info(`Transaction submitted successfully: ${txId}`);
 ### 2. Make a Trade on a DEX V2 Pool
 
 ```typescript
-const network: Network = "Preprod";
-const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+const network: NetworkId = NetworkId.TESTNET;
+const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
 const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
 
-const lucid = await getBackendLucidInstance(
+const lucid = await getBackendBlockfrostLucidInstance(
   network,
   blockfrostProjectId,
   blockfrostUrl,
@@ -127,6 +135,11 @@ const blockfrostAdapter = new BlockfrostAdapter(
     network: "preprod",
   })
 );
+
+const MIN: Asset = {
+  policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+  tokenName: "4d494e",
+};
 
 const utxos = await lucid.utxosAt(address);
 
@@ -134,45 +147,49 @@ const assetA = ADA;
 const assetB = MIN;
 
 const pool = await blockfrostAdapter.getV2PoolByPair(assetA, assetB);
-invariant(pool, "could not find pool");
+if (!pool) {
+  throw new Error("could not find pool");
+}
 
-const swapAmount = 5_000_000n;
+const swapAmount = BigInt(1000000);
 const amountOut = DexV2Calculation.calculateAmountOut({
   reserveIn: pool.reserveA,
   reserveOut: pool.reserveB,
   amountIn: swapAmount,
   tradingFeeNumerator: pool.feeA[0],
 });
-// 20% slippage tolerance
-const slippageTolerance = new BigNumber(20).div(100);
-const acceptedAmountOut = Slippage.apply({
-  slippage: slippageTolerance,
-  amount: amountOut,
-  type: "down",
-});
 
-const txComplete = await new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx(
-  {
-    sender: address,
-    availableUtxos: utxos,
-    orderOptions: [
-      {
-        type: OrderV2.StepType.SWAP_EXACT_IN,
-        amountIn: swapAmount,
-        assetIn: assetA,
-        direction: OrderV2.Direction.A_TO_B,
-        minimumAmountOut: acceptedAmountOut,
-        lpAsset: pool.lpAsset,
-        isLimitOrder: false,
-        killOnFailed: false,
-      },
-    ],
-  }
-);
+// 20% slippage tolerance
+const acceptedAmountOut =
+  DexV2Calculation.calculateAmountOutWithSlippageTolerance({
+    slippageTolerancePercent: 20,
+    amountOut: amountOut,
+    type: "down",
+  });
+
+const txComplete = await new DexV2(
+  lucid,
+  blockfrostAdapter
+).createBulkOrdersTx({
+  sender: address,
+  availableUtxos: utxos,
+  orderOptions: [
+    {
+      type: OrderV2.StepType.SWAP_EXACT_IN,
+      amountIn: swapAmount,
+      assetIn: assetA,
+      direction: OrderV2.Direction.A_TO_B,
+      minimumAmountOut: acceptedAmountOut,
+      lpAsset: pool.lpAsset,
+      isLimitOrder: false,
+      killOnFailed: false,
+    },
+  ],
+});
 
 const signedTx = await txComplete
   .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
-  .complete();
+  .commit();
 const txId = await signedTx.submit();
 console.info(`Transaction submitted successfully: ${txId}`);
 ```
@@ -180,14 +197,14 @@ console.info(`Transaction submitted successfully: ${txId}`);
 ### 3. Create the DEX V2 Liquiditiy Pool
 
 ```typescript
-const network: Network = "Preprod";
+const networkId: NetworkId = NetworkId.TESTNET;
 const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
 const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
 
-const lucid = await getBackendLucidInstance(
-  network,
+const lucid = await getBackendBlockfrostLucidInstance(
+  networkId,
   blockfrostProjectId,
   blockfrostUrl,
   address
@@ -201,11 +218,9 @@ const blockfrostAdapter = new BlockfrostAdapter(
   })
 );
 
-const utxos = await lucid.utxosAt(address);
-
 const txComplete = await new DexV2(lucid, blockfrostAdapter).createPoolTx({
   assetA: ADA,
-  assetB: {
+  assetB: { // Replace with your own asset
     policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
     tokenName: "434d",
   },
@@ -216,7 +231,7 @@ const txComplete = await new DexV2(lucid, blockfrostAdapter).createPoolTx({
 
 const signedTx = await txComplete
   .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
-  .complete();
+  .commit();
 const txId = await signedTx.submit();
 console.info(`Transaction submitted successfully: ${txId}`);
 ```

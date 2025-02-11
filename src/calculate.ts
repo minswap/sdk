@@ -1,10 +1,12 @@
-import { UTxO } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Utxo } from "@spacebudz/lucid";
 import Big from "big.js";
+import BigNumber from "bignumber.js";
 import { zipWith } from "remeda";
 
 import { OrderV2 } from "./types/order";
 import { PoolV2 } from "./types/pool";
+import { Slippage } from "./utils/slippage.internal";
 import { sqrt } from "./utils/sqrt.internal";
 
 /**
@@ -18,6 +20,7 @@ export type CalculateSwapExactInOptions = {
   reserveIn: bigint;
   reserveOut: bigint;
 };
+
 /**
  * Calculate Amount Out & Price Impact while swapping exact in
  * @param options See @CalculateSwapExactInOptions description
@@ -56,6 +59,7 @@ export type CalculateSwapExactOutOptions = {
   reserveIn: bigint;
   reserveOut: bigint;
 };
+
 /**
  * Calculate necessary Amount In & Price Impact to cover the @exactAmountOut while swapping exact out
  * @param options See @CalculateSwapExactOutOptions description
@@ -80,6 +84,35 @@ export function calculateSwapExactOut(options: CalculateSwapExactOutOptions): {
       .mul(new Big(100))
       .div(new Big(priceImpactDenominator.toString())),
   };
+}
+
+/**
+ * Options to calculate amount with slippage tolerance up or down
+ * @slippageTolerancePercent The slippage tolerance percent
+ * @amount The amount that we want to calculate
+ * @type The type of slippage tolerance, up or down
+ */
+export type CalculateSwapExactOutWithSlippageToleranceOptions = {
+  slippageTolerancePercent: number;
+  amount: bigint;
+  type: "up" | "down";
+};
+
+/**
+ * Calculate result amount with slippage tolerance up or down
+ * @param options See @CalculateSwapExactOutWithSlippageToleranceOptions description
+ * @returns The amount needed of the input token for the swap and its price impact
+ */
+export function calculateAmountWithSlippageTolerance(
+  options: CalculateSwapExactOutWithSlippageToleranceOptions
+): bigint {
+  const { slippageTolerancePercent, amount, type } = options;
+  const slippageTolerance = new BigNumber(slippageTolerancePercent).div(100);
+  return Slippage.apply({
+    slippage: slippageTolerance,
+    amount: amount,
+    type: type,
+  });
 }
 
 /**
@@ -1084,7 +1117,7 @@ function gcdFunction(a: bigint, b: bigint): bigint {
   return a;
 }
 
-export function compareUtxo(s1: UTxO, s2: UTxO): number {
+export function compareUtxo(s1: Utxo, s2: Utxo): number {
   if (s1.txHash === s2.txHash) {
     return s1.outputIndex - s2.outputIndex;
   }

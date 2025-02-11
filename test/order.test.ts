@@ -1,22 +1,23 @@
 import invariant from "@minswap/tiny-invariant";
-import { Address, Data, getAddressDetails } from "@minswap/lucid-cardano";
+import { Addresses, Data } from "@spacebudz/lucid";
 
 import { FIXED_BATCHER_FEE } from "../src/batcher-fee-reduction/configs.internal";
 import { Asset } from "../src/types/asset";
 import { FIXED_DEPOSIT_ADA } from "../src/types/constants";
 import { NetworkId } from "../src/types/network";
 import { OrderV1, OrderV2, StableOrder } from "../src/types/order";
+import { DataObject } from "../src";
 
-let testSender: Address;
+let testSender: string;
 let testSenderPkh: string;
-let testReceiver: Address;
+let testReceiver: string;
 let testReceiverDatumHash: string;
 let testAsset: Asset;
 let networkId: NetworkId;
 beforeAll(() => {
   testSender =
     "addr_test1qpssc0r090a9u0pyvdr9y76sm2xzx04n6d4j0y5hukcx6rxz4dtgkhfdynadkea0qezv99wljdl076xkg2krm96nn8jszmh3w7";
-  const senderPkh = getAddressDetails(testSender).paymentCredential?.hash;
+  const senderPkh = Addresses.inspect(testSender).payment?.hash;
   invariant(senderPkh);
   testSenderPkh = senderPkh;
   testReceiver =
@@ -65,11 +66,11 @@ test("V1: SwapExactIn Order to PlutusData Converter", () => {
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -98,11 +99,11 @@ test("V1: SwapExactOut Order to PlutusData Converter", () => {
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -129,11 +130,11 @@ test("V1: Deposit Order to PlutusData Converter", () => {
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -162,11 +163,11 @@ test("V1: Withdraw Order to PlutusData Converter", () => {
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -195,11 +196,11 @@ test("V1: Zap Order to PlutusData Converter", () => {
 
   const convertedOrder1 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = OrderV1.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(OrderV1.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(OrderV1.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -230,11 +231,11 @@ test("Stableswap: Swap Order to PlutusData Converter", () => {
 
   const convertedOrder1 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -261,11 +262,11 @@ test("Stableswap: Deposit Order to PlutusData Converter", () => {
 
   const convertedOrder1 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -292,11 +293,11 @@ test("Stableswap: Withdraw Order to PlutusData Converter", () => {
 
   const convertedOrder1 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -323,11 +324,11 @@ test("Stableswap: Withdraw Imbalance Order to PlutusData Converter", () => {
 
   const convertedOrder1 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -354,11 +355,11 @@ test("Stableswap: Zap Out Order to PlutusData Converter", () => {
 
   const convertedOrder1 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order1)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order1)))
   );
   const convertedOrder2 = StableOrder.Datum.fromPlutusData(
     networkId,
-    Data.from(Data.to(StableOrder.Datum.toPlutusData(order2)))
+    DataObject.from(DataObject.to(StableOrder.Datum.toPlutusData(order2)))
   );
   expect(order1).toEqual(convertedOrder1);
   expect(order2).toEqual(convertedOrder2);
@@ -492,7 +493,7 @@ test("V2: Swap Exact In Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -525,7 +526,7 @@ test("V2: Stop Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -560,7 +561,7 @@ test("V2: OCO Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -595,7 +596,7 @@ test("V2: Swap Exact Out Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -630,7 +631,7 @@ test("V2: Deposit Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -665,7 +666,7 @@ test("V2: Withdraw Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -700,7 +701,7 @@ test("V2: Zap Out Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -735,7 +736,7 @@ test("V2: Partial Swap Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -772,7 +773,7 @@ test("V2: Withdraw Imbalance Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -810,7 +811,7 @@ test("V2: Routing Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);
@@ -825,7 +826,7 @@ test("V2: Donation Order to PlutusData Converter", () => {
   for (const datum of datums) {
     const convertedDatum = OrderV2.Datum.fromPlutusData(
       networkId,
-      Data.from(Data.to(OrderV2.Datum.toPlutusData(datum)))
+      DataObject.from(DataObject.to(OrderV2.Datum.toPlutusData(datum)))
     );
 
     expect(datum).toEqual(convertedDatum);

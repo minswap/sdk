@@ -1,5 +1,6 @@
-import { Credential, Data } from "@minswap/lucid-cardano";
+import { Credential } from "@spacebudz/lucid";
 
+import { DataObject } from "../src";
 import {
   AddressPlutusData,
   LucidCredential,
@@ -20,11 +21,15 @@ test("Lucid Credential to PlutusData Converter", () => {
   };
 
   const convertedPubKeyCredential = LucidCredential.fromPlutusData(
-    Data.from(Data.to(LucidCredential.toPlutusData(pubKeyCredential)))
+    DataObject.from(
+      DataObject.to(LucidCredential.toPlutusData(pubKeyCredential))
+    )
   );
 
   const convertedScriptCredential = LucidCredential.fromPlutusData(
-    Data.from(Data.to(LucidCredential.toPlutusData(scriptCredential)))
+    DataObject.from(
+      DataObject.to(LucidCredential.toPlutusData(scriptCredential))
+    )
   );
 
   expect(JSON.stringify(convertedPubKeyCredential)).toEqual(
@@ -48,19 +53,27 @@ test("Address to PlutusData Converter", () => {
 
   const convertedPubkeyEnterpriseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(pubkeyEnterpriseAddress)))
+    DataObject.from(
+      DataObject.to(AddressPlutusData.toPlutusData(pubkeyEnterpriseAddress))
+    )
   );
   const convertedPubKeyBaseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(pubKeyBaseAddress)))
+    DataObject.from(
+      DataObject.to(AddressPlutusData.toPlutusData(pubKeyBaseAddress))
+    )
   );
   const convertedScriptEnterpriseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(scriptEnterpriseAddress)))
+    DataObject.from(
+      DataObject.to(AddressPlutusData.toPlutusData(scriptEnterpriseAddress))
+    )
   );
   const convertedScriptBaseAddress = AddressPlutusData.fromPlutusData(
     networkId,
-    Data.from(Data.to(AddressPlutusData.toPlutusData(scriptBaseAddress)))
+    DataObject.from(
+      DataObject.to(AddressPlutusData.toPlutusData(scriptBaseAddress))
+    )
   );
 
   expect(pubkeyEnterpriseAddress).toEqual(convertedPubkeyEnterpriseAddress);

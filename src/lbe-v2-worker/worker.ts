@@ -1,7 +1,7 @@
-import { Data, Lucid, UnixTime, UTxO } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Lucid, Utxo } from "@spacebudz/lucid";
 
-import { LbeV2Constant, PoolV2 } from "..";
+import { DataObject, LbeV2Constant, PoolV2 } from "..";
 import { BlockfrostAdapter } from "../adapters/blockfrost";
 import { LbeV2 } from "../lbe-v2/lbe-v2";
 import { LbeV2Types } from "../types/lbe-v2";
@@ -17,11 +17,11 @@ type LbeV2WorkerConstructor = {
 };
 
 export type LbeV2EventData = {
-  treasuryUtxo: UTxO;
-  managerUtxo?: UTxO;
-  sellerUtxos: UTxO[];
-  collectedOrderUtxos: UTxO[];
-  uncollectedOrderUtxos: UTxO[];
+  treasuryUtxo: Utxo;
+  managerUtxo?: Utxo;
+  sellerUtxos: Utxo[];
+  collectedOrderUtxos: Utxo[];
+  uncollectedOrderUtxos: Utxo[];
 };
 
 export class LbeV2Worker {
@@ -96,7 +96,7 @@ export class LbeV2Worker {
       invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
       const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
         this.networkId,
-        Data.from(rawTreasuryDatum)
+        DataObject.from(rawTreasuryDatum)
       );
       const lbeId = PoolV2.computeLPAssetName(
         treasuryDatum.baseAsset,
@@ -115,7 +115,7 @@ export class LbeV2Worker {
       const rawManagerDatum = managerUtxo.datum;
       invariant(rawManagerDatum, "Manager utxo must have inline datum");
       const managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-        Data.from(rawManagerDatum)
+        DataObject.from(rawManagerDatum)
       );
       const lbeId = PoolV2.computeLPAssetName(
         managerDatum.baseAsset,
@@ -129,7 +129,7 @@ export class LbeV2Worker {
       const rawDatum = sellerUtxo.datum;
       invariant(rawDatum, "Seller utxo must have inline datum");
       const datum = LbeV2Types.SellerDatum.fromPlutusData(
-        Data.from(rawDatum),
+        DataObject.from(rawDatum),
         this.networkId
       );
       const lbeId = PoolV2.computeLPAssetName(
@@ -144,7 +144,7 @@ export class LbeV2Worker {
       const rawDatum = orderUtxo.datum;
       invariant(rawDatum, "Order utxo must have inline datum");
       const datum = LbeV2Types.OrderDatum.fromPlutusData(
-        Data.from(rawDatum),
+        DataObject.from(rawDatum),
         this.networkId
       );
       const lbeId = PoolV2.computeLPAssetName(
@@ -163,7 +163,7 @@ export class LbeV2Worker {
 
   async countingSellers(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, managerUtxo, sellerUtxos } = eventData;
     invariant(managerUtxo, "collectSellers: can not find manager");
@@ -171,12 +171,12 @@ export class LbeV2Worker {
       treasuryUtxo: treasuryUtxo,
       managerUtxo: managerUtxo,
       sellerUtxos: sellerUtxos.slice(0, LbeV2Constant.MINIMUM_SELLER_COLLECTED),
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Counting seller transaction submitted successfully: ${txId}`);
@@ -184,19 +184,19 @@ export class LbeV2Worker {
 
   async collectManager(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, managerUtxo } = eventData;
     invariant(managerUtxo, "collectManager: can not find manager");
     const txComplete = await new LbeV2(this.lucid).collectManager({
       treasuryUtxo: treasuryUtxo,
       managerUtxo: managerUtxo,
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Collect manager transaction submitted successfully: ${txId}`);
@@ -204,18 +204,18 @@ export class LbeV2Worker {
 
   async collectOrders(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, uncollectedOrderUtxos } = eventData;
     const txComplete = await new LbeV2(this.lucid).collectOrders({
       treasuryUtxo: treasuryUtxo,
       orderUtxos: uncollectedOrderUtxos,
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Collect orders transaction submitted successfully: ${txId}`);
@@ -223,26 +223,26 @@ export class LbeV2Worker {
 
   async createAmmPoolOrCancelEvent(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo } = eventData;
     const rawTreasuryDatum = eventData.treasuryUtxo.datum;
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
 
     if (treasuryDatum.collectedFund < (treasuryDatum.minimumRaise ?? 1n)) {
       const txComplete = await new LbeV2(this.lucid).cancelEvent({
         treasuryUtxo: treasuryUtxo,
         cancelData: { reason: LbeV2Types.CancelReason.NOT_REACH_MINIMUM },
-        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+        currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
       });
 
       const signedTx = await txComplete
         .signWithPrivateKey(this.privateKey)
-        .complete();
+        .commit();
 
       const txId = await signedTx.submit();
       console.info(
@@ -273,11 +273,11 @@ export class LbeV2Worker {
           reason: LbeV2Types.CancelReason.CREATED_POOL,
           ammPoolUtxo: ammPoolUtxos[0],
         },
-        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+        currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
       });
       const signedTx = await txComplete
         .signWithPrivateKey(this.privateKey)
-        .complete();
+        .commit();
 
       const txId = await signedTx.submit();
       console.info(
@@ -292,12 +292,12 @@ export class LbeV2Worker {
       const txComplete = await new LbeV2(this.lucid).createAmmPool({
         treasuryUtxo: treasuryUtxo,
         ammFactoryUtxo: ammFactoryUtxos[0],
-        currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+        currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
       });
 
       const signedTx = await txComplete
         .signWithPrivateKey(this.privateKey)
-        .complete();
+        .commit();
 
       const txId = await signedTx.submit();
       console.info(
@@ -308,19 +308,19 @@ export class LbeV2Worker {
 
   async redeemOrders(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, collectedOrderUtxos } = eventData;
 
     const txComplete = await new LbeV2(this.lucid).redeemOrders({
       treasuryUtxo: treasuryUtxo,
       orderUtxos: collectedOrderUtxos,
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Redeem Orders transaction submitted successfully: ${txId}`);
@@ -328,19 +328,19 @@ export class LbeV2Worker {
 
   async refundOrders(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<void> {
     const { treasuryUtxo, collectedOrderUtxos } = eventData;
 
     const txComplete = await new LbeV2(this.lucid).refundOrders({
       treasuryUtxo: treasuryUtxo,
       orderUtxos: collectedOrderUtxos,
-      currentSlot: this.lucid.utils.unixTimeToSlot(currentTime),
+      currentSlot: this.lucid.utils.unixTimeToSlots(currentTime),
     });
 
     const signedTx = await txComplete
       .signWithPrivateKey(this.privateKey)
-      .complete();
+      .commit();
 
     const txId = await signedTx.submit();
     console.info(`Refund Orders transaction submitted successfully: ${txId}`);
@@ -348,7 +348,7 @@ export class LbeV2Worker {
 
   async handleEvent(
     eventData: LbeV2EventData,
-    currentTime: UnixTime
+    currentTime: number
   ): Promise<"skip" | "success"> {
     // FIND PHASE OF BATCHER
     const checkPhaseAndHandle: {
@@ -358,7 +358,7 @@ export class LbeV2Worker {
       ) => boolean;
       handleFn: (
         eventData: LbeV2EventData,
-        currentTime: UnixTime
+        currentTime: number
       ) => Promise<void>;
     }[] = [
       // COUNTING SELLER
@@ -440,7 +440,7 @@ export class LbeV2Worker {
     invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
     const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
       this.networkId,
-      Data.from(rawTreasuryDatum)
+      DataObject.from(rawTreasuryDatum)
     );
     const {
       endTime,
@@ -469,7 +469,7 @@ export class LbeV2Worker {
       const rawManagerDatum = eventData.managerUtxo.datum;
       invariant(rawManagerDatum, "Treasury utxo must have inline datum");
       managerDatum = LbeV2Types.ManagerDatum.fromPlutusData(
-        Data.from(rawManagerDatum)
+        DataObject.from(rawManagerDatum)
       );
     }
 
@@ -485,7 +485,7 @@ export class LbeV2Worker {
   async runWorker(): Promise<void> {
     const eventsData = await this.getData();
     const currentSlot = await this.blockfrostAdapter.currentSlot();
-    const currentTime = this.lucid.utils.slotToUnixTime(currentSlot);
+    const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
 
     for (const eventData of eventsData) {
       try {
@@ -501,7 +501,7 @@ export class LbeV2Worker {
         invariant(rawTreasuryDatum, "Treasury utxo must have inline datum");
         const treasuryDatum = LbeV2Types.TreasuryDatum.fromPlutusData(
           this.networkId,
-          Data.from(rawTreasuryDatum)
+          DataObject.from(rawTreasuryDatum)
         );
         console.error(
           `Fail to run worker for LBE ${PoolV2.computeLPAssetName(treasuryDatum.baseAsset, treasuryDatum.raiseAsset)}: ${err}`

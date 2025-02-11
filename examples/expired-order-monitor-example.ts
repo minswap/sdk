@@ -1,20 +1,20 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { Network } from "@minswap/lucid-cardano";
 
-import { NetworkId } from "../src";
-import { BlockfrostAdapter } from "../src/adapters/blockfrost";
-import { ExpiredOrderMonitor } from "../src/expired-order-monitor";
-import { getBackendLucidInstance } from "../src/utils/lucid";
+import {
+  BlockfrostAdapter,
+  ExpiredOrderMonitor,
+  getBackendBlockfrostLucidInstance,
+  NetworkId,
+} from "../src";
 
 async function main(): Promise<void> {
-  const network: Network = "Preprod";
+  const networkId: NetworkId = NetworkId.TESTNET;
   const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
-  const address =
-    "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
-  const lucid = await getBackendLucidInstance(
-    network,
+  const address = "<YOUR_ADDRESS>";
+  const lucid = await getBackendBlockfrostLucidInstance(
+    networkId,
     blockfrostProjectId,
     blockfrostUrl,
     address
@@ -28,6 +28,7 @@ async function main(): Promise<void> {
     })
   );
 
+  // To test it, you need to create an expired order first
   const monitor = new ExpiredOrderMonitor({
     lucid,
     blockfrostAdapter,

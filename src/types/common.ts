@@ -1,17 +1,19 @@
-import { Constr, Data } from "@minswap/lucid-cardano";
+import { Constr, Data } from "@spacebudz/lucid";
+
+import { DataType } from "..";
 
 export namespace Options {
   export function toPlutusData<T>(
     data: T | undefined,
     toPlutusDataFn: (data: T) => Data
-  ): Constr<Data> {
+  ): Constr<DataType> {
     return data !== undefined
       ? new Constr(0, [toPlutusDataFn(data)])
       : new Constr(1, []);
   }
 
   export function fromPlutusData<T>(
-    data: Constr<Data>,
+    data: Constr<DataType>,
     fromPlutusDataFn: (data: Data) => T
   ): T | undefined {
     switch (data.index) {
@@ -29,11 +31,11 @@ export namespace Options {
 }
 
 export namespace Bool {
-  export function toPlutusData(data: boolean): Constr<Data> {
+  export function toPlutusData(data: boolean): Constr<DataType> {
     return data ? new Constr(1, []) : new Constr(0, []);
   }
 
-  export function fromPlutusData(data: Constr<Data>): boolean {
+  export function fromPlutusData(data: Constr<DataType>): boolean {
     switch (data.index) {
       case 0: {
         return false;
@@ -53,7 +55,7 @@ export namespace RedeemerWrapper {
     return new Constr(1, [d]);
   }
 
-  export function fromPlutusData(data: Constr<Data>): Data {
+  export function fromPlutusData(data: Constr<DataType>): Data {
     switch (data.index) {
       case 1: {
         return data.fields[0];

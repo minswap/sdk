@@ -1,4 +1,4 @@
-import { Assets, UTxO } from "@minswap/lucid-cardano";
+import { Assets, Utxos } from "@spacebudz/lucid";
 import BigNumber from "bignumber.js";
 
 import { NetworkEnvironment } from "../types/network";
@@ -64,7 +64,7 @@ export namespace BatcherFee {
     networkEnv: NetworkEnvironment;
     currentDate: Date,
     dexVersion: DexVersion;
-    utxos: UTxO[];
+    utxos: Utxos;
     orderAssets: Assets;
   }): {
     batcherFee: bigint;

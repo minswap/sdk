@@ -1,7 +1,7 @@
-import { Address, Constr, Data } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Constr } from "@spacebudz/lucid";
 
-import { Asset, LbeV2Constant, NetworkId, PoolV2 } from "..";
+import { Asset, DataObject, DataType, LbeV2Constant, NetworkId, PoolV2 } from "..";
 import { AddressPlutusData } from "./address.internal";
 import { Bool, Options } from "./common";
 import { TxIn, Value } from "./tx.internal";
@@ -23,7 +23,7 @@ export namespace LbeV2Types {
       };
 
   export namespace ReceiverDatum {
-    export function toPlutusData(data: ReceiverDatum): Constr<Data> {
+    export function toPlutusData(data: ReceiverDatum): Constr<DataType> {
       switch (data.type) {
         case ReceiverDatumType.NO_DATUM: {
           return new Constr(0, []);
@@ -37,7 +37,7 @@ export namespace LbeV2Types {
       }
     }
 
-    export function fromPlutusData(data: Constr<Data>): ReceiverDatum {
+    export function fromPlutusData(data: Constr<DataType>): ReceiverDatum {
       switch (data.index) {
         case ReceiverDatumType.NO_DATUM: {
           invariant(
@@ -81,11 +81,11 @@ export namespace LbeV2Types {
   };
 
   export namespace PenaltyConfig {
-    export function toPlutusData(data: PenaltyConfig): Constr<Data> {
+    export function toPlutusData(data: PenaltyConfig): Constr<DataType> {
       return new Constr(0, [data.penaltyStartTime, data.percent]);
     }
 
-    export function fromPlutusData(data: Constr<Data>): PenaltyConfig {
+    export function fromPlutusData(data: Constr<DataType>): PenaltyConfig {
       switch (data.index) {
         case 0: {
           invariant(
@@ -116,8 +116,8 @@ export namespace LbeV2Types {
     raiseAsset: Asset;
     startTime: bigint;
     endTime: bigint;
-    owner: Address;
-    receiver: Address;
+    owner: string;
+    receiver: string;
 
     receiverDatum: ReceiverDatum;
     poolAllocation: bigint;
@@ -139,7 +139,7 @@ export namespace LbeV2Types {
   };
 
   export namespace TreasuryDatum {
-    export function toPlutusData(datum: TreasuryDatum): Constr<Data> {
+    export function toPlutusData(datum: TreasuryDatum): Constr<DataType> {
       const {
         factoryPolicyId,
         managerHash,
@@ -206,7 +206,7 @@ export namespace LbeV2Types {
 
     export function fromPlutusData(
       networkId: NetworkId,
-      data: Constr<Data>
+      data: Constr<DataType>
     ): TreasuryDatum {
       if (data.index !== 0) {
         throw new Error(
@@ -224,49 +224,49 @@ export namespace LbeV2Types {
         managerHash: fields[1] as string,
         sellerHash: fields[2] as string,
         orderHash: fields[3] as string,
-        baseAsset: Asset.fromPlutusData(fields[4] as Constr<Data>),
+        baseAsset: Asset.fromPlutusData(fields[4] as Constr<DataType>),
 
-        raiseAsset: Asset.fromPlutusData(fields[5] as Constr<Data>),
+        raiseAsset: Asset.fromPlutusData(fields[5] as Constr<DataType>),
         startTime: fields[6] as bigint,
         endTime: fields[7] as bigint,
         owner: AddressPlutusData.fromPlutusData(
           networkId,
-          fields[8] as Constr<Data>
+          fields[8] as Constr<DataType>
         ),
         receiver: AddressPlutusData.fromPlutusData(
           networkId,
-          fields[9] as Constr<Data>
+          fields[9] as Constr<DataType>
         ),
 
-        receiverDatum: ReceiverDatum.fromPlutusData(fields[10] as Constr<Data>),
+        receiverDatum: ReceiverDatum.fromPlutusData(fields[10] as Constr<DataType>),
         poolAllocation: fields[11] as bigint,
         minimumOrderRaise: Options.fromPlutusData<bigint>(
-          fields[12] as Constr<Data>,
+          fields[12] as Constr<DataType>,
           (data) => data as bigint
         ),
         minimumRaise: Options.fromPlutusData<bigint>(
-          fields[13] as Constr<Data>,
+          fields[13] as Constr<DataType>,
           (data) => data as bigint
         ),
         maximumRaise: Options.fromPlutusData<bigint>(
-          fields[14] as Constr<Data>,
+          fields[14] as Constr<DataType>,
           (data) => data as bigint
         ),
 
         reserveBase: fields[15] as bigint,
         penaltyConfig: Options.fromPlutusData(
-          fields[16] as Constr<Data>,
-          (data) => PenaltyConfig.fromPlutusData(data as Constr<Data>)
+          fields[16] as Constr<DataType>,
+          (data) => PenaltyConfig.fromPlutusData(data as Constr<DataType>)
         ),
         poolBaseFee: fields[17] as bigint,
-        revocable: Bool.fromPlutusData(fields[18] as Constr<Data>),
+        revocable: Bool.fromPlutusData(fields[18] as Constr<DataType>),
         collectedFund: fields[19] as bigint,
 
         reserveRaise: fields[20] as bigint,
         totalPenalty: fields[21] as bigint,
         totalLiquidity: fields[22] as bigint,
-        isCancelled: Bool.fromPlutusData(fields[23] as Constr<Data>),
-        isManagerCollected: Bool.fromPlutusData(fields[24] as Constr<Data>),
+        isCancelled: Bool.fromPlutusData(fields[23] as Constr<DataType>),
+        isManagerCollected: Bool.fromPlutusData(fields[24] as Constr<DataType>),
       };
     }
   }
@@ -303,7 +303,7 @@ export namespace LbeV2Types {
       };
 
   export namespace TreasuryRedeemer {
-    export function toPlutusData(data: TreasuryRedeemer): Constr<Data> {
+    export function toPlutusData(data: TreasuryRedeemer): Constr<DataType> {
       switch (data.type) {
         case TreasuryRedeemerType.COLLECT_MANAGER:
         case TreasuryRedeemerType.COLLECT_ORDERS:
@@ -338,7 +338,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = TreasuryDatum.fromPlutusData(networkId, Data.from(datum));
+      this.datum = TreasuryDatum.fromPlutusData(networkId, DataObject.from(datum));
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -366,8 +366,8 @@ export namespace LbeV2Types {
     raiseAsset: Asset;
     startTime: bigint;
     endTime: bigint;
-    owner: Address;
-    receiver: Address;
+    owner: string;
+    receiver: string;
     poolAllocation: bigint;
     minimumOrderRaise?: bigint;
     minimumRaise?: bigint;
@@ -426,11 +426,11 @@ export namespace LbeV2Types {
   };
 
   export namespace FactoryDatum {
-    export function toPlutusData(data: FactoryDatum): Constr<Data> {
+    export function toPlutusData(data: FactoryDatum): Constr<DataType> {
       return new Constr(0, [data.head, data.tail]);
     }
 
-    export function fromPlutusData(data: Constr<Data>): FactoryDatum {
+    export function fromPlutusData(data: Constr<DataType>): FactoryDatum {
       switch (data.index) {
         case 0: {
           invariant(
@@ -481,7 +481,7 @@ export namespace LbeV2Types {
       };
 
   export namespace FactoryRedeemer {
-    export function toPlutusData(data: FactoryRedeemer): Constr<Data> {
+    export function toPlutusData(data: FactoryRedeemer): Constr<DataType> {
       switch (data.type) {
         case FactoryRedeemerType.INITIALIZATION:
         case FactoryRedeemerType.MINT_MANAGER:
@@ -521,7 +521,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = FactoryDatum.fromPlutusData(Data.from(datum));
+      this.datum = FactoryDatum.fromPlutusData(DataObject.from(datum));
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -552,7 +552,7 @@ export namespace LbeV2Types {
   };
 
   export namespace ManagerDatum {
-    export function toPlutusData(data: ManagerDatum): Constr<Data> {
+    export function toPlutusData(data: ManagerDatum): Constr<DataType> {
       return new Constr(0, [
         data.factoryPolicyId,
         Asset.toPlutusData(data.baseAsset),
@@ -563,7 +563,7 @@ export namespace LbeV2Types {
       ]);
     }
 
-    export function fromPlutusData(data: Constr<Data>): ManagerDatum {
+    export function fromPlutusData(data: Constr<DataType>): ManagerDatum {
       switch (data.index) {
         case 0: {
           const fields = data.fields;
@@ -573,8 +573,8 @@ export namespace LbeV2Types {
           );
           return {
             factoryPolicyId: fields[0] as string,
-            baseAsset: Asset.fromPlutusData(fields[1] as Constr<Data>),
-            raiseAsset: Asset.fromPlutusData(fields[2] as Constr<Data>),
+            baseAsset: Asset.fromPlutusData(fields[1] as Constr<DataType>),
+            raiseAsset: Asset.fromPlutusData(fields[2] as Constr<DataType>),
             sellerCount: fields[3] as bigint,
             reserveRaise: fields[4] as bigint,
             totalPenalty: fields[5] as bigint,
@@ -593,7 +593,7 @@ export namespace LbeV2Types {
     SPEND_MANAGER = 2,
   }
   export namespace ManagerRedeemer {
-    export function toPlutusData(data: ManagerRedeemer): Constr<Data> {
+    export function toPlutusData(data: ManagerRedeemer): Constr<DataType> {
       return new Constr(data, []);
     }
   }
@@ -616,7 +616,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = ManagerDatum.fromPlutusData(Data.from(datum));
+      this.datum = ManagerDatum.fromPlutusData(DataObject.from(datum));
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -638,7 +638,7 @@ export namespace LbeV2Types {
 
   export type SellerDatum = {
     factoryPolicyId: string;
-    owner: Address;
+    owner: string;
     baseAsset: Asset;
     raiseAsset: Asset;
     amount: bigint;
@@ -646,7 +646,7 @@ export namespace LbeV2Types {
   };
 
   export namespace SellerDatum {
-    export function toPlutusData(data: SellerDatum): Constr<Data> {
+    export function toPlutusData(data: SellerDatum): Constr<DataType> {
       return new Constr(0, [
         data.factoryPolicyId,
         AddressPlutusData.toPlutusData(data.owner),
@@ -658,7 +658,7 @@ export namespace LbeV2Types {
     }
 
     export function fromPlutusData(
-      data: Constr<Data>,
+      data: Constr<DataType>,
       networkId: NetworkId
     ): SellerDatum {
       switch (data.index) {
@@ -672,10 +672,10 @@ export namespace LbeV2Types {
             factoryPolicyId: fields[0] as string,
             owner: AddressPlutusData.fromPlutusData(
               networkId,
-              fields[1] as Constr<Data>
+              fields[1] as Constr<DataType>
             ),
-            baseAsset: Asset.fromPlutusData(fields[2] as Constr<Data>),
-            raiseAsset: Asset.fromPlutusData(fields[3] as Constr<Data>),
+            baseAsset: Asset.fromPlutusData(fields[2] as Constr<DataType>),
+            raiseAsset: Asset.fromPlutusData(fields[3] as Constr<DataType>),
             amount: fields[4] as bigint,
             penaltyAmount: fields[5] as bigint,
           };
@@ -693,7 +693,7 @@ export namespace LbeV2Types {
   }
 
   export namespace SellerRedeemer {
-    export function toPlutusData(data: SellerRedeemer): Constr<Data> {
+    export function toPlutusData(data: SellerRedeemer): Constr<DataType> {
       return new Constr(data, []);
     }
   }
@@ -716,7 +716,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = SellerDatum.fromPlutusData(Data.from(datum), networkId);
+      this.datum = SellerDatum.fromPlutusData(DataObject.from(datum), networkId);
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -740,14 +740,14 @@ export namespace LbeV2Types {
     factoryPolicyId: string;
     baseAsset: Asset;
     raiseAsset: Asset;
-    owner: Address;
+    owner: string;
     amount: bigint;
     isCollected: boolean;
     penaltyAmount: bigint;
   };
 
   export namespace OrderDatum {
-    export function toPlutusData(data: OrderDatum): Constr<Data> {
+    export function toPlutusData(data: OrderDatum): Constr<DataType> {
       return new Constr(0, [
         data.factoryPolicyId,
         Asset.toPlutusData(data.baseAsset),
@@ -760,7 +760,7 @@ export namespace LbeV2Types {
     }
 
     export function fromPlutusData(
-      data: Constr<Data>,
+      data: Constr<DataType>,
       networkId: NetworkId
     ): OrderDatum {
       switch (data.index) {
@@ -772,14 +772,14 @@ export namespace LbeV2Types {
           );
           return {
             factoryPolicyId: fields[0] as string,
-            baseAsset: Asset.fromPlutusData(fields[1] as Constr<Data>),
-            raiseAsset: Asset.fromPlutusData(fields[2] as Constr<Data>),
+            baseAsset: Asset.fromPlutusData(fields[1] as Constr<DataType>),
+            raiseAsset: Asset.fromPlutusData(fields[2] as Constr<DataType>),
             owner: AddressPlutusData.fromPlutusData(
               networkId,
-              fields[3] as Constr<Data>
+              fields[3] as Constr<DataType>
             ),
             amount: fields[4] as bigint,
-            isCollected: Bool.fromPlutusData(fields[5] as Constr<Data>),
+            isCollected: Bool.fromPlutusData(fields[5] as Constr<DataType>),
             penaltyAmount: fields[6] as bigint,
           };
         }
@@ -797,7 +797,7 @@ export namespace LbeV2Types {
   }
 
   export namespace OrderRedeemer {
-    export function toPlutusData(data: OrderRedeemer): Constr<Data> {
+    export function toPlutusData(data: OrderRedeemer): Constr<DataType> {
       return new Constr(data, []);
     }
   }
@@ -819,7 +819,7 @@ export namespace LbeV2Types {
       this.txIn = txIn;
       this.value = value;
       this.datumCbor = datum;
-      this.datum = OrderDatum.fromPlutusData(Data.from(datum), networkId);
+      this.datum = OrderDatum.fromPlutusData(DataObject.from(datum), networkId);
 
       const config = LbeV2Constant.CONFIG[networkId];
       if (
@@ -838,7 +838,7 @@ export namespace LbeV2Types {
       );
     }
 
-    get owner(): Address {
+    get owner(): string {
       return this.datum.owner;
     }
   }

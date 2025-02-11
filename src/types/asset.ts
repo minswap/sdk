@@ -1,6 +1,7 @@
-import { Constr, Data } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Constr } from "@spacebudz/lucid";
 
+import { DataType } from "..";
 import { StringUtils } from "./string";
 
 export const ADA: Asset = {
@@ -37,7 +38,7 @@ export namespace Asset {
         return policyId + tokenName
     }
 
-    export function toPlutusData(asset: Asset): Constr<Data> {
+    export function toPlutusData(asset: Asset): Constr<DataType> {
         const { policyId, tokenName } = asset
         return new Constr(0, [
             policyId,
@@ -45,7 +46,7 @@ export namespace Asset {
         ])
     }
 
-    export function fromPlutusData(data: Constr<Data>): Asset {
+    export function fromPlutusData(data: Constr<DataType>): Asset {
         if (data.index !== 0) {
             throw new Error(`Index of Asset must be 0, actual: ${data.index}`)
         }

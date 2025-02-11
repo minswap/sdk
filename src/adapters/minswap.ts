@@ -1,11 +1,6 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import {
-  C,
-  fromHex,
-  SLOT_CONFIG_NETWORK,
-  slotToBeginUnixTime,
-} from "@minswap/lucid-cardano";
 import * as Prisma from "@prisma/client";
+import { Hasher } from "@spacebudz/lucid";
 import JSONBig from "json-bigint";
 
 import { PostgresRepositoryReader } from "../syncer/repository/postgres-repository";
@@ -14,7 +9,7 @@ import { DexV1Constant, StableswapConstant } from "../types/constants";
 import { NetworkEnvironment, NetworkId } from "../types/network";
 import { PoolV1, PoolV2, StablePool } from "../types/pool";
 import { TxHistory, TxIn, Value } from "../types/tx.internal";
-import { networkEnvToLucidNetwork } from "../utils/network.internal";
+import { networkEnvToLucidNetwork, slotToBeginUnixTime } from "../utils/network.internal";
 import {
   GetPoolByIdParams,
   GetPoolInTxParams,
@@ -68,9 +63,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
       alwaysParseAsBig: true,
       useNativeBigInt: true,
     }).parse(prismaPool.value);
-    const datumHash = C.hash_plutus_data(
-      C.PlutusData.from_bytes(fromHex(prismaPool.raw_datum))
-    ).to_hex();
+    const datumHash = Hasher.hashData(prismaPool.raw_datum);
     return new PoolV1.State(address, txIn, value, datumHash);
   }
 
@@ -125,7 +118,6 @@ export class MinswapAdapter extends BlockfrostAdapter {
     if (prismaPools.length === 0) {
       return [];
     }
-
     const network = networkEnvToLucidNetwork(this.networkEnv);
     return prismaPools.map(
       (prismaPool): TxHistory => ({
@@ -135,7 +127,7 @@ export class MinswapAdapter extends BlockfrostAdapter {
         time: new Date(
           slotToBeginUnixTime(
             Number(prismaPool.slot),
-            SLOT_CONFIG_NETWORK[network]
+            network
           )
         ),
       })

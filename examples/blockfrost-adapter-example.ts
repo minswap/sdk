@@ -1,44 +1,35 @@
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import {
-  Address,
-  Blockfrost,
-  Constr,
-  Data,
-  Lucid,
-  Network,
-  OutRef,
-  TxComplete,
-  UTxO,
-} from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
+import { Constr, Lucid, OutRef, TxComplete, Utxo } from "@spacebudz/lucid";
 import BigNumber from "bignumber.js";
 
 import {
   ADA,
   Asset,
+  BlockfrostAdapter,
+  calculateAmountWithSlippageTolerance,
   calculateDeposit,
   calculateSwapExactIn,
   calculateSwapExactOut,
   calculateWithdraw,
   calculateZapIn,
+  DataObject,
+  DataType,
   Dex,
   DexV2,
   DexV2Calculation,
+  getBackendBlockfrostLucidInstance,
+  LbeV2,
+  LbeV2Types,
   NetworkId,
   OrderV2,
   PoolV1,
   PoolV2,
   StableOrder,
+  Stableswap,
   StableswapCalculation,
   StableswapConstant,
 } from "../src";
-
-import { BlockfrostAdapter } from "../src/adapters/blockfrost";
-import { LbeV2 } from "../src/lbe-v2/lbe-v2";
-import { Stableswap } from "../src/stableswap";
-import { LbeV2Types } from "../src/types/lbe-v2";
-import { getBackendLucidInstance } from "../src/utils/lucid";
-import { Slippage } from "../src/utils/slippage.internal";
 
 const MIN: Asset = {
   policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
@@ -46,14 +37,13 @@ const MIN: Asset = {
 };
 
 async function main(): Promise<void> {
-  const network: Network = "Preprod";
+  const networkId: NetworkId = NetworkId.TESTNET;
   const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
-  const address =
-    "addr_test1qqf2dhk96l2kq4xh2fkhwksv0h49vy9exw383eshppn863jereuqgh2zwxsedytve5gp9any9jwc5hz98sd47rwfv40stc26fr";
-  const lucid = await getBackendLucidInstance(
-    network,
+  const address = "<YOUR_ADDRESS>";
+  const lucid = await getBackendBlockfrostLucidInstance(
+    networkId,
     blockfrostProjectId,
     blockfrostUrl,
     address
@@ -67,21 +57,26 @@ async function main(): Promise<void> {
     })
   );
 
-  const txComplete = await _lbeV2DepositOrderExample(
+  const utxos = await lucid.utxosAt(address);
+
+  // Replace your function that you want to test here
+  const txComplete = await _swapExactInV2TxExample(
     lucid,
+    blockfrostAdapter,
     address,
-    blockfrostAdapter
+    utxos
   );
+
   const signedTx = await txComplete
     .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
-    .complete();
+    .commit();
 
   const txId = await signedTx.submit();
   console.info(`Transaction submitted successfully: ${txId}`);
 }
 
 async function getPoolById(
-  network: Network,
+  networkId: NetworkId,
   blockfrostAdapter: BlockfrostAdapter,
   poolId: string
 ): Promise<{ poolState: PoolV1.State; poolDatum: PoolV1.Datum }> {
@@ -96,8 +91,8 @@ async function getPoolById(
     pool.datumHash
   );
   const poolDatum = PoolV1.Datum.fromPlutusData(
-    network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET,
-    Data.from(rawRoolDatum) as Constr<Data>
+    networkId,
+    DataObject.from(rawRoolDatum) as Constr<DataType>
   );
   return {
     poolState: pool,
@@ -107,18 +102,18 @@ async function getPoolById(
 
 // MARK: DEX V1
 async function _depositTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -135,11 +130,13 @@ async function _depositTxExample(
   });
 
   // Because pool is always fluctuating, so you should determine the impact of amount which you will receive
-  const slippageTolerance = 20n;
-  const acceptedLPAmount = (lpAmount * (100n - slippageTolerance)) / 100n;
+  const acceptedLPAmount = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
+    amount: lpAmount,
+    type: "down",
+  });
 
-  const dex = new Dex(lucid);
-  return await dex.buildDepositTx({
+  return await new Dex(lucid).buildDepositTx({
     amountA: necessaryAmountA,
     amountB: necessaryAmountB,
     assetA: poolDatum.assetA,
@@ -151,18 +148,18 @@ async function _depositTxExample(
 }
 
 async function _swapExactInTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -192,18 +189,18 @@ async function _swapExactInTxExample(
 }
 
 async function _swapExactOutTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -232,17 +229,17 @@ async function _swapExactOutTxExample(
 }
 
 async function _swapLimitExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
-  const { poolDatum } = await getPoolById(network, blockfrostAdapter, poolId);
+  const { poolDatum } = await getPoolById(networkId, blockfrostAdapter, poolId);
 
   const swapAmountADA = 10_000_000n;
 
@@ -263,18 +260,18 @@ async function _swapLimitExample(
 }
 
 async function _withdrawTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -308,18 +305,18 @@ async function _withdrawTxExample(
 }
 
 async function _zapTxExample(
-  network: Network,
+  networkId: NetworkId,
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ID of ADA-MIN Pool on Testnet Preprod
   const poolId =
     "3bb0079303c57812462dec9de8fb867cef8fd3768de7f12c77f6f0dd80381d0d";
 
   const { poolState, poolDatum } = await getPoolById(
-    network,
+    networkId,
     blockfrostAdapter,
     poolId
   );
@@ -351,7 +348,7 @@ async function _zapTxExample(
 async function _cancelTxExample(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter,
-  address: Address,
+  address: string,
   orderOutRef: OutRef
 ): Promise<TxComplete> {
   const orderUtxo = (await lucid.utxosByOutRef([orderOutRef]))[0];
@@ -375,11 +372,12 @@ async function _createPoolV2(
   const txComplete = await dexV2.createPoolTx({
     assetA: ADA,
     assetB: {
+      // Replace with your asset
       policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
       tokenName: "434d",
     },
     amountA: 10_000000n,
-    amountB: 300_000000n,
+    amountB: 30_000n,
     tradingFeeNumerator: 100n,
   });
 
@@ -389,8 +387,8 @@ async function _createPoolV2(
 async function _swapExactInV2TxExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -405,10 +403,10 @@ async function _swapExactInV2TxExample(
     amountIn: swapAmount,
     tradingFeeNumerator: pool.feeA[0],
   });
+
   // 20%
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptedAmountOut = Slippage.apply({
-    slippage: slippageTolerance,
+  const acceptedAmountOut = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: amountOut,
     type: "down",
   });
@@ -434,8 +432,8 @@ async function _swapExactInV2TxExample(
 async function _swapExactOutV2TxExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -452,12 +450,12 @@ async function _swapExactOutV2TxExample(
   });
 
   // 20%
-  const slippageTolerance = new BigNumber(20).div(100);
-  const maximumAmountIn = Slippage.apply({
-    slippage: slippageTolerance,
+  const maximumAmountIn = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: amountIn,
     type: "up",
   });
+
   return new DexV2(lucid, blockfrostAdapter).createBulkOrdersTx({
     sender: address,
     availableUtxos: availableUtxos,
@@ -478,8 +476,8 @@ async function _swapExactOutV2TxExample(
 async function _depositV2TxExample(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -496,9 +494,8 @@ async function _depositV2TxExample(
     poolInfo: pool.info,
   });
 
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptableLPAmount = Slippage.apply({
-    slippage: slippageTolerance,
+  const acceptableLPAmount = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: lpAmount,
     type: "down",
   });
@@ -524,8 +521,8 @@ async function _depositV2TxExample(
 async function _withdrawV2TxExample(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ADA-MIN Lp Asset
   const lpAsset = {
@@ -536,24 +533,26 @@ async function _withdrawV2TxExample(
   const lpAmount = 20_000n;
   const pool = await blockFrostAdapter.getV2PoolByLp(lpAsset);
   invariant(pool, "Pool not found");
-  const { withdrawalA, withdrawalB } =
-    await DexV2Calculation.calculateWithdrawAmount({
+  const { withdrawalA, withdrawalB } = DexV2Calculation.calculateWithdrawAmount(
+    {
       withdrawalLPAmount: lpAmount,
       totalLiquidity: pool.totalLiquidity,
       datumReserves: pool.datumReserves,
-    });
+    }
+  );
 
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptableAmountAReceive = Slippage.apply({
-    slippage: slippageTolerance,
+  const acceptableAmountAReceive = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: withdrawalA,
     type: "down",
   });
-  const acceptableAmountBReceive = Slippage.apply({
-    slippage: slippageTolerance,
+
+  const acceptableAmountBReceive = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: withdrawalB,
     type: "down",
   });
+
   return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
     sender: address,
     availableUtxos,
@@ -573,8 +572,8 @@ async function _withdrawV2TxExample(
 async function _stopV2TxExample(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -590,8 +589,8 @@ async function _stopV2TxExample(
   });
 
   // sell at 10% down
-  const stopAmount = Slippage.apply({
-    slippage: new BigNumber(10).div(100),
+  const stopAmount = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 10,
     amount: amountOut,
     type: "down",
   });
@@ -615,8 +614,8 @@ async function _stopV2TxExample(
 async function _ocoV2TxExample(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -631,16 +630,19 @@ async function _ocoV2TxExample(
     amountIn: amountA,
     tradingFeeNumerator: pool.feeA[0],
   });
-  const limitAmount = Slippage.apply({
-    slippage: new BigNumber(20).div(100),
+
+  const limitAmount = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: amountOut,
     type: "up",
   });
-  const stopAmount = Slippage.apply({
-    slippage: new BigNumber(20).div(100),
+
+  const stopAmount = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: amountOut,
     type: "down",
   });
+
   return new DexV2(lucid, blockFrostAdapter).createBulkOrdersTx({
     sender: address,
     orderOptions: [
@@ -661,8 +663,8 @@ async function _ocoV2TxExample(
 async function _zapOutV2TxExample(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ADA-MIN Lp Asset
   const lpAsset = {
@@ -679,9 +681,8 @@ async function _zapOutV2TxExample(
     poolInfo: pool.info,
   });
 
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptableZapOutAmount = Slippage.apply({
-    slippage: slippageTolerance,
+  const acceptableZapOutAmount = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: zapAmountOut,
     type: "down",
   });
@@ -705,8 +706,8 @@ async function _zapOutV2TxExample(
 async function _partialSwapV2TxExample(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -720,9 +721,10 @@ async function _partialSwapV2TxExample(
     amountIn: amountA,
     tradingFeeNumerator: pool.feeA[0],
   });
+
   // 20% above market
-  const limitAmount = Slippage.apply({
-    slippage: new BigNumber(20).div(100),
+  const limitAmount = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: amountOut,
     type: "up",
   });
@@ -756,8 +758,8 @@ async function _partialSwapV2TxExample(
 async function _multiRoutingTxExample(
   lucid: Lucid,
   blockFrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = MIN;
   const amountA = 10_000n;
@@ -806,9 +808,8 @@ async function _multiRoutingTxExample(
     lastAmountIn = amountOut;
   }
 
-  const slippageTolerance = new BigNumber(20).div(100);
-  const acceptableOutputAmount = Slippage.apply({
-    slippage: slippageTolerance,
+  const acceptableOutputAmount = calculateAmountWithSlippageTolerance({
+    slippageTolerancePercent: 20,
     amount: lastAmountIn,
     type: "down",
   });
@@ -845,8 +846,9 @@ async function _cancelV2TxExample(
   return new DexV2(lucid, blockFrostAdapter).cancelOrder({
     orderOutRefs: [
       {
+        // Replace with your tx hash of your Tx Order
         txHash:
-          "83e22abd3fad8525b02bf2fd1c8e8d0dbc37dbbe09384d666699081ee3e6f282",
+          "3523bd66555055b75d9bc7ebaabed85bf5f08834e9d40e6864803c960329c2a7",
         outputIndex: 0,
       },
     ],
@@ -857,8 +859,8 @@ async function _cancelV2TxExample(
 async function _swapStableExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
@@ -872,7 +874,7 @@ async function _swapStableExample(
 
   invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
-  const swapAmount = 1_000n;
+  const swapAmount = 10n;
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
   // Index-0 Asset is tDJED. Index-1 Asset is tiUSD.
@@ -908,8 +910,8 @@ async function _swapStableExample(
 async function _depositStableExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
@@ -959,8 +961,8 @@ async function _depositStableExample(
 async function _withdrawStableExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
@@ -974,7 +976,7 @@ async function _withdrawStableExample(
 
   invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
-  const lpAmount = 10_000n;
+  const lpAmount = 100n;
 
   const amountOuts = StableswapCalculation.calculateWithdraw({
     withdrawalLPAmount: lpAmount,
@@ -1000,8 +1002,8 @@ async function _withdrawStableExample(
 async function _withdrawImbalanceStableExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
@@ -1047,8 +1049,8 @@ async function _withdrawImbalanceStableExample(
 async function _zapOutStableExample(
   lucid: Lucid,
   blockfrostAdapter: BlockfrostAdapter,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
@@ -1095,13 +1097,13 @@ async function _zapOutStableExample(
 
 async function _bulkOrderStableExample(
   lucid: Lucid,
-  address: Address,
-  availableUtxos: UTxO[]
+  address: string,
+  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const lpAsset = Asset.fromString(
     "d16339238c9e1fb4d034b6a48facb2f97794a9cdb7bc049dd7c49f54646a65642d697573642d76312e342d6c70"
   );
-  const lpAmount = 12345n;
+  const lpAmount = 100n;
   const outIndex = 0;
 
   return new Stableswap(lucid).createBulkOrdersTx({
@@ -1118,7 +1120,7 @@ async function _bulkOrderStableExample(
       {
         lpAsset: lpAsset,
         type: StableOrder.StepType.SWAP,
-        assetInAmount: 1000n,
+        assetInAmount: 10n,
         assetInIndex: 0n,
         assetOutIndex: 1n,
         minimumAssetOut: 1n,
@@ -1127,20 +1129,12 @@ async function _bulkOrderStableExample(
   });
 }
 
-async function _cancelStableExample(lucid: Lucid): Promise<TxComplete> {
-  const orderUtxos = await lucid.utxosByOutRef([
-    {
-      txHash:
-        "c3ad8e0aa159a22a14088474908e5c23ba6772a6aa82f8250e7e8eaa1016b2d8",
-      outputIndex: 0,
-    },
-    {
-      txHash:
-        "72e57a1fd90bf0b9291a6fa8e04793099d51df7844813689dde67ce3eea03c1f",
-      outputIndex: 0,
-    },
-  ]);
-  invariant(orderUtxos.length === 2, "Can not find order to cancel");
+async function _cancelStableExample(
+  lucid: Lucid,
+  outRef: OutRef
+): Promise<TxComplete> {
+  const orderUtxos = await lucid.utxosByOutRef([outRef]);
+  invariant(orderUtxos.length > 0, "Can not find order to cancel");
   return new Stableswap(lucid).buildCancelOrdersTx({
     orderUtxos: orderUtxos,
   });
@@ -1154,30 +1148,29 @@ const _ONE_DAY_IN_MS = 1000 * 60 * 60 * 24;
 // Example Tx: e1f42baa7b685acf083d5a3ffe4eefd1f53f4682226f0f39de56310de108239b
 async function _createLbeV2EventExample(
   lucid: Lucid,
-  address: Address,
+  address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
   );
-  const curSlot = lucid.currentSlot();
-  const curDate = lucid.utils.slotToUnixTime(curSlot);
+  const curSlot = lucid.utils.unixTimeToSlots(Date.now());
+  const curDate = lucid.utils.slotsToUnixTime(curSlot);
   const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
     baseAsset: baseAsset,
-    reserveBase: 100_000n,
+    reserveBase: 10n,
     raiseAsset: ADA,
-    startTime: BigInt(curDate + ONE_HOUR_IN_MS),
+    startTime: BigInt(curDate + ONE_MINUTE_IN_MS),
     endTime: BigInt(curDate + 2 * ONE_HOUR_IN_MS),
     owner: address,
     receiver: address,
     poolAllocation: 100n,
     minimumOrderRaise: undefined,
-    minimumRaise: 10_000_000n,
-    maximumRaise: 100_000_000n,
+    minimumRaise: 50n,
+    maximumRaise: 100n,
     penaltyConfig: {
-      penaltyStartTime: BigInt(
-        curDate + ONE_HOUR_IN_MS + 20 * ONE_MINUTE_IN_MS
-      ),
+      penaltyStartTime: BigInt(curDate + ONE_MINUTE_IN_MS * 2),
       percent: 20n,
     },
     revocable: true,
@@ -1226,17 +1219,18 @@ async function _createLbeV2EventExample(
 // Example Tx: 40116c275da234ec6b7c88ff38dfa45ad18c7c1388c2d3f8f6e43dfef90b7e70
 async function _updateLbeV2EventExample(
   lucid: Lucid,
-  address: Address,
+  address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0ba547d1ae595c49041570991a1c33729106e635f20643b99e3ddb1e77dc439586"
   );
-  const curSlot = lucid.currentSlot();
-  const curDate = lucid.utils.slotToUnixTime(curSlot);
+  const curSlot = lucid.utils.unixTimeToSlots(Date.now());
+  const curDate = lucid.utils.slotsToUnixTime(curSlot);
   const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
     baseAsset: baseAsset,
-    reserveBase: 100_000n,
+    reserveBase: 100n,
     raiseAsset: ADA,
     startTime: BigInt(curDate + _ONE_DAY_IN_MS * 20),
     endTime: BigInt(curDate + _ONE_DAY_IN_MS * 20 + 2 * ONE_HOUR_IN_MS),
@@ -1244,8 +1238,8 @@ async function _updateLbeV2EventExample(
     receiver: address,
     poolAllocation: 100n,
     minimumOrderRaise: undefined,
-    minimumRaise: 10_000_000n,
-    maximumRaise: 100_000_000n,
+    minimumRaise: 50n,
+    maximumRaise: 100n,
     penaltyConfig: {
       penaltyStartTime: BigInt(
         curDate + _ONE_DAY_IN_MS * 20 + 10 * ONE_MINUTE_IN_MS
@@ -1295,9 +1289,10 @@ async function _updateLbeV2EventExample(
 // Example Tx: b3c7049ff4402bdb2f3fe6522c720fad499d5f3dae512299dfb3a5e011a66496
 async function _lbeV2AddMoreSellersExample(
   lucid: Lucid,
-  address: Address,
+  address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
   );
@@ -1330,9 +1325,10 @@ async function _lbeV2AddMoreSellersExample(
 // Example Tx: b1819fbee0bb1eace80f97a75089a8b87047ea2f18959092949306e5301b048d
 async function _cancelLbeV2EventByOwnerExample(
   lucid: Lucid,
-  address: Address,
+  address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d865190718981e4e7fab3eb80963f14148714d7a7847652d4017d0fb744db075027"
   );
@@ -1356,9 +1352,10 @@ async function _cancelLbeV2EventByOwnerExample(
 // Example Tx: 7af5ea80b6a4a587e2c6cfce383367829f0cb68c90b65656c8198a72afc3f419
 async function _lbeV2DepositOrderExample(
   lucid: Lucid,
-  address: Address,
+  address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
   );
@@ -1412,9 +1409,10 @@ async function _lbeV2DepositOrderExample(
 // Example Tx: 3388b9ce7f2175576b12ac48eacfb78da24b2319ab0595b5cc6bf9531e781eef
 async function _lbeV2WithdrawOrderExample(
   lucid: Lucid,
-  address: Address,
+  address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
   );
@@ -1461,16 +1459,17 @@ async function _lbeV2WithdrawOrderExample(
     treasuryUtxo: treasuryUtxos[0],
     sellerUtxo: sellerUtxos[0],
     owner: address,
-    action: { type: "withdraw", withdrawalAmount: 1_000_000n },
+    action: { type: "withdraw", withdrawalAmount: 10n },
   });
 }
 
 // Example Tx: 9667528ebfe0c51aad3c6ef6b1dc7e1660c55c8d712d30eb81a5520dd4aca780
 async function _lbeV2CloseEventExample(
   lucid: Lucid,
-  address: Address,
+  address: string,
   blockfrostAdapter: BlockfrostAdapter
 ): Promise<TxComplete> {
+  // Replace with your asset here
   const baseAsset = Asset.fromString(
     "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
   );
@@ -1511,28 +1510,6 @@ async function _lbeV2CloseEventExample(
     currentSlot: currentSlot,
     owner: address,
   });
-}
-
-/**
- * Initialize Lucid Instance for Browser Environment
- * @param network Network you're working on
- * @param projectId Blockfrost API KEY
- * @param blockfrostUrl Blockfrost URL
- * @returns
- */
-async function _getBrowserLucidInstance(
-  network: Network,
-  projectId: string,
-  blockfrostUrl: string
-): Promise<Lucid> {
-  const provider = new Blockfrost(blockfrostUrl, projectId);
-  const lucid = await Lucid.new(provider, network);
-
-  // This is an approach we can inject Eternl Extension to Lucid Instance
-  // We can do similar with other wallet extensions
-  const api = await window.cardano.eternl.enable();
-  lucid.selectWallet(api);
-  return lucid;
 }
 
 function calculateGcd(a: bigint, b: bigint): bigint {

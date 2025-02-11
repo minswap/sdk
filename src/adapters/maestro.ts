@@ -3,7 +3,6 @@ import {
   MaestroClient,
   UtxoWithSlot,
 } from "@maestro-org/typescript-sdk";
-import { Address } from "@minswap/lucid-cardano";
 import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
@@ -877,7 +876,7 @@ export class MaestroAdapter implements Adapter {
 
   public async getLbeV2OrdersByLbeIdAndOwner(
     lbeId: string,
-    owner: Address
+    owner: string
   ): Promise<LbeV2Types.OrderState[]> {
     const { orders: allOrders } = await this.getAllLbeV2Orders();
     const orders: LbeV2Types.OrderState[] = [];
