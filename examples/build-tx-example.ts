@@ -3,7 +3,8 @@ import { Constr, Lucid, OutRef, TxComplete, Utxo } from "@spacebudz/lucid";
 import BigNumber from "bignumber.js";
 
 import {
-  ADA, Adapter,
+  ADA,
+  Adapter,
   Asset,
   calculateAmountWithSlippageTolerance,
   calculateDeposit,
@@ -45,9 +46,7 @@ export async function getPoolById(
     throw new Error(`Not found PoolState of ID: ${poolId}`);
   }
 
-  const rawRoolDatum = await adapter.getDatumByDatumHash(
-    pool.datumHash
-  );
+  const rawRoolDatum = await adapter.getDatumByDatumHash(pool.datumHash);
   const poolDatum = PoolV1.Datum.fromPlutusData(
     networkId,
     DataObject.from(rawRoolDatum) as Constr<DataType>
@@ -311,9 +310,7 @@ export async function _cancelTxExample(
 ): Promise<TxComplete> {
   const orderUtxo = (await lucid.utxosByOutRef([orderOutRef]))[0];
   invariant(orderUtxo.datumHash, "order utxo missing datum hash");
-  orderUtxo.datum = await adapter.getDatumByDatumHash(
-    orderUtxo.datumHash
-  );
+  orderUtxo.datum = await adapter.getDatumByDatumHash(orderUtxo.datumHash);
   const dex = new Dex(lucid);
   return dex.buildCancelOrder({
     orderUtxo,
@@ -1334,18 +1331,15 @@ export async function _lbeV2DepositOrderExample(
   ]);
   invariant(sellerUtxos.length === 1, "Can not find seller Utxo");
 
-  const orders = await adapter.getLbeV2OrdersByLbeIdAndOwner(
-    lbeId,
-    address
-  );
+  const orders = await adapter.getLbeV2OrdersByLbeIdAndOwner(lbeId, address);
   const orderUtxos =
     orders.length > 0
       ? await lucid.utxosByOutRef(
-        orders.map((o) => ({
-          txHash: o.txIn.txHash,
-          outputIndex: o.txIn.index,
-        }))
-      )
+          orders.map((o) => ({
+            txHash: o.txIn.txHash,
+            outputIndex: o.txIn.index,
+          }))
+        )
       : [];
 
   invariant(
@@ -1391,18 +1385,15 @@ export async function _lbeV2WithdrawOrderExample(
   ]);
   invariant(sellerUtxos.length === 1, "Can not find seller Utxo");
 
-  const orders = await adapter.getLbeV2OrdersByLbeIdAndOwner(
-    lbeId,
-    address
-  );
+  const orders = await adapter.getLbeV2OrdersByLbeIdAndOwner(lbeId, address);
   const orderUtxos =
     orders.length > 0
       ? await lucid.utxosByOutRef(
-        orders.map((o) => ({
-          txHash: o.txIn.txHash,
-          outputIndex: o.txIn.index,
-        }))
-      )
+          orders.map((o) => ({
+            txHash: o.txIn.txHash,
+            outputIndex: o.txIn.index,
+          }))
+        )
       : [];
 
   invariant(
@@ -1436,8 +1427,7 @@ export async function _lbeV2CloseEventExample(
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
   const treasury = await adapter.getLbeV2TreasuryByLbeId(lbeId);
   invariant(treasury !== null, `Can not find treasury by lbeId ${lbeId}`);
-  const headAndTailFactory =
-    await adapter.getLbeV2HeadAndTailFactory(lbeId);
+  const headAndTailFactory = await adapter.getLbeV2HeadAndTailFactory(lbeId);
   invariant(
     headAndTailFactory,
     `Can not find head and tail factory by lbeId ${lbeId}`
