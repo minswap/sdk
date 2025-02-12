@@ -389,4 +389,4 @@ export async function swapExactInV2TxExample() {
 void swapExactInV2TxExample();
 ```
 
-See `examples/` for more details. You can run a single file like `pnpm run exec examples/example.ts`.
+See `examples/` or `docs` for more details. You can run a single file like `npm run exec examples/example.ts`.
