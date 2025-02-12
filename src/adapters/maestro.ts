@@ -61,7 +61,7 @@ export class MaestroAdapter implements Adapter {
     }));
   }
 
-  private async getAllUtxosDataByAddress(address: string, queryParams?: UtxosByAddressQueryParams): Promise<UtxoWithSlot[]> {
+  private async getAllUtxosDataByPaymentCred(credential: string, queryParams?: UtxosByAddressQueryParams): Promise<UtxoWithSlot[]> {
     let cursor: string | null | undefined = null;
     const utxosData: UtxoWithSlot[] = [];
 
@@ -71,8 +71,8 @@ export class MaestroAdapter implements Adapter {
 
     do {
       queryParams.cursor = cursor;
-      const utxos = await this.maestroClient.addresses.utxosByAddress(
-        address,
+      const utxos = await this.maestroClient.addresses.utxosByPaymentCred(
+        credential,
         queryParams
       );
       utxosData.push(...utxos.data);
@@ -375,8 +375,8 @@ export class MaestroAdapter implements Adapter {
     errors: unknown[];
   }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
-    const utxosData = await this.getAllUtxosDataByAddress(
-      v2Config.factoryAddress,
+    const utxosData = await this.getAllUtxosDataByPaymentCred(
+      v2Config.factoryScriptHashBech32,
       {
         asset: v2Config.factoryAsset,
       }
@@ -598,24 +598,24 @@ export class MaestroAdapter implements Adapter {
     return Big(priceNum.toString()).div(priceDen.toString());
   }
 
+  // MARK: LBE V2
   public async getAllLbeV2Factories(): Promise<{
     factories: LbeV2Types.FactoryState[];
     errors: unknown[];
   }> {
     const config = LbeV2Constant.CONFIG[this.networkId];
-    const utxos = await this.maestroClient.addresses.utxosByAddress(
+    const utxosData = await this.getAllUtxosDataByPaymentCred(
       config.factoryHashBech32,
       {
         asset: config.factoryAsset,
       }
-    );
-    const utxosData = utxos.data;
+    )
 
     const factories: LbeV2Types.FactoryState[] = [];
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (utxo.datum?.type != "inline") {
+        if (utxo.datum?.type != "inline" || !utxo.datum?.bytes) {
           throw new Error(
             `Cannot find datum of LBE V2 Factory, tx: ${utxo.tx_hash}`
           );
@@ -626,7 +626,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash
+          utxo.datum?.bytes
         );
         factories.push(factory);
       } catch (err) {
@@ -684,19 +684,18 @@ export class MaestroAdapter implements Adapter {
   }> {
     const config = LbeV2Constant.CONFIG[this.networkId];
 
-    const utxos = await this.maestroClient.addresses.utxosByAddress(
+    const utxosData = await this.getAllUtxosDataByPaymentCred(
       config.treasuryHashBech32,
       {
         asset: config.treasuryAsset,
       }
     );
-    const utxosData = utxos.data;
 
     const treasuries: LbeV2Types.TreasuryState[] = [];
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (utxo.datum?.type != "inline") {
+        if (utxo.datum?.type != "inline" || !utxo.datum?.bytes) {
           throw new Error(
             `Cannot find datum of LBE V2 Treasury, tx: ${utxo.tx_hash}`
           );
@@ -707,7 +706,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash
+          utxo.datum?.bytes
         );
         treasuries.push(treasury);
       } catch (err) {
@@ -738,19 +737,18 @@ export class MaestroAdapter implements Adapter {
   }> {
     const config = LbeV2Constant.CONFIG[this.networkId];
 
-    const utxos = await this.maestroClient.addresses.utxosByAddress(
+    const utxosData = await this.getAllUtxosDataByPaymentCred(
       config.managerHashBech32,
       {
         asset: config.managerAsset,
       }
     );
-    const utxosData = utxos.data;
 
     const managers: LbeV2Types.ManagerState[] = [];
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (utxo.datum?.type != "inline") {
+        if (utxo.datum?.type != "inline" || !utxo.datum?.bytes) {
           throw new Error(
             `Cannot find datum of Lbe V2 Manager, tx: ${utxo.tx_hash}`
           );
@@ -761,7 +759,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash
+          utxo.datum?.bytes
         );
         managers.push(manager);
       } catch (err) {
@@ -792,19 +790,18 @@ export class MaestroAdapter implements Adapter {
   }> {
     const config = LbeV2Constant.CONFIG[this.networkId];
 
-    const utxos = await this.maestroClient.addresses.utxosByAddress(
+    const utxosData = await this.getAllUtxosDataByPaymentCred(
       config.sellerHashBech32,
       {
         asset: config.sellerAsset,
       }
     );
-    const utxosData = utxos.data;
 
     const sellers: LbeV2Types.SellerState[] = [];
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (utxo.datum?.type != "inline") {
+        if (utxo.datum?.type != "inline" || !utxo.datum?.bytes) {
           throw new Error(
             `Cannot find datum of Lbe V2 Seller, tx: ${utxo.tx_hash}`
           );
@@ -815,7 +812,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash
+          utxo.datum?.bytes
         );
         sellers.push(seller);
       } catch (err) {
@@ -846,19 +843,18 @@ export class MaestroAdapter implements Adapter {
   }> {
     const config = LbeV2Constant.CONFIG[this.networkId];
 
-    const utxos = await this.maestroClient.addresses.utxosByAddress(
+    const utxosData = await this.getAllUtxosDataByPaymentCred(
       config.orderHashBech32,
       {
         asset: config.orderAsset,
       }
     );
-    const utxosData = utxos.data;
 
     const orders: LbeV2Types.OrderState[] = [];
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (utxo.datum?.type != "inline") {
+        if (utxo.datum?.type != "inline" || !utxo.datum?.bytes) {
           throw new Error(
             `Cannot find datum of Lbe V2 Order, tx: ${utxo.tx_hash}`
           );
@@ -869,7 +865,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash
+          utxo.datum?.bytes
         );
         orders.push(order);
       } catch (err) {

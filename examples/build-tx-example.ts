@@ -1104,12 +1104,11 @@ const _ONE_DAY_IN_MS = 1000 * 60 * 60 * 24;
 export async function _createLbeV2EventExample(
   lucid: Lucid,
   address: string,
-  adapter: Adapter
+  adapter: Adapter,
+  asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
-  );
+  const baseAsset = Asset.fromString(asset);
   const curSlot = lucid.utils.unixTimeToSlots(Date.now());
   const curDate = lucid.utils.slotsToUnixTime(curSlot);
   const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
@@ -1175,12 +1174,11 @@ export async function _createLbeV2EventExample(
 export async function _updateLbeV2EventExample(
   lucid: Lucid,
   address: string,
-  adapter: Adapter
+  adapter: Adapter,
+  asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0ba547d1ae595c49041570991a1c33729106e635f20643b99e3ddb1e77dc439586"
-  );
+  const baseAsset = Asset.fromString(asset);
   const curSlot = lucid.utils.unixTimeToSlots(Date.now());
   const curDate = lucid.utils.slotsToUnixTime(curSlot);
   const lbeV2Parameters: LbeV2Types.LbeV2Parameters = {
@@ -1245,12 +1243,11 @@ export async function _updateLbeV2EventExample(
 export async function _lbeV2AddMoreSellersExample(
   lucid: Lucid,
   address: string,
-  adapter: Adapter
+  adapter: Adapter,
+  asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
-  );
+  const baseAsset = Asset.fromString(asset);
   const raiseAsset = Asset.fromString("lovelace");
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
@@ -1281,12 +1278,11 @@ export async function _lbeV2AddMoreSellersExample(
 export async function _cancelLbeV2EventByOwnerExample(
   lucid: Lucid,
   address: string,
-  adapter: Adapter
+  adapter: Adapter,
+  asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    "e4214b7cce62ac6fbba385d164df48e157eae5863521b4b67ca71d865190718981e4e7fab3eb80963f14148714d7a7847652d4017d0fb744db075027"
-  );
+  const baseAsset = Asset.fromString(asset);
   const raiseAsset = Asset.fromString("lovelace");
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
@@ -1308,12 +1304,11 @@ export async function _cancelLbeV2EventByOwnerExample(
 export async function _lbeV2DepositOrderExample(
   lucid: Lucid,
   address: string,
-  adapter: Adapter
+  adapter: Adapter,
+  asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
-  );
+  const baseAsset = Asset.fromString(asset);
   const raiseAsset = Asset.fromString("lovelace");
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
@@ -1362,12 +1357,11 @@ export async function _lbeV2DepositOrderExample(
 export async function _lbeV2WithdrawOrderExample(
   lucid: Lucid,
   address: string,
-  adapter: Adapter
+  adapter: Adapter,
+  asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed7243414b45"
-  );
+  const baseAsset = Asset.fromString(asset);
   const raiseAsset = Asset.fromString("lovelace");
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
@@ -1416,12 +1410,11 @@ export async function _lbeV2WithdrawOrderExample(
 export async function _lbeV2CloseEventExample(
   lucid: Lucid,
   address: string,
-  adapter: Adapter
+  adapter: Adapter,
+  asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    "d6aae2059baee188f74917493cf7637e679cd219bdfbbf4dcbeb1d0bfdfc61f25b3065a310ba3e352159125910b947b7aee704728318949933127cdc"
-  );
+  const baseAsset = Asset.fromString(asset);
   const raiseAsset = Asset.fromString("lovelace");
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
