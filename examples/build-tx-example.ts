@@ -5,7 +5,6 @@ import BigNumber from "bignumber.js";
 import {
   ADA, Adapter,
   Asset,
-  BlockfrostAdapter,
   calculateAmountWithSlippageTolerance,
   calculateDeposit,
   calculateSwapExactIn,
@@ -332,8 +331,8 @@ export async function _createPoolV2(
     assetA: ADA,
     assetB: {
       // Replace with your asset
-      policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
-      tokenName: "434d",
+      policyId: "997322483e052b1c2e42447fca9261427c6214bb14288a0ac4651fa7",
+      tokenName: "6c7031",
     },
     amountA: 10_000000n,
     amountB: 30_000n,
@@ -807,7 +806,7 @@ export async function _cancelV2TxExample(
       {
         // Replace with your tx hash of your Tx Order
         txHash:
-          "3523bd66555055b75d9bc7ebaabed85bf5f08834e9d40e6864803c960329c2a7",
+          "a59e105fdf159a6b68385994cce84bf4801743482f858e9d504a1275bfb1cf5e",
         outputIndex: 0,
       },
     ],
@@ -886,7 +885,7 @@ export async function _depositStableExample(
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
   // This order deposits 100_000n tDJED and 1_000n tiUSD into the pool.
-  const amountIns = [100_000n, 1_000n];
+  const amountIns = [20_000n, 20_000n];
 
   const lpAmount = StableswapCalculation.calculateDeposit({
     amountIns: amountIns,
@@ -907,8 +906,8 @@ export async function _depositStableExample(
         lpAsset: lpAsset,
         type: StableOrder.StepType.DEPOSIT,
         assetsAmount: [
-          [Asset.fromString(pool.assets[0]), 100_000n],
-          [Asset.fromString(pool.assets[1]), 1_000n],
+          [Asset.fromString(pool.assets[0]), 20_000n],
+          [Asset.fromString(pool.assets[1]), 20_000n],
         ],
         minimumLPReceived: lpAmount,
         totalLiquidity: pool.totalLiquidity,
@@ -919,7 +918,7 @@ export async function _depositStableExample(
 
 export async function _withdrawStableExample(
   lucid: Lucid,
-  blockfrostAdapter: BlockfrostAdapter,
+  adapter: Adapter,
   address: string,
   availableUtxos: Utxo[]
 ): Promise<TxComplete> {
@@ -931,7 +930,7 @@ export async function _withdrawStableExample(
     NetworkId.TESTNET
   );
 
-  const pool = await blockfrostAdapter.getStablePoolByLpAsset(lpAsset);
+  const pool = await adapter.getStablePoolByLpAsset(lpAsset);
 
   invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
@@ -976,7 +975,7 @@ export async function _withdrawImbalanceStableExample(
 
   invariant(pool, `Can not find pool by lp asset ${Asset.toString(lpAsset)}`);
 
-  const withdrawAmounts = [1234n, 5678n];
+  const withdrawAmounts = [100n, 100n];
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
   // This order withdraws exactly 1234n tDJED and 5678n tiUSD from the pool.
@@ -1025,7 +1024,7 @@ export async function _zapOutStableExample(
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
   // This order withdraws xxx tiUSD by 12345 Lp Assets from the pool.
-  const lpAmount = 12345n;
+  const lpAmount = 10n;
   const outIndex = 0;
   const amountOut = StableswapCalculation.calculateZapOut({
     amountLpIn: lpAmount,
