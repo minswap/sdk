@@ -1282,9 +1282,7 @@ export async function _cancelLbeV2EventByOwnerExample(
   asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    asset
-  );
+  const baseAsset = Asset.fromString(asset);
   const raiseAsset = Asset.fromString("lovelace");
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
@@ -1310,9 +1308,7 @@ export async function _lbeV2DepositOrderExample(
   asset: string
 ): Promise<TxComplete> {
   // Replace with your asset here
-  const baseAsset = Asset.fromString(
-    asset
-  );
+  const baseAsset = Asset.fromString(asset);
   const raiseAsset = Asset.fromString("lovelace");
 
   const lbeId = PoolV2.computeLPAssetName(baseAsset, raiseAsset);
