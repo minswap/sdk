@@ -197,4 +197,196 @@ for (let i = 1; ; i++) {
 
 ### Example 3: Build Order transaction and submit
 
-See `examples/` for more details. You can run a single file like `npm run exec examples/example.ts`.
+- Swap MIN-ADA in V2 pool on testnet:
+
+#### With Blockfrost adapter:
+
+```ts
+import {
+    ADA, Asset,
+    BlockfrostAdapter,
+    calculateAmountWithSlippageTolerance,
+    DexV2,
+    DexV2Calculation,
+    getBackendBlockfrostLucidInstance,
+    NetworkId, 
+    OrderV2
+} from "@minswap/sdk";
+import {BlockFrostAPI} from "@blockfrost/blockfrost-js";
+
+export async function swapExactInV2TxExample() {
+    const networkId: NetworkId = NetworkId.TESTNET;
+    const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
+    const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
+
+    const address = "<YOUR_ADDRESS";
+
+    const lucid = await getBackendBlockfrostLucidInstance(
+        networkId,
+        blockfrostProjectId,
+        blockfrostUrl,
+        address
+    );
+
+    const adapter = new BlockfrostAdapter(
+        NetworkId.TESTNET,
+        new BlockFrostAPI({
+            projectId: blockfrostProjectId,
+            network: "preprod",
+        })
+    );
+
+    const MIN: Asset = {
+        policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+        tokenName: "4d494e",
+    };
+
+    const utxos = await lucid.utxosAt(address);
+
+    const assetA = ADA;
+    const assetB = MIN;
+
+    const pool = await adapter.getV2PoolByPair(assetA, assetB);
+    if (!pool) {
+        throw new Error("Pool not found");
+    }
+
+    const swapAmount = 1_000n;
+    const amountOut = DexV2Calculation.calculateAmountOut({
+        reserveIn: pool.reserveA,
+        reserveOut: pool.reserveB,
+        amountIn: swapAmount,
+        tradingFeeNumerator: pool.feeA[0],
+    });
+
+    // 20% slippage tolerance
+    const acceptedAmountOut = calculateAmountWithSlippageTolerance({
+        slippageTolerancePercent: 20,
+        amount: amountOut,
+        type: "down",
+    });
+
+    const txComplete = await new DexV2(lucid, adapter).createBulkOrdersTx({
+        sender: address,
+        availableUtxos: utxos,
+        orderOptions: [
+            {
+                type: OrderV2.StepType.SWAP_EXACT_IN,
+                amountIn: swapAmount,
+                assetIn: assetA,
+                direction: OrderV2.Direction.A_TO_B,
+                minimumAmountOut: acceptedAmountOut,
+                lpAsset: pool.lpAsset,
+                isLimitOrder: false,
+                killOnFailed: false,
+            },
+        ],
+    });
+
+    const signedTx = await txComplete
+        .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+        .commit();
+    const txId = await signedTx.submit();
+
+    console.log(`Transaction submitted successfully: ${txId}`);
+}
+
+void swapExactInV2TxExample();
+```
+
+#### With Meastro adapter:
+
+```ts
+import {
+    ADA,
+    Asset,
+    calculateAmountWithSlippageTolerance,
+    DexV2,
+    DexV2Calculation,
+    getBackendMaestroLucidInstance,
+    MaestroAdapter,
+    NetworkId,
+    OrderV2
+} from "@minswap/sdk";
+import {Configuration, MaestroClient} from "@maestro-org/typescript-sdk";
+
+export async function swapExactInV2TxExample() {
+    const networkId: NetworkId = NetworkId.TESTNET;
+    const maestroApiKey = "<YOUR_API_KEY>";
+
+    const address = "<YOUR_ADDRESS>";
+
+    const lucid = await getBackendMaestroLucidInstance(
+        "Preprod",
+        maestroApiKey,
+        address
+    );
+
+    const maestroClient = new MaestroClient(
+        new Configuration({
+            apiKey: maestroApiKey,
+            network: "Preprod",
+        })
+    );
+
+    const MIN: Asset = {
+        policyId: "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed72",
+        tokenName: "4d494e",
+    };
+
+    const adapter = new MaestroAdapter(NetworkId.TESTNET, maestroClient);
+
+    const utxos = await lucid.utxosAt(address);
+
+    const assetA = ADA;
+    const assetB = MIN;
+
+    const pool = await adapter.getV2PoolByPair(assetA, assetB);
+    if (!pool) {
+        throw new Error("Pool not found");
+    }
+
+    const swapAmount = 1_000n;
+    const amountOut = DexV2Calculation.calculateAmountOut({
+        reserveIn: pool.reserveA,
+        reserveOut: pool.reserveB,
+        amountIn: swapAmount,
+        tradingFeeNumerator: pool.feeA[0],
+    });
+
+    // 20% slippage tolerance
+    const acceptedAmountOut = calculateAmountWithSlippageTolerance({
+        slippageTolerancePercent: 20,
+        amount: amountOut,
+        type: "down",
+    });
+
+    const txComplete = await new DexV2(lucid, adapter).createBulkOrdersTx({
+        sender: address,
+        availableUtxos: utxos,
+        orderOptions: [
+            {
+                type: OrderV2.StepType.SWAP_EXACT_IN,
+                amountIn: swapAmount,
+                assetIn: assetA,
+                direction: OrderV2.Direction.A_TO_B,
+                minimumAmountOut: acceptedAmountOut,
+                lpAsset: pool.lpAsset,
+                isLimitOrder: false,
+                killOnFailed: false,
+            },
+        ],
+    });
+
+    const signedTx = await txComplete
+        .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+        .commit();
+    const txId = await signedTx.submit();
+
+    console.log(`Transaction submitted successfully: ${txId}`);
+}
+
+void swapExactInV2TxExample();
+```
+
+See `examples/` for more details. You can run a single file like `pnpm run exec examples/example.ts`.
