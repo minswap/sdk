@@ -8,9 +8,6 @@ echo "update version field"
 jq ".version = \"$version\"" <package.json >package.json.tmp
 mv package.json.tmp package.json
 
-jq ".version = \"$version\"" <package-lock.json >package-lock.json.tmp
-mv package-lock.json.tmp package-lock.json
-
 echo "build"
 npm run build
 
@@ -18,7 +15,7 @@ echo "publish"
 npm publish --access public
 
 echo "commit new version"
-git add package.json package-lock.json
+git add package.json
 git commit -m "publish version v$version"
 
 echo "tag version"
