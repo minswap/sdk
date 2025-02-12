@@ -6,6 +6,7 @@ export * from "./expired-order-monitor";
 export * from "./lbe-v2/lbe-v2";
 export * from "./lbe-v2-worker/worker";
 export { Stableswap } from "./stableswap";
+export * from "./syncer";
 export * from "./types/asset";
 export * from "./types/constants";
 export * from "./types/lbe-v2";
