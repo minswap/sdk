@@ -239,13 +239,13 @@ console.info(`Transaction submitted successfully: ${txId}`);
 ### 4. Off-chain component to track and cancel the expired orders
 
 ```ts
-const network: Network = "Preprod";
+const networkId: NetworkId = NetworkId.TESTNET;
 const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
 const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
-const lucid = await getBackendLucidInstance(
-  network,
+const lucid = await getBackendBlockfrostLucidInstance(
+  networkId,
   blockfrostProjectId,
   blockfrostUrl,
   address
@@ -259,6 +259,7 @@ const blockfrostAdapter = new BlockfrostAdapter(
   })
 );
 
+// To test it, you need to create an expired order first
 const monitor = new ExpiredOrderMonitor({
   lucid,
   blockfrostAdapter,

@@ -22,7 +22,7 @@
     "lint": "eslint src",
     "format": "prettier --write **/*.ts && eslint src --fix",
     "check-format": "prettier --check **/*.ts && eslint src",
-    "exec": "tsx",
+    "exec": "tsx --experimental-wasm-modules",
     "example": "tsx examples/example.ts",
     "prisma:dbpull": "prisma db pull",
     "prisma:generate": "prisma generate",

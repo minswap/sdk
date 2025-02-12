@@ -3,6 +3,7 @@ import {
   MaestroClient,
   UtxoWithSlot,
 } from "@maestro-org/typescript-sdk";
+import { UtxosByAddressQueryParams } from "@maestro-org/typescript-sdk/src/api/addresses/type";
 import invariant from "@minswap/tiny-invariant";
 import Big from "big.js";
 
@@ -58,6 +59,27 @@ export class MaestroAdapter implements Adapter {
       unit: asset.unit.toString(),
       quantity: asset.amount.toString(),
     }));
+  }
+
+  private async getAllUtxosDataByAddress(address: string, queryParams?: UtxosByAddressQueryParams): Promise<UtxoWithSlot[]> {
+    let cursor: string | null | undefined = null;
+    const utxosData: UtxoWithSlot[] = [];
+
+    if (!queryParams) {
+      queryParams = {};
+    }
+
+    do {
+      queryParams.cursor = cursor;
+      const utxos = await this.maestroClient.addresses.utxosByAddress(
+        address,
+        queryParams
+      );
+      utxosData.push(...utxos.data);
+      cursor = utxos.next_cursor;
+    } while (cursor);
+
+    return utxosData;
   }
 
   public async getAssetDecimals(asset: string): Promise<number> {
@@ -353,19 +375,18 @@ export class MaestroAdapter implements Adapter {
     errors: unknown[];
   }> {
     const v2Config = DexV2Constant.CONFIG[this.networkId];
-    const utxos = await this.maestroClient.addresses.utxosByAddress(
-      v2Config.factoryScriptHashBech32,
+    const utxosData = await this.getAllUtxosDataByAddress(
+      v2Config.factoryAddress,
       {
         asset: v2Config.factoryAsset,
       }
-    );
-    const utxosData = utxos.data;
+    )
 
     const factories: FactoryV2.State[] = [];
     const errors: unknown[] = [];
     for (const utxo of utxosData) {
       try {
-        if (utxo.datum?.type != "inline") {
+        if (utxo.datum?.type != "inline" || !utxo.datum?.bytes) {
           throw new Error(
             `Cannot find datum of Factory V2, tx: ${utxo.tx_hash}`
           );
@@ -375,7 +396,7 @@ export class MaestroAdapter implements Adapter {
           utxo.address,
           { txHash: utxo.tx_hash, index: utxo.index },
           this.mapMaestroAssetToValue(utxo.assets),
-          utxo.datum.hash
+          utxo.datum?.bytes
         );
         factories.push(factory);
       } catch (err) {
