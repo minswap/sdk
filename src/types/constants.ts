@@ -178,6 +178,78 @@ export namespace StableswapConstant {
         adminFee: 5000000000n,
         feeDenominator: 10000000000n,
       },
+      {
+        orderAddress:
+          "addr1w9ksys0l07s9933kgkn4uxylsss5k6lqvt6e66kfc7am9sgtwqgv0",
+        poolAddress:
+          "addr1wx87yvnhj78yehh64unc7hr02dx73vmpedktz79xy2n3xxgs3t38l",
+        nftAsset:
+          "4e73e9cf8fd73e74956c67fa3a01486f02ab612ee580dc27755b8d57444a45442d4d795553442d534c50",
+        lpAsset:
+          "b69f5d48c91297142c46b764b69ab57844e3e7af9d7ba9bc63c3c517444a45442d4d795553442d534c50",
+        assets: [
+          "8db269c3ec630e06ae29f74bc39edd1f87c819f1056206e879a1cd61446a65644d6963726f555344",
+          "92776616f1f32c65a173392e4410a3d8c39dcf6ef768c73af164779c4d79555344",
+        ],
+        multiples: [1n, 1n],
+        fee: 1000000n,
+        adminFee: 5000000000n,
+        feeDenominator: 10000000000n,
+      },
+      {
+        orderAddress:
+          "addr1w8akt26kwj9kc2y56p8x3s9e9lp2qqtcxql0rmnz55u6lks99kkjc",
+        poolAddress:
+          "addr1wxcsnc9wzuczcmcctzpl9c0w4r84f73rsmwl8ce8d9n54ygep9znj",
+        nftAsset:
+          "1d4c43ac86463f93c4cba60c28f143b2781d7f7328b18d8e68298e614d795553442d5553444d2d534c50",
+        lpAsset:
+          "5827249dcaf49ce7ccae2e0577fd9bf9514a4c34adabc7eb57e192594d795553442d5553444d2d534c50",
+        assets: [
+          "92776616f1f32c65a173392e4410a3d8c39dcf6ef768c73af164779c4d79555344",
+          "c48cbb3d5e57ed56e276bc45f99ab39abe94e6cd7ac39fb402da47ad0014df105553444d"
+        ],
+        multiples: [1n, 1n],
+        fee: 1000000n,
+        adminFee: 5000000000n,
+        feeDenominator: 10000000000n,
+      },
+      {
+        orderAddress:
+          "addr1w86a53qhsmh0qszg486ell6nchy77yq6txksfz8p4z4r39cd4e04m",
+        poolAddress:
+          "addr1wytm0yuffszdzkme56mlm07htw388vkny2wy49ch7c3p57s4wwk57",
+        nftAsset:
+          "3ff28ad0d4788f24619746cc86b774495ed4727634b61710d2bb7ed5555344432d695553442d534c50",
+        lpAsset:
+          "40b6f8a17ba5d9bab02fc776c9677212b40bfc3df77346f0b1edcba6555344432d695553442d534c50",
+        assets: [
+          "25c5de5f5b286073c593edfd77b48abc7a48e5a4f3d4cd9d428ff93555534443",
+          "f66d78b4a3cb3d37afa0ec36461e51ecbde00f26c8f0a68f94b6988069555344",
+        ],
+        multiples: [1n, 100n],
+        fee: 1000000n,
+        adminFee: 5000000000n,
+        feeDenominator: 10000000000n,
+      },
+      {
+        orderAddress:
+          "addr1wy42rt3rdptdaa2lwlntkx49ksuqrmqqjlu7pf5l5f8upmgj3gq2m",
+        poolAddress:
+          "addr1wx4w03kq5tfhaad2fmglefgejj0anajcsvvg88w96lrmylc7mx5rm",
+        nftAsset:
+          "739150a2612da82e16adc2a3a1f88b256202d8415df0c5b7a2ff93fb555344432d695553442d302e312d534c50",
+        lpAsset:
+          "48bee898de501ff287165fdfc5be34818f3a41e474ae8f47f8c59f7a555344432d695553442d302e312d534c50",
+        assets: [
+          "25c5de5f5b286073c593edfd77b48abc7a48e5a4f3d4cd9d428ff93555534443",
+          "f66d78b4a3cb3d37afa0ec36461e51ecbde00f26c8f0a68f94b6988069555344"
+        ],
+        multiples: [1n, 100n],
+        fee: 10000000n,
+        adminFee: 500000000n,
+        feeDenominator: 10000000000n,
+      }
     ],
   };
 
@@ -280,7 +352,7 @@ export namespace StableswapConstant {
             outputIndex: 3,
           },
         },
-      d97fa91daaf63559a253970365fb219dc4364c028e5fe0606cdbfff9555344432d444a45442d534c50:
+      "d97fa91daaf63559a253970365fb219dc4364c028e5fe0606cdbfff9555344432d444a45442d534c50":
         {
           order: {
             txHash:
@@ -346,6 +418,98 @@ export namespace StableswapConstant {
           poolBatching: {
             txHash:
               "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+            outputIndex: 3,
+          },
+        },
+      "4e73e9cf8fd73e74956c67fa3a01486f02ab612ee580dc27755b8d57444a45442d4d795553442d534c50":
+        {
+          order: {
+            txHash:
+              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+            outputIndex: 3,
+          },
+        },
+      "1d4c43ac86463f93c4cba60c28f143b2781d7f7328b18d8e68298e614d795553442d5553444d2d534c50":
+        {
+          order: {
+            txHash:
+              "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
+            outputIndex: 3,
+          },
+        },
+      "3ff28ad0d4788f24619746cc86b774495ed4727634b61710d2bb7ed5555344432d695553442d534c50":
+        {
+          order: {
+            txHash:
+              "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
+            outputIndex: 3,
+          },
+        },
+      "739150a2612da82e16adc2a3a1f88b256202d8415df0c5b7a2ff93fb555344432d695553442d302e312d534c50":
+        {
+          order: {
+            txHash:
+              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
             outputIndex: 3,
           },
         },
