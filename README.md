@@ -1,10 +1,9 @@
 # Minswap SDK
 
-- The Minswap open-source providing a comprehensive suite of off-chain tools price feeds, historical data storage, 
-and integration methods for: `Stableswap`, `AMM V1`, `AMM V2` and `LBE V2`.
+The Minswap open-source project provides a comprehensive suite of off-chain tools, including price feeds, historical data storage, and integration methods for Stableswap, AMM V1, AMM V2, and LBE V2.
 
-- See the [Minswap Example](https://github.com/minswap/sdk-example) to see how to use the SDK. For more build 
-  tx examples, see the `examples/` folder in this repository.
+- See the [Minswap Example](https://github.com/minswap/sdk-example) for a demonstration of how to use the SDK.
+- For additional transaction-building examples, refer to the `examples/` directory in this repository.
 
 ## Features
 
