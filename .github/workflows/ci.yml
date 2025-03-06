@@ -23,6 +23,8 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Run generate prisma
+        run: pnpm run prisma:generate
       - name: Run build
         run: pnpm run build
       - name: Run test
