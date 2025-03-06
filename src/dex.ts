@@ -3,8 +3,7 @@ import { Addresses, Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
 import { Utxo } from "@spacebudz/lucid";
 
 import { DataObject, DataType } from ".";
-import { BatcherFee } from "./batcher-fee-reduction/calculate";
-import { DexVersion } from "./batcher-fee-reduction/configs.internal";
+import { BATCHER_FEE_DEX_V1, DexVersion } from "./batcher-fee-reduction/configs.internal";
 import { Asset } from "./types/asset";
 import {
   DexV1Constant,
@@ -143,18 +142,11 @@ export class Dex {
       assetOut,
       minimumAmountOut,
       isLimitOrder,
-      availableUtxos,
     } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
-      utxos: availableUtxos,
-      currentDate: new Date(),
-      orderAssets,
-      networkEnv: this.networkEnv,
-      dexVersion: this.dexVersion,
-    });
+    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.SWAP_EXACT_IN]
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -180,9 +172,6 @@ export class Dex {
         orderAssets
       )
       .addSigner(Addresses.addressToCredential(sender).hash);
-    if (Object.keys(reductionAssets).length !== 0) {
-      tx.payTo(sender, reductionAssets);
-    }
     if (isLimitOrder) {
       tx.attachMetadata(674, {
         msg: [MetadataMessage.SWAP_EXACT_IN_LIMIT_ORDER],
@@ -217,20 +206,13 @@ export class Dex {
       assetOut,
       maximumAmountIn,
       expectedAmountOut,
-      availableUtxos,
     } = options;
     invariant(
       maximumAmountIn > 0n && expectedAmountOut > 0n,
       "amount in and out must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(assetIn)]: maximumAmountIn };
-    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
-      utxos: availableUtxos,
-      orderAssets,
-      networkEnv: this.networkEnv,
-      dexVersion: this.dexVersion,
-      currentDate: new Date(),
-    });
+    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.SWAP_EXACT_OUT]
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -256,7 +238,6 @@ export class Dex {
         DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payTo(sender, reductionAssets)
       .addSigner(Addresses.addressToCredential(sender).hash)
       .attachMetadata(674, { msg: [MetadataMessage.SWAP_EXACT_OUT_ORDER] });
 
@@ -285,7 +266,6 @@ export class Dex {
       lpAmount,
       minimumAssetAReceived,
       minimumAssetBReceived,
-      availableUtxos,
     } = options;
     invariant(lpAmount > 0n, "LP amount must be positive");
     invariant(
@@ -293,13 +273,7 @@ export class Dex {
       "minimum asset received must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(lpAsset)]: lpAmount };
-    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
-      utxos: availableUtxos,
-      orderAssets,
-      networkEnv: this.networkEnv,
-      dexVersion: this.dexVersion,
-      currentDate: new Date(),
-    });
+    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.WITHDRAW]
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -324,7 +298,6 @@ export class Dex {
         DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payTo(sender, reductionAssets)
       .addSigner(Addresses.addressToCredential(sender).hash)
       .attachMetadata(674, { msg: [MetadataMessage.WITHDRAW_ORDER] })
       .commit();
@@ -337,18 +310,11 @@ export class Dex {
       amountIn,
       assetOut,
       minimumLPReceived,
-      availableUtxos,
     } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
-      utxos: availableUtxos,
-      orderAssets,
-      networkEnv: this.networkEnv,
-      dexVersion: this.dexVersion,
-      currentDate: new Date(),
-    });
+    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.ZAP_IN];
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -374,7 +340,6 @@ export class Dex {
         DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payTo(sender, reductionAssets)
       .addSigner(Addresses.addressToCredential(sender).hash)
       .attachMetadata(674, { msg: [MetadataMessage.ZAP_IN_ORDER] })
       .commit();
@@ -388,7 +353,6 @@ export class Dex {
       amountA,
       amountB,
       minimumLPReceived,
-      availableUtxos,
     } = options;
     invariant(amountA > 0n && amountB > 0n, "amount must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
@@ -396,13 +360,7 @@ export class Dex {
       [Asset.toString(assetA)]: amountA,
       [Asset.toString(assetB)]: amountB,
     };
-    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
-      utxos: availableUtxos,
-      orderAssets,
-      networkEnv: this.networkEnv,
-      dexVersion: this.dexVersion,
-      currentDate: new Date(),
-    });
+    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.DEPOSIT];
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -426,7 +384,6 @@ export class Dex {
         DataObject.to(OrderV1.Datum.toPlutusData(datum)),
         orderAssets
       )
-      .payTo(sender, reductionAssets)
       .addSigner(Addresses.addressToCredential(sender).hash)
       .attachMetadata(674, { msg: [MetadataMessage.DEPOSIT_ORDER] })
       .commit();

@@ -328,8 +328,8 @@ export async function _createPoolV2(
     assetA: ADA,
     assetB: {
       // Replace with your asset
-      policyId: "997322483e052b1c2e42447fca9261427c6214bb14288a0ac4651fa7",
-      tokenName: "6c7031",
+      policyId: "a99569ec232f6b5ce2d81045417af541addca3c44de01be882b394ee",
+      tokenName: "4c505f544f4b454e",
     },
     amountA: 10_000000n,
     amountB: 30_000n,
@@ -343,7 +343,6 @@ export async function _swapExactInV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -368,7 +367,6 @@ export async function _swapExactInV2TxExample(
 
   return new DexV2(lucid, adapter).createBulkOrdersTx({
     sender: address,
-    availableUtxos: availableUtxos,
     orderOptions: [
       {
         type: OrderV2.StepType.SWAP_EXACT_IN,
@@ -388,7 +386,6 @@ export async function _swapExactOutV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -413,7 +410,6 @@ export async function _swapExactOutV2TxExample(
 
   return new DexV2(lucid, adapter).createBulkOrdersTx({
     sender: address,
-    availableUtxos: availableUtxos,
     orderOptions: [
       {
         type: OrderV2.StepType.SWAP_EXACT_OUT,
@@ -432,7 +428,6 @@ export async function _depositV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -457,7 +452,6 @@ export async function _depositV2TxExample(
 
   return new DexV2(lucid, adapter).createBulkOrdersTx({
     sender: address,
-    availableUtxos,
     orderOptions: [
       {
         type: OrderV2.StepType.DEPOSIT,
@@ -477,7 +471,6 @@ export async function _withdrawV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ADA-MIN Lp Asset
   const lpAsset = {
@@ -510,7 +503,6 @@ export async function _withdrawV2TxExample(
 
   return new DexV2(lucid, adapter).createBulkOrdersTx({
     sender: address,
-    availableUtxos,
     orderOptions: [
       {
         type: OrderV2.StepType.WITHDRAW,
@@ -528,7 +520,6 @@ export async function _stopV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -552,7 +543,6 @@ export async function _stopV2TxExample(
 
   return new DexV2(lucid, adapter).createBulkOrdersTx({
     sender: address,
-    availableUtxos,
     orderOptions: [
       {
         type: OrderV2.StepType.STOP,
@@ -570,7 +560,6 @@ export async function _ocoV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -611,7 +600,6 @@ export async function _ocoV2TxExample(
         direction: OrderV2.Direction.A_TO_B,
       },
     ],
-    availableUtxos,
   });
 }
 
@@ -619,7 +607,6 @@ export async function _zapOutV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   // ADA-MIN Lp Asset
   const lpAsset = {
@@ -644,7 +631,6 @@ export async function _zapOutV2TxExample(
 
   return new DexV2(lucid, adapter).createBulkOrdersTx({
     sender: address,
-    availableUtxos,
     orderOptions: [
       {
         type: OrderV2.StepType.ZAP_OUT,
@@ -662,7 +648,6 @@ export async function _partialSwapV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -689,7 +674,6 @@ export async function _partialSwapV2TxExample(
 
   return new DexV2(lucid, adapter).createBulkOrdersTx({
     sender: address,
-    availableUtxos,
     orderOptions: [
       {
         type: OrderV2.StepType.PARTIAL_SWAP,
@@ -714,7 +698,6 @@ export async function _multiRoutingTxExample(
   lucid: Lucid,
   adapter: Adapter,
   address: string,
-  availableUtxos: Utxo[]
 ): Promise<TxComplete> {
   const assetA = MIN;
   const amountA = 10_000n;
@@ -771,7 +754,6 @@ export async function _multiRoutingTxExample(
 
   return new DexV2(lucid, adapter).createBulkOrdersTx({
     sender: address,
-    availableUtxos,
     orderOptions: [
       {
         type: OrderV2.StepType.SWAP_ROUTING,
@@ -882,7 +864,7 @@ export async function _depositStableExample(
 
   // This pool has 2 assets in its config. They are [tDJED, tiUSD].
   // This order deposits 100_000n tDJED and 1_000n tiUSD into the pool.
-  const amountIns = [20_000n, 20_000n];
+  const amountIns = [1_000n, 1_000n];
 
   const lpAmount = StableswapCalculation.calculateDeposit({
     amountIns: amountIns,
@@ -903,8 +885,8 @@ export async function _depositStableExample(
         lpAsset: lpAsset,
         type: StableOrder.StepType.DEPOSIT,
         assetsAmount: [
-          [Asset.fromString(pool.assets[0]), 20_000n],
-          [Asset.fromString(pool.assets[1]), 20_000n],
+          [Asset.fromString(pool.assets[0]), 1_000n],
+          [Asset.fromString(pool.assets[1]), 1_000n],
         ],
         minimumLPReceived: lpAmount,
         totalLiquidity: pool.totalLiquidity,
