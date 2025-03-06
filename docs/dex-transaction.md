@@ -19,9 +19,9 @@ This documentation provides details on how to interact with the **Stableswap** a
 
 ### Batcher Fee 
 
-Currently, every swap on the Minswap DEX incurs a 2 ADA fee for executing the DEX order.
+- Currently, every swap on the Minswap DEX incurs a 2 ADA fee for store UTXO order. It will be refunded after the transaction is completed.
 
-Additionally, building a transaction requires a Batcher Fee, which is defined in [BatcherFee.finalizeFee](../src/batcher-fee/configs.internal.ts#L11).
+- Additionally, building a transaction requires a Batcher Fee, which is defined in [BatcherFee](../src/batcher-fee/configs.internal.ts).
 ---
 
 ## Example Usage
