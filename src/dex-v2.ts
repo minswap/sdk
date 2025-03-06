@@ -14,8 +14,7 @@ import {
 } from "@spacebudz/lucid";
 
 import { Adapter, DataObject, DataType } from ".";
-import { BatcherFee } from "./batcher-fee-reduction/calculate";
-import { DexVersion } from "./batcher-fee-reduction/configs.internal";
+import { BATCHER_FEE_DEX_V2, DexVersion } from "./batcher-fee/configs.internal";
 import { compareUtxo, DexV2Calculation } from "./calculate";
 import { Asset } from "./types/asset";
 import {
@@ -71,7 +70,6 @@ export type BulkOrdersOption = {
   sender: string;
   orderOptions: OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
-  availableUtxos: Utxo[];
   composeTx?: Tx;
   authorizationMethodType?: OrderV2.AuthorizationMethodType;
 };
@@ -750,7 +748,6 @@ export class DexV2 {
     sender,
     orderOptions,
     expiredOptions,
-    availableUtxos,
     composeTx,
     authorizationMethodType,
   }: BulkOrdersOption): Promise<TxComplete> {
@@ -766,14 +763,6 @@ export class DexV2 {
         }
       }
     }
-    // calculate batcher fee
-    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
-      utxos: availableUtxos,
-      currentDate: new Date(),
-      orderAssets: totalOrderAssets,
-      networkEnv: this.networkEnv,
-      dexVersion: this.dexVersion,
-    });
     const limitOrders: string[] = [];
     const lucidTx = this.lucid.newTx();
     const necessaryExtraDatums: {
@@ -784,6 +773,7 @@ export class DexV2 {
       const option = orderOptions[i];
       const { type, lpAsset, customReceiver } = option;
       const orderAssets = this.buildOrderValue(option);
+      const batcherFee = BATCHER_FEE_DEX_V2[type];
       const orderStep = this.buildOrderStep(option, batcherFee);
       if (type === OrderV2.StepType.SWAP_EXACT_IN && option.isLimitOrder) {
         limitOrders.push(i.toString());
@@ -903,9 +893,6 @@ export class DexV2 {
       msg: [metadata],
       ...(limitOrderMessage && { limitOrders: limitOrderMessage }),
     });
-    if (Object.keys(reductionAssets).length !== 0) {
-      lucidTx.payTo(sender, reductionAssets);
-    }
     if (composeTx) {
       lucidTx.compose(composeTx);
     }

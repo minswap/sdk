@@ -2,10 +2,15 @@ import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
 import { Configuration, MaestroClient } from "@maestro-org/typescript-sdk";
 import { Network } from "@spacebudz/lucid";
 
-import { Adapter, BlockfrostAdapter, MaestroAdapter } from "../src/adapters";
-import { ADA, Asset } from "../src/types/asset";
-import { StableswapConstant } from "../src/types/constants";
-import { NetworkId } from "../src/types/network";
+import {
+  ADA,
+  Adapter,
+  Asset,
+  BlockfrostAdapter,
+  MaestroAdapter,
+  NetworkId,
+  StableswapConstant
+} from "../src";
 
 function mustGetEnv(key: string): string {
   const val = process.env[key];

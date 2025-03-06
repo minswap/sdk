@@ -17,14 +17,11 @@ This documentation provides details on how to interact with the **Stableswap** a
 - All utility functions are located in the [Calculate](../src/calculate.ts) file. These functions provide the necessary calculations for operations such as trades, deposits, and withdrawals related to the DEX V2 and Stable Liquidity Pool.
 - You can combine these utility functions with the [Slippage](../src/utils/slippage.internal.ts) file to manage volatile liquidity pools efficiently.
 
-### Batcher Fee Discount
+### Batcher Fee 
 
-Currently, everyone who swaps on the Minswap DEX pays a 2 $ADA fee to execute the DEX order. To increase the utility of the $MIN token within the platform, $MIN holders are entitled to a discount on this 2 $ADA Batcher Fee. More details about this can be found in the [Minswap Official Docs](https://docs.minswap.org/min-token/usdmin-tokenomics/trading-fee-discount).
+- Currently, every swap on the Minswap DEX incurs a 2 ADA fee for store UTXO order. It will be refunded after the transaction is completed.
 
-Technically, the Batcher Fee Discount is calculated based on the ADA-MIN LP Tokens and MIN tokens that users are holding. This calculation is handled by the [BatcherFee.finalizeFee](../src/batcher-fee-reduction/calculate.ts#L11) function.
-
-If you are transacting through the `Stableswap` or `DexV2` classes, the transaction is automatically constructed with the Batcher Fee Discount if you are eligible for it.
-
+- Additionally, building a transaction requires a Batcher Fee, which is defined in [BatcherFee](../src/batcher-fee/configs.internal.ts).
 ---
 
 ## Example Usage

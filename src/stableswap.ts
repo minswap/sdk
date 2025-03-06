@@ -11,8 +11,7 @@ import {
   StableswapConstant,
   V1AndStableswapCustomReceiver,
 } from ".";
-import { BatcherFee } from "./batcher-fee-reduction/calculate";
-import { DexVersion } from "./batcher-fee-reduction/configs.internal";
+import { BATCHER_FEE_STABLESWAP, DexVersion } from "./batcher-fee/configs.internal";
 import { Asset } from "./types/asset";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
@@ -282,7 +281,7 @@ export class Stableswap {
   }
 
   async createBulkOrdersTx(options: BulkOrdersOption): Promise<TxComplete> {
-    const { sender, availableUtxos, options: orderOptions } = options;
+    const { sender, options: orderOptions } = options;
 
     invariant(
       orderOptions.length > 0,
@@ -300,25 +299,16 @@ export class Stableswap {
         }
       }
     }
-
-    // calculate batcher fee
-    const { batcherFee, reductionAssets } = BatcherFee.finalizeFee({
-      utxos: availableUtxos,
-      orderAssets: totalOrderAssets,
-      networkEnv: this.networkEnv,
-      dexVersion: this.dexVersion,
-      currentDate: new Date(),
-    });
-
     const tx = this.lucid.newTx();
     for (const orderOption of orderOptions) {
       const config = StableswapConstant.getConfigByLpAsset(
         orderOption.lpAsset,
         this.networkId
       );
-      const { customReceiver } = orderOption;
+      const { customReceiver, type } = orderOption;
       const orderAssets = this.buildOrderValue(orderOption);
       const step = this.buildOrderStep(orderOption);
+      const batcherFee = BATCHER_FEE_STABLESWAP[type];
       if ("lovelace" in orderAssets) {
         orderAssets["lovelace"] += batcherFee;
       } else {
@@ -354,9 +344,6 @@ export class Stableswap {
           );
         }
       }
-    }
-    if (Object.keys(reductionAssets).length !== 0) {
-      tx.payTo(sender, reductionAssets);
     }
     tx.attachMetadata(674, {
       msg: [

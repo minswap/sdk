@@ -1,12 +1,20 @@
 import invariant from "@minswap/tiny-invariant";
-import { Addresses, Data } from "@spacebudz/lucid";
+import { Addresses } from "@spacebudz/lucid";
 
-import { FIXED_BATCHER_FEE } from "../src/batcher-fee-reduction/configs.internal";
-import { Asset } from "../src/types/asset";
-import { FIXED_DEPOSIT_ADA } from "../src/types/constants";
-import { NetworkId } from "../src/types/network";
-import { OrderV1, OrderV2, StableOrder } from "../src/types/order";
-import { DataObject } from "../src";
+import {
+  Asset,
+  DataObject,
+  FIXED_DEPOSIT_ADA,
+  NetworkId,
+  OrderV1,
+  OrderV2,
+  StableOrder,
+} from "../src";
+import {
+  BATCHER_FEE,
+  BATCHER_FEE_DEX_V2,
+  DexVersion,
+} from "../src/batcher-fee/configs.internal";
 
 let testSender: string;
 let testSenderPkh: string;
@@ -31,21 +39,21 @@ beforeAll(() => {
   networkId = NetworkId.TESTNET;
 });
 
-function buildCommonV1Datum(): Omit<
-  OrderV1.Datum,
-  "receiverDatumHash" | "step"
-> {
+function buildCommonV1Datum(
+  dexVersion: DexVersion,
+  type: OrderV1.StepType | StableOrder.StepType
+): Omit<OrderV1.Datum, "receiverDatumHash" | "step"> {
   return {
     sender: testSender,
     receiver: testReceiver,
-    batcherFee: FIXED_BATCHER_FEE,
+    batcherFee: BATCHER_FEE[dexVersion][type],
     depositADA: FIXED_DEPOSIT_ADA,
   };
 }
 
 test("V1: SwapExactIn Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.SWAP_EXACT_IN),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.SWAP_EXACT_IN,
@@ -55,7 +63,7 @@ test("V1: SwapExactIn Order to PlutusData Converter", () => {
   };
 
   const order2: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.SWAP_EXACT_IN),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.SWAP_EXACT_IN,
@@ -78,7 +86,7 @@ test("V1: SwapExactIn Order to PlutusData Converter", () => {
 
 test("V1: SwapExactOut Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.SWAP_EXACT_OUT),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.SWAP_EXACT_OUT,
@@ -88,7 +96,7 @@ test("V1: SwapExactOut Order to PlutusData Converter", () => {
   };
 
   const order2: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.SWAP_EXACT_OUT),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.SWAP_EXACT_OUT,
@@ -111,7 +119,7 @@ test("V1: SwapExactOut Order to PlutusData Converter", () => {
 
 test("V1: Deposit Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.DEPOSIT),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.DEPOSIT,
@@ -120,7 +128,7 @@ test("V1: Deposit Order to PlutusData Converter", () => {
   };
 
   const order2: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.DEPOSIT),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.DEPOSIT,
@@ -142,7 +150,7 @@ test("V1: Deposit Order to PlutusData Converter", () => {
 
 test("V1: Withdraw Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.WITHDRAW),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.WITHDRAW,
@@ -152,7 +160,7 @@ test("V1: Withdraw Order to PlutusData Converter", () => {
   };
 
   const order2: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.WITHDRAW),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.WITHDRAW,
@@ -175,7 +183,7 @@ test("V1: Withdraw Order to PlutusData Converter", () => {
 
 test("V1: Zap Order to PlutusData Converter", () => {
   const order1: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.ZAP_IN),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: OrderV1.StepType.ZAP_IN,
@@ -185,7 +193,7 @@ test("V1: Zap Order to PlutusData Converter", () => {
   };
 
   const order2: OrderV1.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.DEX_V1, OrderV1.StepType.SWAP_EXACT_IN),
     receiverDatumHash: undefined,
     step: {
       type: OrderV1.StepType.ZAP_IN,
@@ -208,7 +216,7 @@ test("V1: Zap Order to PlutusData Converter", () => {
 
 test("Stableswap: Swap Order to PlutusData Converter", () => {
   const order1: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.SWAP),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: StableOrder.StepType.SWAP,
@@ -219,7 +227,7 @@ test("Stableswap: Swap Order to PlutusData Converter", () => {
   };
 
   const order2: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.SWAP),
     receiverDatumHash: undefined,
     step: {
       type: StableOrder.StepType.SWAP,
@@ -243,7 +251,7 @@ test("Stableswap: Swap Order to PlutusData Converter", () => {
 
 test("Stableswap: Deposit Order to PlutusData Converter", () => {
   const order1: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.DEPOSIT),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: StableOrder.StepType.DEPOSIT,
@@ -252,7 +260,7 @@ test("Stableswap: Deposit Order to PlutusData Converter", () => {
   };
 
   const order2: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.DEPOSIT),
     receiverDatumHash: undefined,
     step: {
       type: StableOrder.StepType.DEPOSIT,
@@ -274,7 +282,7 @@ test("Stableswap: Deposit Order to PlutusData Converter", () => {
 
 test("Stableswap: Withdraw Order to PlutusData Converter", () => {
   const order1: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.WITHDRAW),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: StableOrder.StepType.WITHDRAW,
@@ -283,7 +291,7 @@ test("Stableswap: Withdraw Order to PlutusData Converter", () => {
   };
 
   const order2: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.WITHDRAW),
     receiverDatumHash: undefined,
     step: {
       type: StableOrder.StepType.WITHDRAW,
@@ -305,7 +313,7 @@ test("Stableswap: Withdraw Order to PlutusData Converter", () => {
 
 test("Stableswap: Withdraw Imbalance Order to PlutusData Converter", () => {
   const order1: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.WITHDRAW_IMBALANCE),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: StableOrder.StepType.WITHDRAW_IMBALANCE,
@@ -314,7 +322,7 @@ test("Stableswap: Withdraw Imbalance Order to PlutusData Converter", () => {
   };
 
   const order2: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.WITHDRAW_IMBALANCE),
     receiverDatumHash: undefined,
     step: {
       type: StableOrder.StepType.WITHDRAW_IMBALANCE,
@@ -336,7 +344,7 @@ test("Stableswap: Withdraw Imbalance Order to PlutusData Converter", () => {
 
 test("Stableswap: Zap Out Order to PlutusData Converter", () => {
   const order1: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.ZAP_OUT),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: StableOrder.StepType.WITHDRAW_IMBALANCE,
@@ -345,7 +353,7 @@ test("Stableswap: Zap Out Order to PlutusData Converter", () => {
   };
 
   const order2: StableOrder.Datum = {
-    ...buildCommonV1Datum(),
+    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.ZAP_OUT),
     receiverDatumHash: undefined,
     step: {
       type: StableOrder.StepType.WITHDRAW_IMBALANCE,
@@ -386,7 +394,7 @@ function buildV2Datums(step: OrderV2.Step): OrderV2.Datum[] {
         tokenName:
           "e08460587b08cca542bd2856b8d5e1d23bf3f63f9916fb81f6d95fda0910bf69",
       },
-      maxBatcherFee: FIXED_BATCHER_FEE,
+      maxBatcherFee: BATCHER_FEE_DEX_V2[step.type],
       expiredOptions: undefined,
     },
     {
@@ -410,7 +418,7 @@ function buildV2Datums(step: OrderV2.Step): OrderV2.Datum[] {
         tokenName:
           "e08460587b08cca542bd2856b8d5e1d23bf3f63f9916fb81f6d95fda0910bf69",
       },
-      maxBatcherFee: FIXED_BATCHER_FEE,
+      maxBatcherFee: BATCHER_FEE_DEX_V2[step.type],
       expiredOptions: undefined,
     },
     {
@@ -434,7 +442,7 @@ function buildV2Datums(step: OrderV2.Step): OrderV2.Datum[] {
         tokenName:
           "e08460587b08cca542bd2856b8d5e1d23bf3f63f9916fb81f6d95fda0910bf69",
       },
-      maxBatcherFee: FIXED_BATCHER_FEE,
+      maxBatcherFee: BATCHER_FEE_DEX_V2[step.type],
       expiredOptions: undefined,
     },
     {
@@ -456,7 +464,7 @@ function buildV2Datums(step: OrderV2.Step): OrderV2.Datum[] {
         tokenName:
           "e08460587b08cca542bd2856b8d5e1d23bf3f63f9916fb81f6d95fda0910bf69",
       },
-      maxBatcherFee: FIXED_BATCHER_FEE,
+      maxBatcherFee: BATCHER_FEE_DEX_V2[step.type],
       expiredOptions: {
         expiredTime: 1721010208050n,
         maxCancellationTip: 300_000n,
@@ -716,7 +724,8 @@ test("V2: Partial Swap Order to PlutusData Converter", () => {
     ioRatioNumerator: 1n,
     hops: 3n,
     direction: OrderV2.Direction.A_TO_B,
-    maxBatcherFeeEachTime: FIXED_BATCHER_FEE * 3n,
+    maxBatcherFeeEachTime:
+      BATCHER_FEE_DEX_V2[OrderV2.StepType.PARTIAL_SWAP] * 3n,
     minimumSwapAmountRequired: 1000n,
   };
   const step2: OrderV2.Step = {
@@ -726,7 +735,8 @@ test("V2: Partial Swap Order to PlutusData Converter", () => {
     ioRatioNumerator: 1n,
     hops: 3n,
     direction: OrderV2.Direction.B_TO_A,
-    maxBatcherFeeEachTime: FIXED_BATCHER_FEE * 3n,
+    maxBatcherFeeEachTime:
+      BATCHER_FEE_DEX_V2[OrderV2.StepType.PARTIAL_SWAP] * 3n,
     minimumSwapAmountRequired: 1000n,
   };
   const datums: OrderV2.Datum[] = [
