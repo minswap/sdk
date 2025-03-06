@@ -14,7 +14,7 @@ import {
 } from "@spacebudz/lucid";
 
 import { Adapter, DataObject, DataType } from ".";
-import { BATCHER_FEE_DEX_V2, DexVersion } from "./batcher-fee-reduction/configs.internal";
+import { BATCHER_FEE_DEX_V2, DexVersion } from "./batcher-fee/configs.internal";
 import { compareUtxo, DexV2Calculation } from "./calculate";
 import { Asset } from "./types/asset";
 import {

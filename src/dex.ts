@@ -3,7 +3,7 @@ import { Addresses, Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
 import { Utxo } from "@spacebudz/lucid";
 
 import { DataObject, DataType } from ".";
-import { BATCHER_FEE_DEX_V1, DexVersion } from "./batcher-fee-reduction/configs.internal";
+import { BATCHER_FEE_DEX_V1, DexVersion } from "./batcher-fee/configs.internal";
 import { Asset } from "./types/asset";
 import {
   DexV1Constant,

@@ -14,7 +14,7 @@ import {
   BATCHER_FEE_DEX_V1,
   BATCHER_FEE_DEX_V2,
   BATCHER_FEE_STABLESWAP,
-} from "../src/batcher-fee-reduction/configs.internal";
+} from "../src/batcher-fee/configs.internal";
 
 let testSender: string;
 let testSenderPkh: string;

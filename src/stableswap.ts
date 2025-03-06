@@ -11,7 +11,7 @@ import {
   StableswapConstant,
   V1AndStableswapCustomReceiver,
 } from ".";
-import { BATCHER_FEE_STABLESWAP, DexVersion } from "./batcher-fee-reduction/configs.internal";
+import { BATCHER_FEE_STABLESWAP, DexVersion } from "./batcher-fee/configs.internal";
 import { Asset } from "./types/asset";
 import { NetworkEnvironment, NetworkId } from "./types/network";
 import { lucidToNetworkEnv } from "./utils/network.internal";
