@@ -944,7 +944,7 @@ export enum MetadataMessage {
   OCO_ORDER = "SDK Minswap: OCO Order",
   ROUTING_ORDER = "SDK Minswap: Routing Order",
   PARTIAL_SWAP_ORDER = "SDK Minswap: Partial Fill Order",
-  DONATION_ORDER = "Minswap: Donation Order",
+  DONATION_ORDER = "SDK Minswap: Donation Order",
   MIXED_ORDERS = "SDK Minswap: Mixed Orders",
   CREATE_POOL = "SDK Minswap: Create Pool",
   // LAUNCH
