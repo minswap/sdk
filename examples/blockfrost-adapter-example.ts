@@ -15,10 +15,12 @@ const MIN: Asset = {
 
 async function main(): Promise<void> {
   const networkId: NetworkId = NetworkId.TESTNET;
-  const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
+  // Replace with your Blockfrost project ID
+  const blockfrostProjectId = "preprodBA1p1STJuuCjuw2QjfqFIecfT9SCyC9M";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
-  const address = "<YOUR_ADDRESS>";
+  // Replace with your address
+  const address = "addr_test1vp0rfn7x3mf85jctsd85uu4pzga0ujh23dsxhznlktazflsjze52n";
   const lucid = await getBackendBlockfrostLucidInstance(
     networkId,
     blockfrostProjectId,
@@ -41,13 +43,15 @@ async function main(): Promise<void> {
     lucid,
     blockfrostAdapter,
     address,
-    utxos
   );
 
+  // Replace with your private key
   const signedTx = await txComplete
-    .signWithPrivateKey("<YOUR_PRIVATE_KEY>")
+    .signWithPrivateKey("ed25519_sk1j9gkra33ts20pvjjq4my4lazpttmv98usq2e49um7sj67yy2clmqjdeuj9")
     .commit();
 
   const txId = await signedTx.submit();
   console.info(`Transaction submitted successfully: ${txId}`);
 }
+
+void main();
