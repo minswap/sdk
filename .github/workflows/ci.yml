@@ -27,6 +27,8 @@ jobs:
         run: pnpm run prisma:generate
       - name: Run build
         run: pnpm run build
+      - name: Check format & lint
+        run: pnpm run check-format
       - name: Run test
         run: pnpm run test
         env:
@@ -34,5 +36,3 @@ jobs:
           BLOCKFROST_PROJECT_ID_TESTNET: ${{ secrets.BLOCKFROST_PROJECT_ID_TESTNET }}
           MAESTRO_API_KEY_MAINNET: ${{ secrets.MAESTRO_API_KEY_MAINNET }}
           MAESTRO_API_KEY_TESTNET: ${{ secrets.MAESTRO_API_KEY_TESTNET }}
-      - name: Check format & lint
-        run: pnpm run check-format
