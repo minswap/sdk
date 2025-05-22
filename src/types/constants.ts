@@ -249,7 +249,96 @@ export namespace StableswapConstant {
         fee: 10000000n,
         adminFee: 500000000n,
         feeDenominator: 10000000000n,
-      }
+      },
+      {
+        orderAddress:
+          "addr1w8cafpjmeer4j8t8aseqayhwkf4ezuufue0clvfthxecsacv83rt0",
+        poolAddress:
+          "addr1wywdvw0qwv2n97e8y5jsfqq3qryu6re3gxwqcc7fzscpwugxz5dwe",
+        nftAsset:
+          "a0d806e67be578911ca39260cff5eaa6eb06f9f4165ccd570282f5055553444d2d555344412d534c50",
+        lpAsset:
+          "5f0d38b3eb8fea72cd3cbdaa9594a74d0db79b5a27e85be5e9015bd65553444d2d555344412d534c50",
+        assets: [
+          "c48cbb3d5e57ed56e276bc45f99ab39abe94e6cd7ac39fb402da47ad0014df105553444d",
+          "fe7c786ab321f41c654ef6c1af7b3250a613c24e4213e0425a7ae45655534441"
+        ],
+        multiples: [1n, 1n],
+        fee: 5000000n,
+        adminFee: 500000000n,
+        feeDenominator: 10000000000n,
+      },
+      {
+        orderAddress:
+          "addr1w83fd654hwp5kzqkae4hqrasprq72tt4ppeghy20706jweqrcqkf3",
+        poolAddress:
+          "addr1wyge54qpez2zc250f8frwtksjzrg4l6n5cs34psqas9uz0syae9sf",
+        nftAsset:
+          "b7ff73b687f4abdec86ca9984faa70dfead433588f183c3f956fb213695553442d555344412d534c50",
+        lpAsset:
+          "5fd1180269cd5a01f397f37a17981424a3ec3bdab1e743a61f3bb113695553442d555344412d534c50",
+        assets: [
+          "f66d78b4a3cb3d37afa0ec36461e51ecbde00f26c8f0a68f94b6988069555344",
+          "fe7c786ab321f41c654ef6c1af7b3250a613c24e4213e0425a7ae45655534441"
+        ],
+        multiples: [1n, 1n],
+        fee: 10000000n,
+        adminFee: 500000000n,
+        feeDenominator: 10000000000n,
+      },
+      {
+        orderAddress:
+          "addr1wykr5fpg2qjca5lt75qmh9g459vnwr08wj5xlfcwyleyqagryre2v",
+        poolAddress:"addr1wxzuzc4279crnjeln9yae4lutkqsyz7trrwhvnfty8wa40q2zzcsm",
+        nftAsset:
+          "6d0af21948cca104be7e639ed7d9a169f15b7763c066df41ec4b29b8774554482d694554482d534c50",
+        lpAsset:
+          "b6b60bf469adb18c21ff3ad06bbdb9e78327b34d4c15db162de53b1c774554482d694554482d534c50",
+        assets: [
+          "25c5de5f5b286073c593edfd77b48abc7a48e5a4f3d4cd9d428ff935455448",
+          "f66d78b4a3cb3d37afa0ec36461e51ecbde00f26c8f0a68f94b6988069455448"
+        ],
+        multiples: [1n, 100n],
+        fee: 10000000n,
+        adminFee: 500000000n,
+        feeDenominator: 10000000000n,
+      },
+      {
+        orderAddress:
+          "addr1wx0mfd2vxe6x80fa50fw325n2ufnaaa53xkmrnuukt5d6uqyjjvj4",
+        poolAddress:
+          "addr1w90vp068jkxl5cx77w6wj6ufj5l628uec2y0eds5jhumn3chscq35",
+        nftAsset:
+          "6bdc0ad93ceb1f1df8f4be04d8037bc5d8dc21e5c8d654b48a9679f8774254432d694254432d534c50",
+        lpAsset:
+          "d4e0b170fc503735b260b1a0c99223c2b4e6dd6e87ccdcabfba28b8a774254432d694254432d534c50",
+        assets: [
+          "25c5de5f5b286073c593edfd77b48abc7a48e5a4f3d4cd9d428ff935425443",
+          "f66d78b4a3cb3d37afa0ec36461e51ecbde00f26c8f0a68f94b6988069425443"
+        ],
+        multiples: [1n, 100n],
+        fee: 10000000n,
+        adminFee: 500000000n,
+        feeDenominator: 10000000000n,
+      },
+      {
+        orderAddress:
+          "addr1wxaw7dge3st4v7jreug6t5zfhqlkvsjpkddxvm6e3rcgpysxvuf5z",
+        poolAddress:
+          "addr1wx302gec6k43m8cvvqa9rsr3dz40a0657hts3v4tuuvc33svhaqu9",
+        nftAsset:
+          "666c65d6d6152864ef16371beed29150259564bde5a30d345c5e236977534f4c2d69534f4c2d534c50",
+        lpAsset:
+          "d3facc199b218a60723500bb80fcfc091f5bd67bdb74df4c099d817477534f4c2d69534f4c2d534c50",
+        assets: [
+          "25c5de5f5b286073c593edfd77b48abc7a48e5a4f3d4cd9d428ff935534f4c",
+          "f66d78b4a3cb3d37afa0ec36461e51ecbde00f26c8f0a68f94b6988069534f4c"
+        ],
+        multiples: [1n, 100n],
+        fee: 10000000n,
+        adminFee: 500000000n,
+        feeDenominator: 10000000000n,
+      },
     ],
   };
 
@@ -329,7 +418,7 @@ export namespace StableswapConstant {
         },
     },
     [NetworkId.MAINNET]: {
-      "5d4b6afd3344adcf37ccef5558bb87f522874578c32f17160512e398444a45442d695553442d534c50":
+      "5d4b6afd3344adcf37ccef5558bb87f522874578c32f17160512e398444a45442d695553442d534c50": // djed-iusd
         {
           order: {
             txHash:
@@ -352,7 +441,7 @@ export namespace StableswapConstant {
             outputIndex: 3,
           },
         },
-      "d97fa91daaf63559a253970365fb219dc4364c028e5fe0606cdbfff9555344432d444a45442d534c50":
+      "d97fa91daaf63559a253970365fb219dc4364c028e5fe0606cdbfff9555344432d444a45442d534c50": // usdc-djed
         {
           order: {
             txHash:
@@ -375,7 +464,7 @@ export namespace StableswapConstant {
             outputIndex: 3,
           },
         },
-      "96402c6f5e7a04f16b4d6f500ab039ff5eac5d0226d4f88bf5523ce85553444d2d695553442d534c50":
+      "96402c6f5e7a04f16b4d6f500ab039ff5eac5d0226d4f88bf5523ce85553444d2d695553442d534c50": // usdm-iusd
         {
           order: {
             txHash:
@@ -398,7 +487,7 @@ export namespace StableswapConstant {
             outputIndex: 3,
           },
         },
-      "07b0869ed7488657e24ac9b27b3f0fb4f76757f444197b2a38a15c3c444a45442d5553444d2d534c50":
+      "07b0869ed7488657e24ac9b27b3f0fb4f76757f444197b2a38a15c3c444a45442d5553444d2d534c50": // djed-usdm
         {
           order: {
             txHash:
@@ -421,7 +510,7 @@ export namespace StableswapConstant {
             outputIndex: 3,
           },
         },
-      "4e73e9cf8fd73e74956c67fa3a01486f02ab612ee580dc27755b8d57444a45442d4d795553442d534c50":
+      "4e73e9cf8fd73e74956c67fa3a01486f02ab612ee580dc27755b8d57444a45442d4d795553442d534c50": // djed-myusd
         {
           order: {
             txHash:
@@ -444,7 +533,7 @@ export namespace StableswapConstant {
             outputIndex: 3,
           },
         },
-      "1d4c43ac86463f93c4cba60c28f143b2781d7f7328b18d8e68298e614d795553442d5553444d2d534c50":
+      "1d4c43ac86463f93c4cba60c28f143b2781d7f7328b18d8e68298e614d795553442d5553444d2d534c50": // myusd-usdm
         {
           order: {
             txHash:
@@ -467,7 +556,7 @@ export namespace StableswapConstant {
             outputIndex: 3,
           },
         },
-      "3ff28ad0d4788f24619746cc86b774495ed4727634b61710d2bb7ed5555344432d695553442d534c50":
+      "3ff28ad0d4788f24619746cc86b774495ed4727634b61710d2bb7ed5555344432d695553442d534c50": // usdc-iusd
         {
           order: {
             txHash:
@@ -490,7 +579,7 @@ export namespace StableswapConstant {
             outputIndex: 3,
           },
         },
-      "739150a2612da82e16adc2a3a1f88b256202d8415df0c5b7a2ff93fb555344432d695553442d302e312d534c50":
+      "739150a2612da82e16adc2a3a1f88b256202d8415df0c5b7a2ff93fb555344432d695553442d302e312d534c50": // usdc-iusd-0.1
         {
           order: {
             txHash:
@@ -510,6 +599,121 @@ export namespace StableswapConstant {
           poolBatching: {
             txHash:
               "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+            outputIndex: 3,
+          },
+        },
+      "a0d806e67be578911ca39260cff5eaa6eb06f9f4165ccd570282f5055553444d2d555344412d534c50": // usdm-usda
+        {
+          order: {
+            txHash:
+              "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
+            outputIndex: 3,
+          },
+        },
+      "b7ff73b687f4abdec86ca9984faa70dfead433588f183c3f956fb213695553442d555344412d534c50": // iusd-usda
+        {
+          order: {
+            txHash:
+              "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
+            outputIndex: 3,
+          },
+        },
+      "6d0af21948cca104be7e639ed7d9a169f15b7763c066df41ec4b29b8774554482d694554482d534c50": // weth-ieth
+        {
+          order: {
+            txHash:
+              "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
+            outputIndex: 3,
+          },
+        },
+      "6bdc0ad93ceb1f1df8f4be04d8037bc5d8dc21e5c8d654b48a9679f8774254432d694254432d534c50": // wbtc-ibtc
+        {
+          order: {
+            txHash:
+              "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
+            outputIndex: 3,
+          },
+        },
+      "666c65d6d6152864ef16371beed29150259564bde5a30d345c5e236977534f4c2d69534f4c2d534c50": // wsol-isol
+        {
+          order: {
+            txHash:
+              "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
+            outputIndex: 0,
+          },
+          pool: {
+            txHash:
+              "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
+            outputIndex: 1,
+          },
+          lp: {
+            txHash:
+              "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
+            outputIndex: 2,
+          },
+          poolBatching: {
+            txHash:
+              "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
             outputIndex: 3,
           },
         },

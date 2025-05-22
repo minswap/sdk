@@ -146,7 +146,7 @@ export class Dex {
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumAmountOut > 0n, "minimum amount out must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
-    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.SWAP_EXACT_IN]
+    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.SWAP_EXACT_IN];
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -212,7 +212,7 @@ export class Dex {
       "amount in and out must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(assetIn)]: maximumAmountIn };
-    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.SWAP_EXACT_OUT]
+    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.SWAP_EXACT_OUT];
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -273,7 +273,7 @@ export class Dex {
       "minimum asset received must be positive"
     );
     const orderAssets: Assets = { [Asset.toString(lpAsset)]: lpAmount };
-    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.WITHDRAW]
+    const batcherFee = BATCHER_FEE_DEX_V1[OrderV1.StepType.WITHDRAW];
     if (orderAssets["lovelace"]) {
       orderAssets["lovelace"] += FIXED_DEPOSIT_ADA + batcherFee;
     } else {
@@ -304,13 +304,7 @@ export class Dex {
   }
 
   async buildZapInTx(options: BuildZapInTxOptions): Promise<TxComplete> {
-    const {
-      sender,
-      assetIn,
-      amountIn,
-      assetOut,
-      minimumLPReceived,
-    } = options;
+    const { sender, assetIn, amountIn, assetOut, minimumLPReceived } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
     const orderAssets: Assets = { [Asset.toString(assetIn)]: amountIn };
@@ -346,14 +340,8 @@ export class Dex {
   }
 
   async buildDepositTx(options: BuildDepositTxOptions): Promise<TxComplete> {
-    const {
-      sender,
-      assetA,
-      assetB,
-      amountA,
-      amountB,
-      minimumLPReceived,
-    } = options;
+    const { sender, assetA, assetB, amountA, amountB, minimumLPReceived } =
+      options;
     invariant(amountA > 0n && amountB > 0n, "amount must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
     const orderAssets = {

@@ -9,7 +9,7 @@ import {
   BlockfrostAdapter,
   MaestroAdapter,
   NetworkId,
-  StableswapConstant
+  StableswapConstant,
 } from "../src";
 
 function mustGetEnv(key: string): string {

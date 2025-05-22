@@ -313,7 +313,10 @@ test("Stableswap: Withdraw Order to PlutusData Converter", () => {
 
 test("Stableswap: Withdraw Imbalance Order to PlutusData Converter", () => {
   const order1: StableOrder.Datum = {
-    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.WITHDRAW_IMBALANCE),
+    ...buildCommonV1Datum(
+      DexVersion.STABLESWAP,
+      StableOrder.StepType.WITHDRAW_IMBALANCE
+    ),
     receiverDatumHash: testReceiverDatumHash,
     step: {
       type: StableOrder.StepType.WITHDRAW_IMBALANCE,
@@ -322,7 +325,10 @@ test("Stableswap: Withdraw Imbalance Order to PlutusData Converter", () => {
   };
 
   const order2: StableOrder.Datum = {
-    ...buildCommonV1Datum(DexVersion.STABLESWAP, StableOrder.StepType.WITHDRAW_IMBALANCE),
+    ...buildCommonV1Datum(
+      DexVersion.STABLESWAP,
+      StableOrder.StepType.WITHDRAW_IMBALANCE
+    ),
     receiverDatumHash: undefined,
     step: {
       type: StableOrder.StepType.WITHDRAW_IMBALANCE,
