@@ -342,7 +342,7 @@ export async function _createPoolV2(
 export async function _swapExactInV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -385,7 +385,7 @@ export async function _swapExactInV2TxExample(
 export async function _swapExactOutV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -427,7 +427,7 @@ export async function _swapExactOutV2TxExample(
 export async function _depositV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -470,7 +470,7 @@ export async function _depositV2TxExample(
 export async function _withdrawV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   // ADA-MIN Lp Asset
   const lpAsset = {
@@ -519,7 +519,7 @@ export async function _withdrawV2TxExample(
 export async function _stopV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -559,7 +559,7 @@ export async function _stopV2TxExample(
 export async function _ocoV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -606,7 +606,7 @@ export async function _ocoV2TxExample(
 export async function _zapOutV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   // ADA-MIN Lp Asset
   const lpAsset = {
@@ -647,7 +647,7 @@ export async function _zapOutV2TxExample(
 export async function _partialSwapV2TxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   const assetA = ADA;
   const assetB = MIN;
@@ -697,7 +697,7 @@ export async function _partialSwapV2TxExample(
 export async function _multiRoutingTxExample(
   lucid: Lucid,
   adapter: Adapter,
-  address: string,
+  address: string
 ): Promise<TxComplete> {
   const assetA = MIN;
   const amountA = 10_000n;
