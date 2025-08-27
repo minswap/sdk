@@ -9,17 +9,17 @@ import {
 } from "../src";
 
 async function main(): Promise<void> {
-  const networkId: NetworkId = NetworkId.TESTNET;
+  const network = "Preprod";
   const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
   const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
   const address = "<YOUR_ADDRESS>";
-  const lucid = await getBackendBlockfrostLucidInstance(
-    networkId,
-    blockfrostProjectId,
+  const lucid = await getBackendBlockfrostLucidInstance({
+    network,
+    projectId: blockfrostProjectId,
     blockfrostUrl,
-    address
-  );
+    address,
+  });
 
   const blockfrostAdapter = new BlockfrostAdapter(
     NetworkId.TESTNET,

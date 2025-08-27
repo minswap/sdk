@@ -3,28 +3,32 @@ import {
   Lucid,
   Maestro,
   MaestroSupportedNetworks,
+  Network,
 } from "@spacebudz/lucid";
 
-import { NetworkId } from "../types/network";
+/**
+ * Options for initializing Lucid Instance for Backend Environment
+ */
+export interface BackendBlockfrostLucidOptions {
+  network: Network;
+  projectId: string;
+  blockfrostUrl: string;
+  address: string;
+}
 
 /**
  * Initialize Lucid Instance for Backend Environment
- * @param network Network you're working on
- * @param projectId Blockfrost API KEY
- * @param blockfrostUrl Blockfrost URL
- * @param address Your own address
+ * @param options Configuration options
  * @returns
  */
 export async function getBackendBlockfrostLucidInstance(
-  networkId: NetworkId,
-  projectId: string,
-  blockfrostUrl: string,
-  address: string,
+  options: BackendBlockfrostLucidOptions,
 ): Promise<Lucid> {
+  const { network, projectId, blockfrostUrl, address } = options;
   const provider = new Blockfrost(blockfrostUrl, projectId);
   const lucid = new Lucid({
     provider: provider,
-    network: networkId === NetworkId.MAINNET ? 'Mainnet' : 'Preprod',
+    network,
   });
   lucid.selectReadOnlyWallet({
     address: address,

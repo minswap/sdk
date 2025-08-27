@@ -72,6 +72,7 @@ export type BulkOrdersOption = {
   expiredOptions?: OrderV2.ExpirySetting;
   composeTx?: Tx;
   authorizationMethodType?: OrderV2.AuthorizationMethodType;
+  receiver?: string;
 };
 
 export type OrderV2SwapRouting = {
@@ -750,6 +751,7 @@ export class DexV2 {
     expiredOptions,
     composeTx,
     authorizationMethodType,
+    receiver,
   }: BulkOrdersOption): Promise<TxComplete> {
     // calculate total order value
     const totalOrderAssets: Record<string, bigint> = {};
@@ -806,7 +808,7 @@ export class DexV2 {
             hash: senderPaymentCred.hash,
           };
 
-      let successReceiver: string = sender;
+      let successReceiver: string = receiver ?? sender;
       let successReceiverDatum: OrderV2.ExtraDatum = {
         type: OrderV2.ExtraDatumType.NO_DATUM,
       };

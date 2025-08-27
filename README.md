@@ -224,12 +224,12 @@ export async function swapExactInV2TxExample() {
 
     const address = "<YOUR_ADDRESS";
 
-    const lucid = await getBackendBlockfrostLucidInstance(
-        networkId,
+    const lucid = await getBackendBlockfrostLucidInstance({
+        network: "Preprod",
         blockfrostProjectId,
         blockfrostUrl,
         address
-    );
+    });
 
     const adapter = new BlockfrostAdapter(
         NetworkId.TESTNET,

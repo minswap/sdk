@@ -30,17 +30,18 @@ This documentation provides details on how to interact with the **Stableswap** a
 
 ```typescript
 const networkId: NetworkId = NetworkId.TESTNET;
+const network = "Preprod";
 const blockfrostProjectId = "<YOUR_BLOCKFROST_PROJECT_ID>";
 const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
 
-const lucid = await getBackendBlockfrostLucidInstance(
-  networkId,
+const lucid = await getBackendBlockfrostLucidInstance({
+  network,
   blockfrostProjectId,
   blockfrostUrl,
   address
-);
+});
 
 const blockfrostAdapter = new BlockfrostAdapter(
   NetworkId.TESTNET,
@@ -118,12 +119,12 @@ const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
 
-const lucid = await getBackendBlockfrostLucidInstance(
-  network,
+const lucid = await getBackendBlockfrostLucidInstance({
+  network: "Preprod",
   blockfrostProjectId,
   blockfrostUrl,
   address
-);
+});
 
 const blockfrostAdapter = new BlockfrostAdapter(
   NetworkId.TESTNET,
@@ -200,12 +201,12 @@ const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
 
-const lucid = await getBackendBlockfrostLucidInstance(
-  networkId,
+const lucid = await getBackendBlockfrostLucidInstance({
+  network: "Preprod",
   blockfrostProjectId,
   blockfrostUrl,
   address
-);
+});
 
 const blockfrostAdapter = new BlockfrostAdapter(
   NetworkId.TESTNET,
@@ -241,12 +242,12 @@ const blockfrostProjectId = "<YOUR_BLOCKFROST_API_KEY>";
 const blockfrostUrl = "https://cardano-preprod.blockfrost.io/api/v0";
 
 const address = "<YOUR_ADDRESS>";
-const lucid = await getBackendBlockfrostLucidInstance(
-  networkId,
+const lucid = await getBackendBlockfrostLucidInstance({
+  network: "Preprod",
   blockfrostProjectId,
   blockfrostUrl,
   address
-);
+});
 
 const blockfrostAdapter = new BlockfrostAdapter(
   NetworkId.TESTNET,
