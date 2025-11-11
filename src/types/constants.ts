@@ -289,7 +289,7 @@ export namespace StableswapConstant {
       {
         orderAddress:
           "addr1wykr5fpg2qjca5lt75qmh9g459vnwr08wj5xlfcwyleyqagryre2v",
-        poolAddress:"addr1wxzuzc4279crnjeln9yae4lutkqsyz7trrwhvnfty8wa40q2zzcsm",
+        poolAddress: "addr1wxzuzc4279crnjeln9yae4lutkqsyz7trrwhvnfty8wa40q2zzcsm",
         nftAsset:
           "6d0af21948cca104be7e639ed7d9a169f15b7763c066df41ec4b29b8774554482d694554482d534c50",
         lpAsset:
@@ -348,375 +348,375 @@ export namespace StableswapConstant {
   > = {
     [NetworkId.TESTNET]: {
       "06fe1ba957728130154154d5e5b25a7b533ebe6c4516356c0aa69355646a65642d697573642d76312e342d6c70":
-        {
-          order: {
-            txHash:
-              "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "527e421bc3eb8b9e5ec0a9ad214bb9b76148f57b9a5a8cbd83a51264f943e91d",
+          outputIndex: 3,
+        },
+      },
       "06fe1ba957728130154154d5e5b25a7b533ebe6c4516356c0aa69355757364632d757364742d76312e342d6c70":
-        {
-          order: {
-            txHash:
-              "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "cf699550642c8ffc1673d1e5d56d8562ca7c7f5c0b513a8428c3f52cdcc8fdb7",
+          outputIndex: 3,
+        },
+      },
       "06fe1ba957728130154154d5e5b25a7b533ebe6c4516356c0aa69355646a65642d697573642d6461692d76312e342d6c70":
-        {
-          order: {
-            txHash:
-              "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "a8ab602259654697c85e2f61752d34cdb631f314eaeded0676fee6f6be70afe7",
+          outputIndex: 3,
+        },
+      },
     },
     [NetworkId.MAINNET]: {
       "5d4b6afd3344adcf37ccef5558bb87f522874578c32f17160512e398444a45442d695553442d534c50": // djed-iusd
-        {
-          order: {
-            txHash:
-              "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "20227174ec2f7853a71a02c435d063b3bf63851d4e0ad9a0c09250a087a6577e",
+          outputIndex: 3,
+        },
+      },
       "d97fa91daaf63559a253970365fb219dc4364c028e5fe0606cdbfff9555344432d444a45442d534c50": // usdc-djed
-        {
-          order: {
-            txHash:
-              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+          outputIndex: 3,
+        },
+      },
       "96402c6f5e7a04f16b4d6f500ab039ff5eac5d0226d4f88bf5523ce85553444d2d695553442d534c50": // usdm-iusd
-        {
-          order: {
-            txHash:
-              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+          outputIndex: 3,
+        },
+      },
       "07b0869ed7488657e24ac9b27b3f0fb4f76757f444197b2a38a15c3c444a45442d5553444d2d534c50": // djed-usdm
-        {
-          order: {
-            txHash:
-              "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "dddccee9cd58cbf712f2ff2c49ea20537db681a333c701106aa13cd57aee3873",
+          outputIndex: 3,
+        },
+      },
       "4e73e9cf8fd73e74956c67fa3a01486f02ab612ee580dc27755b8d57444a45442d4d795553442d534c50": // djed-myusd
-        {
-          order: {
-            txHash:
-              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "8b880e77a726e76e5dd585cda2c4c2ac93f1cfccc06910f00550fb820ae1fc54",
+          outputIndex: 3,
+        },
+      },
       "1d4c43ac86463f93c4cba60c28f143b2781d7f7328b18d8e68298e614d795553442d5553444d2d534c50": // myusd-usdm
-        {
-          order: {
-            txHash:
-              "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "316e7a87af964d9a65b2eecdb4afd62eae639b37539f0102f1b90144966bb074",
+          outputIndex: 3,
+        },
+      },
       "3ff28ad0d4788f24619746cc86b774495ed4727634b61710d2bb7ed5555344432d695553442d534c50": // usdc-iusd
-        {
-          order: {
-            txHash:
-              "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "20c0cab94e5fcb31c9d91206fa2da754f484bb006f5d581c4afd39d83003ac80",
+          outputIndex: 3,
+        },
+      },
       "739150a2612da82e16adc2a3a1f88b256202d8415df0c5b7a2ff93fb555344432d695553442d302e312d534c50": // usdc-iusd-0.1
-        {
-          order: {
-            txHash:
-              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "48019a931af442e1eedab6c5b52b3069cf6eadb2483a2131f517e62fddfd5662",
+          outputIndex: 3,
+        },
+      },
       "a0d806e67be578911ca39260cff5eaa6eb06f9f4165ccd570282f5055553444d2d555344412d534c50": // usdm-usda
-        {
-          order: {
-            txHash:
-              "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "0420f0b0a47d68e1ff5eb263d12b32480084de2429ca81cf557bafd374ca49ec",
+          outputIndex: 3,
+        },
+      },
       "b7ff73b687f4abdec86ca9984faa70dfead433588f183c3f956fb213695553442d555344412d534c50": // iusd-usda
-        {
-          order: {
-            txHash:
-              "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "438e0d29b9cb4bd862afb91d7f492b32af6f7bbeebbbb12fdc8ed43c1135430a",
+          outputIndex: 3,
+        },
+      },
       "6d0af21948cca104be7e639ed7d9a169f15b7763c066df41ec4b29b8774554482d694554482d534c50": // weth-ieth
-        {
-          order: {
-            txHash:
-              "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "cd7a90a75531e1be780c1672bca8823175d6cf1c7c3d362bf4524ce96b45b7dd",
+          outputIndex: 3,
+        },
+      },
       "6bdc0ad93ceb1f1df8f4be04d8037bc5d8dc21e5c8d654b48a9679f8774254432d694254432d534c50": // wbtc-ibtc
-        {
-          order: {
-            txHash:
-              "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "f6923f13cbb7c8068ee890815ccd04f0c5fc4dc63900c5ddc481ce14a8789755",
+          outputIndex: 3,
+        },
+      },
       "666c65d6d6152864ef16371beed29150259564bde5a30d345c5e236977534f4c2d69534f4c2d534c50": // wsol-isol
-        {
-          order: {
-            txHash:
-              "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
-            outputIndex: 0,
-          },
-          pool: {
-            txHash:
-              "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
-            outputIndex: 1,
-          },
-          lp: {
-            txHash:
-              "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
-            outputIndex: 2,
-          },
-          poolBatching: {
-            txHash:
-              "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
-            outputIndex: 3,
-          },
+      {
+        order: {
+          txHash:
+            "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
+          outputIndex: 0,
         },
+        pool: {
+          txHash:
+            "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
+          outputIndex: 1,
+        },
+        lp: {
+          txHash:
+            "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
+          outputIndex: 2,
+        },
+        poolBatching: {
+          txHash:
+            "3d0da995e695d9aba6babcad2c0d6e2fac2aa65eddbe65ca3bddf2f2618a19cb",
+          outputIndex: 3,
+        },
+      },
     },
   };
 
@@ -758,6 +758,8 @@ export namespace StableswapConstant {
 
 export namespace DexV2Constant {
   export const DEFAULT_CANCEL_TIPS = 300_000n;
+  export const MIN_TRADING_FEE: bigint = 5n; // 0.05%
+  export const MAX_TRADING_FEE: bigint = 2000n; // 20%
   export type Config = {
     factoryAsset: string;
     poolAuthenAsset: string;
@@ -1166,6 +1168,8 @@ export enum MetadataMessage {
   LBE_V2_REDEEM_LP = "SDK Minswap: Lbe V2 redeem lp",
   LBE_V2_REFUND = "SDK Minswap: Lbe V2 refund",
   LBE_V2_CREATE_AMM_POOL = "SDK Minswap: Lbe V2 create AMM pool",
+  // DAO
+  DAO_POOL_FEE_UPDATE = "Minswap: Request of Pool Fee Manager",
 }
 
 export const FIXED_DEPOSIT_ADA = 2_000_000n;
