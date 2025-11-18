@@ -1,5 +1,5 @@
 import invariant from "@minswap/tiny-invariant";
-import { Lucid, TxComplete } from "@spacebudz/lucid";
+import { Addresses, Lucid, TxComplete } from "@spacebudz/lucid";
 import JSONBig from "json-bigint";
 
 import { Asset } from "./types/asset";
@@ -45,8 +45,8 @@ export class Dao {
     options: Omit<PoolFeeRequest, "version">
   ): Promise<TxComplete> {
     const { managerAddress, poolLPAsset, newFeeA, newFeeB } = options;
-    const newFeeABps = BigInt(Math.floor(newFeeA * 10000));
-    const newFeeBBps = BigInt(Math.floor(newFeeB * 10000));
+    const newFeeABps = BigInt(Math.floor(newFeeA * 100));
+    const newFeeBBps = BigInt(Math.floor(newFeeB * 100));
 
     invariant(
       newFeeABps >= DexV2Constant.MIN_TRADING_FEE &&
@@ -71,10 +71,15 @@ export class Dao {
       newFeeB: newFeeBBps.toString(),
       version: "1",
     }).match(/.{1,64}/g);
+    const paymentCred = Addresses.addressToCredential(managerAddress);
+    invariant(
+      paymentCred.type === "Key",
+      "Manager address must be a key address"
+    );
 
     return this.lucid
       .newTx()
-      .addSigner(managerAddress)
+      .addSigner(paymentCred.hash)
       .attachMetadata(674, {
         msg: [MetadataMessage.DAO_POOL_FEE_UPDATE],
         extraData: feeRequestJSON,
