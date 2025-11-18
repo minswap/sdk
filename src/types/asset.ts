@@ -38,6 +38,17 @@ export namespace Asset {
         return policyId + tokenName
     }
 
+    export function toDottedString(asset: Asset): string {
+        const { policyId, tokenName } = asset
+        if (policyId === "" && tokenName === "") {
+            return "lovelace"
+        }
+        if (asset.tokenName === "") {
+            return asset.policyId;
+        }
+        return `${asset.policyId}.${asset.tokenName}`;
+    }
+
     export function toPlutusData(asset: Asset): Constr<DataType> {
         const { policyId, tokenName } = asset
         return new Constr(0, [
@@ -51,8 +62,8 @@ export namespace Asset {
             throw new Error(`Index of Asset must be 0, actual: ${data.index}`)
         }
         invariant(
-          data.fields.length === 2,
-          `Asset fields length must be 2, actual: ${data.fields.length}`
+            data.fields.length === 2,
+            `Asset fields length must be 2, actual: ${data.fields.length}`
         );
         return {
             policyId: data.fields[0] as string,
