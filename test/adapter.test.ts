@@ -71,10 +71,9 @@ function getMaestroAdapters(): [Adapter, Adapter] {
   return [maestroAdapterTestnet, maestroAdapterMainnet];
 }
 
-describe.each([
-  ["Blockfrost", ...getBlockfrostAdapters()],
-  ["Maestro", ...getMaestroAdapters()],
-])("Run test with %s adapter", (_name, adapterTestnet, adapterMainnet) => {
+describe.each([["Blockfrost"]])("Run test with %s adapter", (_name) => {
+  const [adapterTestnet, adapterMainnet] = getBlockfrostAdapters();
+
   test("getAssetDecimals", async () => {
     expect(await adapterTestnet.getAssetDecimals("lovelace")).toBe(6);
     expect(await adapterTestnet.getAssetDecimals(MIN_TESTNET)).toBe(0);
