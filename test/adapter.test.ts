@@ -20,33 +20,51 @@ function mustGetEnv(key: string): string {
   return val;
 }
 
+type Task<T> = {
+  fn: () => Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason?: unknown) => void;
+};
+
 /**
- * A simple sequential rate-limiter.
- * All calls share a single promise chain so they are serialised and each one
- * waits at least `minIntervalMs` after the previous call *started* before
- * it fires.  This avoids the arbitrary fixed sleeps while still respecting
- * the API rate-limit.
+ * Queue-based rate-limiter.
+ * Callbacks pushed via `withRateLimit` are queued and executed one at a time.
+ * After each task completes (success or failure) the processor waits
+ * `intervalMs` before dequeuing the next one, keeping API calls well within
+ * rate-limit budgets without any arbitrary fixed sleeps at the call-sites.
  */
-function createRateLimiter(minIntervalMs = 500) {
-  let chain = Promise.resolve();
+function createRateLimiter(intervalMs = 200) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const queue: Task<any>[] = [];
+  let running = false;
+
+  async function processQueue(): Promise<void> {
+    if (running) return;
+    running = true;
+    while (queue.length > 0) {
+      const task = queue.shift()!;
+      try {
+        task.resolve(await task.fn());
+      } catch (err) {
+        task.reject(err);
+      }
+      if (queue.length > 0) {
+        await new Promise<void>((resolve) => setTimeout(resolve, intervalMs));
+      }
+    }
+    running = false;
+  }
 
   return function withRateLimit<T>(fn: () => Promise<T>): Promise<T> {
-    const result = chain.then(() => fn());
-    // Advance the chain: next call will wait until this one has started AND
-    // at least minIntervalMs has elapsed since it started.
-    chain = result
-      .then(
-        () =>
-          new Promise<void>((resolve) => setTimeout(resolve, minIntervalMs)),
-        () => new Promise<void>((resolve) => setTimeout(resolve, minIntervalMs))
-      )
-      .then(() => {});
-    return result;
+    return new Promise<T>((resolve, reject) => {
+      queue.push({ fn, resolve, reject });
+      processQueue();
+    });
   };
 }
 
-// One shared limiter for the whole test suite (500 ms between requests).
-const withRateLimit = createRateLimiter(500);
+// One shared limiter for the whole test suite (200 ms between requests).
+const withRateLimit = createRateLimiter(200);
 
 const MIN_TESTNET =
   "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e";
