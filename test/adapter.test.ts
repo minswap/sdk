@@ -20,6 +20,10 @@ function mustGetEnv(key: string): string {
   return val;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 const MIN_TESTNET =
   "e16c2dc8ae937e8d3790c7fd7168d7b994621ba14ca11415f39fed724d494e";
 const MIN_MAINNET =
@@ -85,8 +89,11 @@ describe.each([["Blockfrost"], ["Maestro"]])(
     });
     test("getAssetDecimals", async () => {
       expect(await adapterTestnet.getAssetDecimals("lovelace")).toBe(6);
+      await sleep(500);
       expect(await adapterTestnet.getAssetDecimals(MIN_TESTNET)).toBe(0);
+      await sleep(500);
       expect(await adapterMainnet.getAssetDecimals("lovelace")).toBe(6);
+      await sleep(500);
       expect(await adapterMainnet.getAssetDecimals(MIN_MAINNET)).toBe(6);
     });
 
@@ -103,13 +110,15 @@ describe.each([["Blockfrost"], ["Maestro"]])(
         expect(
           priceAB.mul(priceBA).sub(1).abs().toNumber()
         ).toBeLessThanOrEqual(1e-6);
+        await sleep(500);
       }
     }
 
     test("getPoolPrice", async () => {
       await testPoolPrice(adapterTestnet);
+      await sleep(1000);
       await testPoolPrice(adapterMainnet);
-    }, 10000);
+    }, 30000);
 
     test("getV1PoolById", async () => {
       const adaMINTestnet = await adapterTestnet.getV1PoolById({
@@ -118,6 +127,8 @@ describe.each([["Blockfrost"], ["Maestro"]])(
       expect(adaMINTestnet).not.toBeNull();
       expect(adaMINTestnet?.assetA).toEqual("lovelace");
       expect(adaMINTestnet?.assetB).toEqual(MIN_TESTNET);
+
+      await sleep(1000);
 
       const adaMINMainnet = await adapterMainnet.getV1PoolById({
         id: MIN_ADA_POOL_V1_ID_MAINNET,
@@ -135,11 +146,13 @@ describe.each([["Blockfrost"], ["Maestro"]])(
       for (let i = 0; i < Math.min(5, history.length); i++) {
         const pool = await adapter.getV1PoolInTx({ txHash: history[i].txHash });
         expect(pool?.txIn.txHash).toEqual(history[i].txHash);
+        await sleep(500);
       }
     }
 
     test("get prices of last 5 states of MIN/ADA pool", async () => {
       await testPriceHistory(adapterTestnet, MIN_ADA_POOL_V1_ID_TESTNET);
+      await sleep(1000);
       await testPriceHistory(adapterMainnet, MIN_ADA_POOL_V1_ID_MAINNET);
     });
 
@@ -186,7 +199,10 @@ describe.each([["Blockfrost"], ["Maestro"]])(
         expect(pool).not.toBeNull();
         expect(pool?.nft).toEqual(cfg.nftAsset);
         expect(pool?.assets).toEqual(cfg.assets);
+        await sleep(500);
       }
+
+      await sleep(1000);
 
       for (const cfg of mainnetCfgs) {
         const pool = await adapterMainnet.getStablePoolByLpAsset(
@@ -195,6 +211,7 @@ describe.each([["Blockfrost"], ["Maestro"]])(
         expect(pool).not.toBeNull();
         expect(pool?.nft).toEqual(cfg.nftAsset);
         expect(pool?.assets).toEqual(cfg.assets);
+        await sleep(500);
       }
     });
 
@@ -209,7 +226,10 @@ describe.each([["Blockfrost"], ["Maestro"]])(
         expect(pool).not.toBeNull();
         expect(pool?.nft).toEqual(cfg.nftAsset);
         expect(pool?.assets).toEqual(cfg.assets);
+        await sleep(500);
       }
+
+      await sleep(1000);
 
       for (const cfg of mainnetCfgs) {
         const pool = await adapterMainnet.getStablePoolByNFT(
@@ -218,6 +238,7 @@ describe.each([["Blockfrost"], ["Maestro"]])(
         expect(pool).not.toBeNull();
         expect(pool?.nft).toEqual(cfg.nftAsset);
         expect(pool?.assets).toEqual(cfg.assets);
+        await sleep(500);
       }
     });
   }
