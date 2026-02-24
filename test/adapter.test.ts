@@ -48,9 +48,7 @@ function createRateLimiter(intervalMs = 200) {
       } catch (err) {
         task.reject(err);
       }
-      if (queue.length > 0) {
-        await new Promise<void>((resolve) => setTimeout(resolve, intervalMs));
-      }
+      await new Promise<void>((resolve) => setTimeout(resolve, intervalMs));
     }
     running = false;
   }
