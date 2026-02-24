@@ -181,9 +181,11 @@ describe.each([["Blockfrost"], ["Maestro"]])(
         StableswapConstant.CONFIG[NetworkId.TESTNET].length;
       const numberOfStablePoolsMainnet =
         StableswapConstant.CONFIG[NetworkId.MAINNET].length;
+      await sleep(1000);
       const { pools: testnetPools } = await adapterTestnet.getAllStablePools();
       expect(testnetPools.length === numberOfStablePoolsTestnet);
 
+      await sleep(1000);
       const { pools: mainnetPools } = await adapterMainnet.getAllStablePools();
       expect(mainnetPools.length === numberOfStablePoolsMainnet);
     });
