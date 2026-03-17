@@ -10,9 +10,7 @@ import {
   StableOrder,
   StableswapConstant,
 } from ".";
-import {
-  BATCHER_FEE_STABLESWAP,
-} from "./batcher-fee/configs.internal";
+import { BATCHER_FEE_STABLESWAP } from "./batcher-fee/configs.internal";
 import { Asset } from "./types/asset";
 import { NetworkId } from "./types/network";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
