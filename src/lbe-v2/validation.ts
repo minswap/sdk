@@ -13,19 +13,19 @@ import {
 import { FactoryV2 } from "../types/factory";
 import { LbeV2Types } from "../types/lbe-v2";
 import {
-  AddSellersOptions,
-  CloseEventOptions,
-  CollectManagerOptions,
-  CollectOrdersOptions,
-  CountingSellersOptions,
-  CreateAmmPoolTxOptions,
+  LbeV2AddSellersOptions,
   LbeV2CancelEventOptions,
+  LbeV2CloseEventOptions,
+  LbeV2CollectManagerOptions,
+  LbeV2CollectOrdersOptions,
+  LbeV2CountingSellersOptions,
+  LbeV2CreateAmmPoolTxOptions,
   LbeV2CreateEventOptions,
   LbeV2DepositOrWithdrawOptions,
   LbeV2ProjectDetails,
+  LbeV2RedeemOrdersOptions,
+  LbeV2RefundOrdersOptions,
   LbeV2UpdateEventOptions,
-  RedeemOrdersOptions,
-  RefundOrdersOptions,
 } from "./type";
 
 export function validateCreateEvent(
@@ -375,7 +375,7 @@ export function validateDepositOrWithdrawOrder(
 }
 
 export function validateCloseEvent(
-  options: CloseEventOptions,
+  options: LbeV2CloseEventOptions,
   networkId: NetworkId
 ): void {
   const { treasuryUtxo, headFactoryUtxo, tailFactoryUtxo, owner } = options;
@@ -429,7 +429,7 @@ export function validateCloseEvent(
 }
 
 export function validateAddSeller(
-  options: AddSellersOptions,
+  options: LbeV2AddSellersOptions,
   lucid: Lucid,
   networkId: NetworkId
 ): void {
@@ -477,7 +477,7 @@ export function validateAddSeller(
 }
 
 export function validateCountingSeller(
-  options: CountingSellersOptions,
+  options: LbeV2CountingSellersOptions,
   lucid: Lucid,
   networkId: NetworkId
 ): void {
@@ -555,7 +555,7 @@ export function validateCountingSeller(
 }
 
 export function validateCollectManager(
-  options: CollectManagerOptions,
+  options: LbeV2CollectManagerOptions,
   lucid: Lucid,
   networkId: NetworkId
 ): void {
@@ -610,7 +610,7 @@ export function validateCollectManager(
 }
 
 export function validateCollectOrders(
-  options: CollectOrdersOptions,
+  options: LbeV2CollectOrdersOptions,
   networkId: NetworkId
 ): void {
   const { treasuryUtxo, orderUtxos } = options;
@@ -666,7 +666,7 @@ export function validateCollectOrders(
 }
 
 export function validateRedeemOrders(
-  options: RedeemOrdersOptions,
+  options: LbeV2RedeemOrdersOptions,
   networkId: NetworkId
 ): void {
   const { treasuryUtxo, orderUtxos } = options;
@@ -714,7 +714,7 @@ export function validateRedeemOrders(
 }
 
 export function validateRefundOrders(
-  options: RefundOrdersOptions,
+  options: LbeV2RefundOrdersOptions,
   networkId: NetworkId
 ): void {
   const { treasuryUtxo, orderUtxos } = options;
@@ -766,7 +766,7 @@ export function validateRefundOrders(
 }
 
 export function validateCreateAmmPool(
-  options: CreateAmmPoolTxOptions,
+  options: LbeV2CreateAmmPoolTxOptions,
   networkId: NetworkId
 ): void {
   const { treasuryUtxo, ammFactoryUtxo } = options;

@@ -66,7 +66,7 @@ export type LbeV2DepositOrWithdrawOptions = {
   action: LbeV2ManageOrderAction;
 };
 
-export type CloseEventOptions = {
+export type LbeV2CloseEventOptions = {
   treasuryUtxo: Utxo;
   headFactoryUtxo: Utxo;
   tailFactoryUtxo: Utxo;
@@ -74,7 +74,7 @@ export type CloseEventOptions = {
   owner: string;
 };
 
-export type AddSellersOptions = {
+export type LbeV2AddSellersOptions = {
   treasuryUtxo: Utxo;
   managerUtxo: Utxo;
   addSellerCount: number;
@@ -82,44 +82,44 @@ export type AddSellersOptions = {
   currentSlot: number;
 };
 
-export type CountingSellersOptions = {
+export type LbeV2CountingSellersOptions = {
   treasuryUtxo: Utxo;
   managerUtxo: Utxo;
   sellerUtxos: Utxo[];
   currentSlot: number;
 };
 
-export type CollectManagerOptions = {
+export type LbeV2CollectManagerOptions = {
   treasuryUtxo: Utxo;
   managerUtxo: Utxo;
   currentSlot: number;
 };
 
-export type CollectOrdersOptions = {
+export type LbeV2CollectOrdersOptions = {
   treasuryUtxo: Utxo;
   orderUtxos: Utxo[];
   currentSlot: number;
 };
 
-export type RedeemOrdersOptions = {
+export type LbeV2RedeemOrdersOptions = {
   treasuryUtxo: Utxo;
   orderUtxos: Utxo[];
   currentSlot: number;
 };
 
-export type RefundOrdersOptions = {
+export type LbeV2RefundOrdersOptions = {
   treasuryUtxo: Utxo;
   orderUtxos: Utxo[];
   currentSlot: number;
 };
 
-export type CreateAmmPoolTxOptions = {
+export type LbeV2CreateAmmPoolTxOptions = {
   treasuryUtxo: Utxo;
   ammFactoryUtxo: Utxo;
   currentSlot: number;
 };
 
-export type CalculationRedeemAmountParams = {
+export type LbeV2CalculationRedeemAmountParams = {
   userAmount: bigint;
   totalPenalty: bigint;
   reserveRaise: bigint;

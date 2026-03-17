@@ -21,22 +21,21 @@ import { Asset } from "../types/asset";
 import { RedeemerWrapper } from "../types/common";
 import { FactoryV2 } from "../types/factory";
 import { LbeV2Types } from "../types/lbe-v2";
-import { NetworkEnvironment, NetworkId } from "../types/network";
-import { lucidToNetworkEnv } from "../utils/network.internal";
+import { NetworkId } from "../types/network";
 import {
-  AddSellersOptions,
-  CalculationRedeemAmountParams,
-  CloseEventOptions,
-  CollectManagerOptions,
-  CollectOrdersOptions,
-  CountingSellersOptions,
-  CreateAmmPoolTxOptions,
+  LbeV2AddSellersOptions,
+  LbeV2CalculationRedeemAmountParams,
   LbeV2CancelEventOptions,
+  LbeV2CloseEventOptions,
+  LbeV2CollectManagerOptions,
+  LbeV2CollectOrdersOptions,
+  LbeV2CountingSellersOptions,
+  LbeV2CreateAmmPoolTxOptions,
   LbeV2CreateEventOptions,
   LbeV2DepositOrWithdrawOptions,
+  LbeV2RedeemOrdersOptions,
+  LbeV2RefundOrdersOptions,
   LbeV2UpdateEventOptions,
-  RedeemOrdersOptions,
-  RefundOrdersOptions,
 } from "./type";
 import {
   validateAddSeller,
@@ -58,13 +57,11 @@ const THREE_HOUR_IN_MS = 3 * 60 * 60 * 1000;
 export class LbeV2 {
   private readonly lucid: Lucid;
   private readonly networkId: NetworkId;
-  private readonly networkEnv: NetworkEnvironment;
 
   constructor(lucid: Lucid) {
     this.lucid = lucid;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
-    this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
   async createEvent(options: LbeV2CreateEventOptions): Promise<TxComplete> {
@@ -637,7 +634,7 @@ export class LbeV2 {
     return lucidTx.commit();
   }
 
-  async closeEventTx(options: CloseEventOptions): Promise<TxComplete> {
+  async closeEventTx(options: LbeV2CloseEventOptions): Promise<TxComplete> {
     validateCloseEvent(options, this.networkId);
     const { treasuryUtxo, headFactoryUtxo, tailFactoryUtxo, currentSlot } =
       options;
@@ -752,7 +749,7 @@ export class LbeV2 {
     return await lucidTx.commit();
   }
 
-  async addSellers(options: AddSellersOptions): Promise<TxComplete> {
+  async addSellers(options: LbeV2AddSellersOptions): Promise<TxComplete> {
     validateAddSeller(options, this.lucid, this.networkId);
     const {
       treasuryUtxo,
@@ -872,7 +869,9 @@ export class LbeV2 {
     return lucidTx.commit();
   }
 
-  async countingSellers(options: CountingSellersOptions): Promise<TxComplete> {
+  async countingSellers(
+    options: LbeV2CountingSellersOptions
+  ): Promise<TxComplete> {
     validateCountingSeller(options, this.lucid, this.networkId);
     const { treasuryUtxo, managerUtxo, sellerUtxos, currentSlot } = options;
     const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
@@ -997,7 +996,9 @@ export class LbeV2 {
     return lucidTx.commit();
   }
 
-  async collectManager(options: CollectManagerOptions): Promise<TxComplete> {
+  async collectManager(
+    options: LbeV2CollectManagerOptions
+  ): Promise<TxComplete> {
     validateCollectManager(options, this.lucid, this.networkId);
     const { treasuryUtxo, managerUtxo, currentSlot } = options;
     const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
@@ -1101,7 +1102,9 @@ export class LbeV2 {
     return lucidTx.commit();
   }
 
-  async collectOrders(options: CollectOrdersOptions): Promise<TxComplete> {
+  async collectOrders(
+    options: LbeV2CollectOrdersOptions
+  ): Promise<TxComplete> {
     validateCollectOrders(options, this.networkId);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
     const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
@@ -1241,7 +1244,7 @@ export class LbeV2 {
     return lucidTx.commit();
   }
 
-  calculateRedeemAmount(params: CalculationRedeemAmountParams): {
+  calculateRedeemAmount(params: LbeV2CalculationRedeemAmountParams): {
     liquidityAmount: bigint;
     returnedRaiseAmount: bigint;
   } {
@@ -1269,7 +1272,7 @@ export class LbeV2 {
     };
   }
 
-  async redeemOrders(options: RedeemOrdersOptions): Promise<TxComplete> {
+  async redeemOrders(options: LbeV2RedeemOrdersOptions): Promise<TxComplete> {
     validateRedeemOrders(options, this.networkId);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
     const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
@@ -1449,7 +1452,7 @@ export class LbeV2 {
     return lucidTx.commit();
   }
 
-  async refundOrders(options: RefundOrdersOptions): Promise<TxComplete> {
+  async refundOrders(options: LbeV2RefundOrdersOptions): Promise<TxComplete> {
     validateRefundOrders(options, this.networkId);
     const { treasuryUtxo, orderUtxos, currentSlot } = options;
     const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);
@@ -1602,7 +1605,9 @@ export class LbeV2 {
     return lucidTx.commit();
   }
 
-  async createAmmPool(options: CreateAmmPoolTxOptions): Promise<TxComplete> {
+  async createAmmPool(
+    options: LbeV2CreateAmmPoolTxOptions
+  ): Promise<TxComplete> {
     validateCreateAmmPool(options, this.networkId);
     const { treasuryUtxo, ammFactoryUtxo, currentSlot } = options;
     const currentTime = this.lucid.utils.slotsToUnixTime(currentSlot);

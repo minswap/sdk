@@ -14,7 +14,7 @@ import {
 } from "@spacebudz/lucid";
 
 import { Adapter, DataObject, DataType } from ".";
-import { BATCHER_FEE_DEX_V2, DexVersion } from "./batcher-fee/configs.internal";
+import { BATCHER_FEE_DEX_V2 } from "./batcher-fee/configs.internal";
 import { compareUtxo, DexV2Calculation } from "./calculate";
 import { Asset } from "./types/asset";
 import {
@@ -23,13 +23,12 @@ import {
   MetadataMessage,
 } from "./types/constants";
 import { FactoryV2 } from "./types/factory";
-import { NetworkEnvironment, NetworkId } from "./types/network";
+import { NetworkId } from "./types/network";
 import { OrderV2 } from "./types/order";
 import { PoolV2 } from "./types/pool";
-import { lucidToNetworkEnv } from "./utils/network.internal";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
-export type V2CustomReceiver = {
+export type DexV2CustomReceiver = {
   refundReceiver: string;
   refundReceiverDatum?: {
     type:
@@ -58,7 +57,7 @@ export type V2CustomReceiver = {
  *      - fee 0.3% -> tradingFeeNumerator 30
  *      - fee 1% -> tradingFeeNumerator 100
  */
-export type CreatePoolV2Options = {
+export type DexV2CreatePoolOptions = {
   assetA: Asset;
   assetB: Asset;
   amountA: bigint;
@@ -66,19 +65,19 @@ export type CreatePoolV2Options = {
   tradingFeeNumerator: bigint;
 };
 
-export type BulkOrdersOption = {
+export type DexV2BulkOrdersOption = {
   sender: string;
-  orderOptions: OrderOptions[];
+  orderOptions: DexV2OrderOptions[];
   expiredOptions?: OrderV2.ExpirySetting;
   composeTx?: Tx;
   authorizationMethodType?: OrderV2.AuthorizationMethodType;
 };
 
-export type OrderV2SwapRouting = {
+export type DexV2SwapRouting = {
   lpAsset: Asset;
   direction: OrderV2.Direction;
 };
-export type DepositOptions = {
+export type DexV2DepositOptions = {
   type: OrderV2.StepType.DEPOSIT;
   assetA: Asset;
   assetB: Asset;
@@ -88,7 +87,7 @@ export type DepositOptions = {
   killOnFailed: boolean;
 };
 
-export type WithdrawOptions = {
+export type DexV2WithdrawOptions = {
   type: OrderV2.StepType.WITHDRAW;
   lpAmount: bigint;
   minimumAssetAReceived: bigint;
@@ -96,7 +95,7 @@ export type WithdrawOptions = {
   killOnFailed: boolean;
 };
 
-export type SwapExactInOptions = {
+export type DexV2SwapExactInOptions = {
   type: OrderV2.StepType.SWAP_EXACT_IN;
   assetIn: Asset;
   amountIn: bigint;
@@ -106,7 +105,7 @@ export type SwapExactInOptions = {
   isLimitOrder: boolean;
 };
 
-export type SwapExactOutOptions = {
+export type DexV2SwapExactOutOptions = {
   type: OrderV2.StepType.SWAP_EXACT_OUT;
   assetIn: Asset;
   maximumAmountIn: bigint;
@@ -115,7 +114,7 @@ export type SwapExactOutOptions = {
   killOnFailed: boolean;
 };
 
-export type StopOptions = {
+export type DexV2StopOptions = {
   type: OrderV2.StepType.STOP;
   assetIn: Asset;
   amountIn: bigint;
@@ -123,7 +122,7 @@ export type StopOptions = {
   direction: OrderV2.Direction;
 };
 
-export type OCOOptions = {
+export type DexV2OCOOptions = {
   type: OrderV2.StepType.OCO;
   assetIn: Asset;
   amountIn: bigint;
@@ -132,7 +131,7 @@ export type OCOOptions = {
   direction: OrderV2.Direction;
 };
 
-export type ZapOutOptions = {
+export type DexV2ZapOutOptions = {
   type: OrderV2.StepType.ZAP_OUT;
   lpAmount: bigint;
   direction: OrderV2.Direction;
@@ -140,7 +139,7 @@ export type ZapOutOptions = {
   killOnFailed: boolean;
 };
 
-export type PartialSwapOptions = {
+export type DexV2PartialSwapOptions = {
   type: OrderV2.StepType.PARTIAL_SWAP;
   assetIn: Asset;
   amountIn: bigint;
@@ -150,7 +149,7 @@ export type PartialSwapOptions = {
   minimumSwapAmountRequired: bigint;
 };
 
-export type WithdrawImbalanceOptions = {
+export type DexV2WithdrawImbalanceOptions = {
   type: OrderV2.StepType.WITHDRAW_IMBALANCE;
   lpAmount: bigint;
   ratioAssetA: bigint;
@@ -159,7 +158,7 @@ export type WithdrawImbalanceOptions = {
   killOnFailed: boolean;
 };
 
-export type MultiRoutingOptions = {
+export type DexV2MultiRoutingOptions = {
   type: OrderV2.StepType.SWAP_ROUTING;
   assetIn: Asset;
   amountIn: bigint;
@@ -167,29 +166,29 @@ export type MultiRoutingOptions = {
   minimumReceived: bigint;
 };
 
-export type OrderOptions = (
-  | DepositOptions
-  | WithdrawOptions
-  | SwapExactInOptions
-  | SwapExactOutOptions
-  | StopOptions
-  | OCOOptions
-  | ZapOutOptions
-  | PartialSwapOptions
-  | WithdrawImbalanceOptions
-  | MultiRoutingOptions
+export type DexV2OrderOptions = (
+  | DexV2DepositOptions
+  | DexV2WithdrawOptions
+  | DexV2SwapExactInOptions
+  | DexV2SwapExactOutOptions
+  | DexV2StopOptions
+  | DexV2OCOOptions
+  | DexV2ZapOutOptions
+  | DexV2PartialSwapOptions
+  | DexV2WithdrawImbalanceOptions
+  | DexV2MultiRoutingOptions
 ) & {
   lpAsset: Asset;
-  customReceiver?: V2CustomReceiver;
+  customReceiver?: DexV2CustomReceiver;
 };
 
-export type CancelBulkOrdersOptions = {
+export type DexV2CancelBulkOrdersOptions = {
   orderOutRefs: OutRef[];
   composeTx?: Tx;
   AuthorizationMethodType?: OrderV2.AuthorizationMethodType;
 };
 
-export type CancelExpiredOrderOptions = {
+export type DexV2CancelExpiredOrderOptions = {
   orderUtxos: Utxo[];
   availableUtxos: Utxo[];
   currentSlot: number;
@@ -200,15 +199,12 @@ export class DexV2 {
   private readonly lucid: Lucid;
   private readonly networkId: NetworkId;
   private readonly adapter: Adapter;
-  private readonly networkEnv: NetworkEnvironment;
-  private readonly dexVersion = DexVersion.DEX_V2;
 
   constructor(lucid: Lucid, adapter: Adapter) {
     this.lucid = lucid;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
     this.adapter = adapter;
-    this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
   async createPoolTx({
@@ -217,7 +213,7 @@ export class DexV2 {
     amountA,
     amountB,
     tradingFeeNumerator,
-  }: CreatePoolV2Options): Promise<TxComplete> {
+  }: DexV2CreatePoolOptions): Promise<TxComplete> {
     const config = DexV2Constant.CONFIG[this.networkId];
     // Sort ascendingly assets and its amount
     const [sortedAssetA, sortedAssetB, sortedAmountA, sortedAmountB] =
@@ -366,7 +362,7 @@ export class DexV2 {
       .commit();
   }
 
-  private buildOrderValue(options: OrderOptions): Assets {
+  private buildOrderValue(options: DexV2OrderOptions): Assets {
     const orderAssets: Assets = {};
     switch (options.type) {
       case OrderV2.StepType.DEPOSIT: {
@@ -473,7 +469,10 @@ export class DexV2 {
     return orderAssets;
   }
 
-  buildOrderStep(options: OrderOptions, finalBatcherFee: bigint): OrderV2.Step {
+  buildOrderStep(
+    options: DexV2OrderOptions,
+    finalBatcherFee: bigint
+  ): OrderV2.Step {
     switch (options.type) {
       case OrderV2.StepType.DEPOSIT: {
         const { amountA, amountB, minimumLPReceived, killOnFailed } = options;
@@ -699,7 +698,7 @@ export class DexV2 {
     );
   }
 
-  private getOrderMetadata(orderOption: OrderOptions): string {
+  private getOrderMetadata(orderOption: DexV2OrderOptions): string {
     switch (orderOption.type) {
       case OrderV2.StepType.SWAP_EXACT_IN: {
         if (orderOption.isLimitOrder) {
@@ -750,7 +749,7 @@ export class DexV2 {
     expiredOptions,
     composeTx,
     authorizationMethodType,
-  }: BulkOrdersOption): Promise<TxComplete> {
+  }: DexV2BulkOrdersOption): Promise<TxComplete> {
     // calculate total order value
     const totalOrderAssets: Record<string, bigint> = {};
     for (const option of orderOptions) {
@@ -916,7 +915,7 @@ export class DexV2 {
   async cancelOrder({
     orderOutRefs,
     composeTx,
-  }: CancelBulkOrdersOptions): Promise<TxComplete> {
+  }: DexV2CancelBulkOrdersOptions): Promise<TxComplete> {
     const orderUtxos = await this.lucid.utxosByOutRef(orderOutRefs);
     if (orderUtxos.length === 0) {
       throw new Error("Order Utxos are empty");
@@ -985,7 +984,7 @@ export class DexV2 {
     currentSlot,
     availableUtxos,
     extraDatumMap,
-  }: CancelExpiredOrderOptions): Promise<TxComplete> {
+  }: DexV2CancelExpiredOrderOptions): Promise<TxComplete> {
     const refScript = await this.lucid.utxosByOutRef([
       DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].order,
       DexV2Constant.DEPLOYED_SCRIPTS[this.networkId].expiredOrderCancellation,
