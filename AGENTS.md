@@ -1,0 +1,1 @@
+- To run a single file in this repo, use `npm run exec <file>`. Example: `npm run exec examples/example.ts`

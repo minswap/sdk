@@ -9,22 +9,25 @@ import {
   MetadataMessage,
   StableOrder,
   StableswapConstant,
-  V1AndStableswapCustomReceiver,
 } from ".";
-import {
-  BATCHER_FEE_STABLESWAP,
-  DexVersion,
-} from "./batcher-fee/configs.internal";
+import { BATCHER_FEE_STABLESWAP } from "./batcher-fee/configs.internal";
 import { Asset } from "./types/asset";
-import { NetworkEnvironment, NetworkId } from "./types/network";
-import { lucidToNetworkEnv } from "./utils/network.internal";
+import { NetworkId } from "./types/network";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
+
+export type StableswapCustomReceiver = {
+  receiver: string;
+  receiverDatum?: {
+    hash: string;
+    datum: string;
+  };
+};
 
 /**
  * @property {bigint} assetInIndex - Index of asset you want to swap in config assets
  * @property {bigint} assetOutIndex - Index of asset you want to receive in config assets
  */
-export type SwapOptions = {
+export type StableswapSwapOptions = {
   type: StableOrder.StepType.SWAP;
   assetInAmount: bigint;
   assetInIndex: bigint;
@@ -32,20 +35,20 @@ export type SwapOptions = {
   minimumAssetOut: bigint;
 };
 
-export type DepositOptions = {
+export type StableswapDepositOptions = {
   type: StableOrder.StepType.DEPOSIT;
   assetsAmount: [Asset, bigint][];
   minimumLPReceived: bigint;
   totalLiquidity: bigint;
 };
 
-export type WithdrawOptions = {
+export type StableswapWithdrawOptions = {
   type: StableOrder.StepType.WITHDRAW;
   lpAmount: bigint;
   minimumAmounts: bigint[];
 };
 
-export type WithdrawImbalanceOptions = {
+export type StableswapWithdrawImbalanceOptions = {
   type: StableOrder.StepType.WITHDRAW_IMBALANCE;
   lpAmount: bigint;
   withdrawAmounts: bigint[];
@@ -54,48 +57,45 @@ export type WithdrawImbalanceOptions = {
 /**
  * @property {bigint} assetOutIndex - Index of asset you want to receive in config assets
  */
-export type ZapOutOptions = {
+export type StableswapZapOutOptions = {
   type: StableOrder.StepType.ZAP_OUT;
   lpAmount: bigint;
   assetOutIndex: bigint;
   minimumAssetOut: bigint;
 };
 
-export type OrderOptions = (
-  | DepositOptions
-  | WithdrawOptions
-  | SwapOptions
-  | WithdrawImbalanceOptions
-  | ZapOutOptions
+export type StableswapOrderOptions = (
+  | StableswapDepositOptions
+  | StableswapWithdrawOptions
+  | StableswapSwapOptions
+  | StableswapWithdrawImbalanceOptions
+  | StableswapZapOutOptions
 ) & {
   lpAsset: Asset;
-  customReceiver?: V1AndStableswapCustomReceiver;
+  customReceiver?: StableswapCustomReceiver;
 };
 
-export type BulkOrdersOption = {
-  options: OrderOptions[];
+export type StableswapBulkOrdersOption = {
+  options: StableswapOrderOptions[];
   sender: string;
   availableUtxos: Utxo[];
 };
 
-export type BuildCancelOrderOptions = {
+export type StableswapBuildCancelOrderOptions = {
   orderUtxos: Utxo[];
 };
 
 export class Stableswap {
   private readonly lucid: Lucid;
   private readonly networkId: NetworkId;
-  private readonly networkEnv: NetworkEnvironment;
-  private readonly dexVersion = DexVersion.STABLESWAP;
 
   constructor(lucid: Lucid) {
     this.lucid = lucid;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
-    this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
-  buildOrderValue(option: OrderOptions): Assets {
+  buildOrderValue(option: StableswapOrderOptions): Assets {
     const orderAssets: Assets = {};
 
     switch (option.type) {
@@ -151,7 +151,7 @@ export class Stableswap {
     return orderAssets;
   }
 
-  buildOrderStep(option: OrderOptions): StableOrder.Step {
+  buildOrderStep(option: StableswapOrderOptions): StableOrder.Step {
     switch (option.type) {
       case StableOrder.StepType.DEPOSIT: {
         const { minimumLPReceived } = option;
@@ -253,7 +253,7 @@ export class Stableswap {
     }
   }
 
-  private getOrderMetadata(options: OrderOptions): string {
+  private getOrderMetadata(options: StableswapOrderOptions): string {
     switch (options.type) {
       case StableOrder.StepType.SWAP: {
         return MetadataMessage.SWAP_EXACT_IN_ORDER;
@@ -283,7 +283,9 @@ export class Stableswap {
     }
   }
 
-  async createBulkOrdersTx(options: BulkOrdersOption): Promise<TxComplete> {
+  async createBulkOrdersTx(
+    options: StableswapBulkOrdersOption
+  ): Promise<TxComplete> {
     const { sender, options: orderOptions } = options;
 
     invariant(
@@ -359,7 +361,7 @@ export class Stableswap {
   }
 
   async buildCancelOrdersTx(
-    options: BuildCancelOrderOptions
+    options: StableswapBuildCancelOrderOptions
   ): Promise<TxComplete> {
     const tx = this.lucid.newTx();
 

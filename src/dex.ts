@@ -3,19 +3,18 @@ import { Addresses, Assets, Constr, Lucid, TxComplete } from "@spacebudz/lucid";
 import { Utxo } from "@spacebudz/lucid";
 
 import { DataObject, DataType } from ".";
-import { BATCHER_FEE_DEX_V1, DexVersion } from "./batcher-fee/configs.internal";
+import { BATCHER_FEE_DEX_V1 } from "./batcher-fee/configs.internal";
 import { Asset } from "./types/asset";
 import {
   DexV1Constant,
   FIXED_DEPOSIT_ADA,
   MetadataMessage,
 } from "./types/constants";
-import { NetworkEnvironment, NetworkId } from "./types/network";
+import { NetworkId } from "./types/network";
 import { OrderV1 } from "./types/order";
-import { lucidToNetworkEnv } from "./utils/network.internal";
 import { buildUtxoToStoreDatum } from "./utils/tx.internal";
 
-export type V1AndStableswapCustomReceiver = {
+export type DexV1CustomReceiver = {
   receiver: string;
   receiverDatum?: {
     hash: string;
@@ -38,7 +37,7 @@ type CommonOptions = {
  * @orderTxId Transaction ID which order is created
  * @sender The owner of this order. The @sender must be matched with data in Order's Datum
  */
-export type BuildCancelOrderOptions = {
+export type DexV1BuildCancelOrderOptions = {
   orderUtxo: Utxo;
   sender: string;
 };
@@ -49,7 +48,7 @@ export type BuildCancelOrderOptions = {
  * @amountA @amountB Define amount which you want to deposit to
  * @minimumLPReceived Minimum Received Amount you can accept after order is executed
  */
-export type BuildDepositTxOptions = CommonOptions & {
+export type DexV1BuildDepositTxOptions = CommonOptions & {
   assetA: Asset;
   assetB: Asset;
   amountA: bigint;
@@ -64,7 +63,7 @@ export type BuildDepositTxOptions = CommonOptions & {
  *      For eg, in Pool ADA-MIN, if @assetIn is ADA then @assetOut will be MIN and vice versa
  * @minimumLPReceived Minimum Received Amount you can accept after order is executed
  */
-export type BuildZapInTxOptions = CommonOptions & {
+export type DexV1BuildZapInTxOptions = CommonOptions & {
   sender: string;
   assetIn: Asset;
   amountIn: bigint;
@@ -79,7 +78,7 @@ export type BuildZapInTxOptions = CommonOptions & {
  * @minimumAssetAReceived Minimum Received of Asset A in the Pool you can accept after order is executed
  * @minimumAssetBReceived Minimum Received of Asset A in the Pool you can accept after order is executed
  */
-export type BuildWithdrawTxOptions = CommonOptions & {
+export type DexV1BuildWithdrawTxOptions = CommonOptions & {
   lpAsset: Asset;
   lpAmount: bigint;
   minimumAssetAReceived: bigint;
@@ -93,8 +92,8 @@ export type BuildWithdrawTxOptions = CommonOptions & {
  * @maximumAmountIn The maximum Amount of Asset In which will be spent after order is executed
  * @expectedAmountOut The expected Amount of Asset Out you want to receive after order is executed
  */
-export type BuildSwapExactOutTxOptions = CommonOptions & {
-  customReceiver?: V1AndStableswapCustomReceiver;
+export type DexV1BuildSwapExactOutTxOptions = CommonOptions & {
+  customReceiver?: DexV1CustomReceiver;
   assetIn: Asset;
   assetOut: Asset;
   maximumAmountIn: bigint;
@@ -109,8 +108,8 @@ export type BuildSwapExactOutTxOptions = CommonOptions & {
  * @minimumAmountOut The minimum Amount of Asset Out you can accept after order is executed
  * @isLimitOrder Define this order is Limit Order or not
  */
-export type BuildSwapExactInTxOptions = CommonOptions & {
-  customReceiver?: V1AndStableswapCustomReceiver;
+export type DexV1BuildSwapExactInTxOptions = CommonOptions & {
+  customReceiver?: DexV1CustomReceiver;
   assetIn: Asset;
   amountIn: bigint;
   assetOut: Asset;
@@ -121,18 +120,15 @@ export type BuildSwapExactInTxOptions = CommonOptions & {
 export class Dex {
   private readonly lucid: Lucid;
   private readonly networkId: NetworkId;
-  private readonly networkEnv: NetworkEnvironment;
-  private readonly dexVersion = DexVersion.DEX_V1;
 
   constructor(lucid: Lucid) {
     this.lucid = lucid;
     this.networkId =
       lucid.network === "Mainnet" ? NetworkId.MAINNET : NetworkId.TESTNET;
-    this.networkEnv = lucidToNetworkEnv(lucid.network);
   }
 
   async buildSwapExactInTx(
-    options: BuildSwapExactInTxOptions
+    options: DexV1BuildSwapExactInTxOptions
   ): Promise<TxComplete> {
     const {
       sender,
@@ -197,7 +193,7 @@ export class Dex {
   }
 
   async buildSwapExactOutTx(
-    options: BuildSwapExactOutTxOptions
+    options: DexV1BuildSwapExactOutTxOptions
   ): Promise<TxComplete> {
     const {
       sender,
@@ -259,7 +255,9 @@ export class Dex {
     return await tx.commit();
   }
 
-  async buildWithdrawTx(options: BuildWithdrawTxOptions): Promise<TxComplete> {
+  async buildWithdrawTx(
+    options: DexV1BuildWithdrawTxOptions
+  ): Promise<TxComplete> {
     const {
       sender,
       lpAsset,
@@ -303,7 +301,7 @@ export class Dex {
       .commit();
   }
 
-  async buildZapInTx(options: BuildZapInTxOptions): Promise<TxComplete> {
+  async buildZapInTx(options: DexV1BuildZapInTxOptions): Promise<TxComplete> {
     const { sender, assetIn, amountIn, assetOut, minimumLPReceived } = options;
     invariant(amountIn > 0n, "amount in must be positive");
     invariant(minimumLPReceived > 0n, "minimum LP received must be positive");
@@ -339,7 +337,9 @@ export class Dex {
       .commit();
   }
 
-  async buildDepositTx(options: BuildDepositTxOptions): Promise<TxComplete> {
+  async buildDepositTx(
+    options: DexV1BuildDepositTxOptions
+  ): Promise<TxComplete> {
     const { sender, assetA, assetB, amountA, amountB, minimumLPReceived } =
       options;
     invariant(amountA > 0n && amountB > 0n, "amount must be positive");
@@ -378,7 +378,7 @@ export class Dex {
   }
 
   async buildCancelOrder(
-    options: BuildCancelOrderOptions
+    options: DexV1BuildCancelOrderOptions
   ): Promise<TxComplete> {
     const { orderUtxo } = options;
     const redeemer = DataObject.to(
