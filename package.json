@@ -1,6 +1,6 @@
 {
   "name": "@minswap/sdk",
-  "version": "0.4.5",
+  "version": "0.5.0",
   "description": "Query Minswap data and build transactions",
   "type": "module",
   "types": "./build/index.d.ts",
