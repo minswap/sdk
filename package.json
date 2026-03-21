@@ -4,9 +4,6 @@
   "description": "Query Minswap data and build transactions",
   "type": "module",
   "types": "./build/index.d.ts",
-  "engines": {
-    "node": ">=20.17 <21"
-  },
   "exports": {
     ".": {
       "types": "./build/index.d.ts",
@@ -53,7 +50,7 @@
     "@cardano-ogmios/schema": "^6.5.0",
     "@maestro-org/typescript-sdk": "^1.6.3",
     "@minswap/tiny-invariant": "^1.2.0",
-    "@spacebudz/lucid": "npm:@jsr/spacebudz__lucid@^0.20.4",
+    "@spacebudz/lucid": "npm:@jsr/spacebudz__lucid@^0.20.14",
     "big.js": "^6.2.1",
     "bignumber.js": "^9.1.2",
     "exponential-backoff": "^3.1.1",
