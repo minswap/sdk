@@ -776,7 +776,7 @@ export async function _multiRoutingTxExample(
   });
 }
 
-export async function _cancelV2TxExample(
+export function _cancelV2TxExample(
   lucid: Lucid,
   adapter: Adapter
 ): Promise<TxComplete> {
@@ -1032,7 +1032,7 @@ export async function _zapOutStableExample(
   });
 }
 
-export async function _bulkOrderStableExample(
+export function _bulkOrderStableExample(
   lucid: Lucid,
   address: string,
   availableUtxos: Utxo[]

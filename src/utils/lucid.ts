@@ -15,16 +15,16 @@ import { NetworkId } from "../types/network";
  * @param address Your own address
  * @returns
  */
-export async function getBackendBlockfrostLucidInstance(
+export function getBackendBlockfrostLucidInstance(
   networkId: NetworkId,
   projectId: string,
   blockfrostUrl: string,
   address: string,
-): Promise<Lucid> {
+): Lucid {
   const provider = new Blockfrost(blockfrostUrl, projectId);
   const lucid = new Lucid({
     provider: provider,
-    network: networkId === NetworkId.MAINNET ? 'Mainnet' : 'Preprod',
+    network: networkId === NetworkId.MAINNET ? "Mainnet" : "Preprod",
   });
   lucid.selectReadOnlyWallet({
     address: address,
@@ -39,11 +39,11 @@ export async function getBackendBlockfrostLucidInstance(
  * @param address Your own address
  * @returns
  */
-export async function getBackendMaestroLucidInstance(
+export function getBackendMaestroLucidInstance(
   network: MaestroSupportedNetworks,
   apiKey: string,
   address: string,
-): Promise<Lucid> {
+): Lucid {
   const provider = new Maestro({
     network: network,
     apiKey: apiKey,

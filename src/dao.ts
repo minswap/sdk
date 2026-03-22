@@ -41,7 +41,7 @@ export class Dao {
    * This method builds a transaction with metadata that requests fee changes for a pool.
    * The transaction must be signed by the pool manager address.
    */
-  async updatePoolFeeTx(
+  updatePoolFeeTx(
     options: Omit<PoolFeeRequest, "version">
   ): Promise<TxComplete> {
     const { managerAddress, poolLPAsset, newFeeA, newFeeB } = options;

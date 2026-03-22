@@ -743,7 +743,7 @@ export class DexV2 {
     }
   }
 
-  async createBulkOrdersTx({
+  createBulkOrdersTx({
     sender,
     orderOptions,
     expiredOptions,

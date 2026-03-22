@@ -342,7 +342,7 @@ export class PostgresRepositoryWriter extends PostgresRepositoryWriterInTransact
     this.prismaClientTx = prismaClient;
   }
 
-  async transaction(
+  transaction(
     fn: (repo: PostgresRepositoryWriterInTransaction) => Promise<void>,
     options: { timeout?: number; maxWait?: number },
   ): Promise<void> {
@@ -352,4 +352,3 @@ export class PostgresRepositoryWriter extends PostgresRepositoryWriterInTransact
     );
   }
 }
-
