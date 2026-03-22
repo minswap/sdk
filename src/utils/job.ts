@@ -34,7 +34,7 @@ export async function runRecurringJob({
   }
 }
 
-async function sleep(durationInMs: number): Promise<unknown> {
+function sleep(durationInMs: number): Promise<unknown> {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve({ error: false, message: `Slept for ${durationInMs} ms` });

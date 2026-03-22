@@ -33,7 +33,7 @@ async function start(): Promise<void> {
   }
 }
 
-async function main(): Promise<void> {
+function main(): Promise<void> {
   return backOff(start, {
     retry(err, attempt): boolean {
       console.error(`Fail to run syncer, retry ${attempt}...`, err);
